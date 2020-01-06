@@ -5,6 +5,7 @@
 <head>
     <title>Example 01.01 - Basic skeleton</title>
     <script type="text/javascript" src="./libs/three.js"></script>
+    <script type="text/javascript" src="./libs/stats.js"></script>
     <style>
         body {
             /* set margin to 0 and overflow to hidden, to
@@ -17,19 +18,41 @@
 <body>
 
 <!-- Div which will hold the Output -->
-<div id="WebGL-output">
-</div>
+<div id="WebGL-output"></div>
+<div id="Stats-output"></div>
 
 <!-- Javascript code that runs our Three.js examples -->
 <script type="text/javascript">
+    var joint_size = 1;
+    function Joint() {
+        this.type = "Joint";
 
-    // once everything is loaded, we run our Three.js stuff.
+        this.geometry = new THREE.SphereGeometry(joint_size);
+        this.material = new THREE.MeshBasicMaterial({color: 0xff0000});
+
+        THREE.Mesh.call(this, this.geometry, this.material);
+    }
+
+    Joint.prototype = Object.create(THREE.Mesh.prototype);
+    Joint.prototype.constructor = Joint;
+
+    Joint.prototype.getMesh = function() {
+        return this.mesh;
+    }
+
     function init() {
+        var stats = initStats();
         // create a scene, that will hold all our elements such as objects, cameras and lights.
         var scene = new THREE.Scene();
 
         // create a camera, which defines where we're looking at.
         var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        // position and point the camera to the center of the scene
+        camera.position.x = -30;
+        camera.position.y = 40;
+        camera.position.z = 30;
+        camera.lookAt(scene.position);
 
         // create a render and set the size
         var renderer = new THREE.WebGLRenderer();
@@ -54,20 +77,37 @@
         // add the plane to the scene
         scene.add(plane);
 
-        // position and point the camera to the center of the scene
-        camera.position.x = -30;
-        camera.position.y = 40;
-        camera.position.z = 30;
-        camera.lookAt(scene.position);
+        // add joints
+        var joint = new Joint();
+        scene.add(joint);
 
         // add the output of the renderer to the html element
         document.getElementById("WebGL-output").appendChild(renderer.domElement);
 
         // render the scene
-        renderer.render(scene, camera);
+        renderScene();
+
+        function renderScene() {
+            stats.update();
+
+            requestAnimationFrame(renderScene);
+            renderer.render(scene, camera);
+        }
+
+        function initStats() {
+            var stats = new Stats();
+            
+            stats.setMode(0);
+            
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+            document.getElementById("Stats-output").appendChild(stats.domElement);
+
+            return stats;
+        }
     }
     window.onload = init
-
 </script>
 </body>
 </html>
