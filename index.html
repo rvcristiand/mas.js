@@ -1,36 +1,65 @@
 <!DOCTYPE html>
+
 <html>
+
 <head>
     <title>Example 01.01 - Basic skeleton</title>
+
     <script type="text/javascript" src="./libs/three.js"></script>
     <script type="text/javascript" src="./libs/stats.js"></script>
     <script type="text/javascript" src="./libs/dat.gui.js"></script>
     <script type="text/javascript" src="./libs/TrackballControls.js"></script>
+    <script type="text/javascript" src="./libs/Projector.js"></script>
+
     <style>
         body {
             margin: 0;
             overflow: hidden;
         }
     </style>
+    
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
     <div id="WebGL-output"></div>
     <div id="Stats-output"></div>
-    <div id="info"></div>
+    <!-- <div id="info"></div> -->
     
     <script type="text/javascript">
         // global variables
         var renderer;
         var scene;
         var camera;
-        var stats
+        var stats;  
         var clock;
         var trackballControls;
-        var joint;
+        // var joint;
         var plane;
 
         var controls = new function() {
+            // camera
+            // this.toggle_camera = true;
+
+            this.position_x = -30;
+            this.position_y =  40;
+            this.position_z =  30;
+
+            // perspective
+            this.fov = 45;
+            this.aspect = window.innerWidth / window.innerHeight;
+            this.near = 0.1;
+            this.far = 1000;
+
+            // orthographic
+            // this.left = 
+            // this.right =    
+            // this.top = 
+            // this.bottom = 
+            // this.near = 
+            // this.far = 
+
+            this.zoom = 1;
+
             // plane
             this.planeWidth = 50;
             this.planeLong = 50;
@@ -38,41 +67,55 @@
             // joint
             this.jointSize = 0.1;
 
-            // camera
+            // trackballControls
             this.rotateSpeed = 1.0;
             this.zoomSpeed = 10.0;
             this.panSpeed = 1.0;
+            this.staticMovig = false;
         }
 
         function init() {
-            clock = new THREE.Clock();
-
+            // statistics
             stats = initStats();
             
-            // create a scene, that will hold all our elements such as objects, cameras and lights.
+            // clock
+            clock = new THREE.Clock();
+            
+            // scene
             scene = new THREE.Scene();
-
-            // create a camera, which defines where we're looking at.
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-
-            camera.up.set(0,0,1);
-
-            trackballControls = new THREE.TrackballControls(camera);
-            trackballControls.rotateSpeed = controls.rotateSpeed;
-            trackballControls.zoomSpeed = controls.zoomSpeed;
-            trackballControls.panSpeed = controls.panSpeed;
-            trackballControls.staticMoving = true;
+            
+            // camera
+            camera = new THREE.PerspectiveCamera(controls.fov, controls.aspect, controls.near, controls.far, controls.zoom);
+            
+            // z axis always upwards
+            camera.up.set(0, 0, 1);
 
             // position and point the camera to the center of the scene
-            camera.position.x = -30;
-            camera.position.y = 40;
-            camera.position.z = 30;
+            camera.position.x = controls.position_x;
+            camera.position.y = controls.position_y;
+            camera.position.z = controls.position_z;
             camera.lookAt(scene.position);
-
+            
             // create a render and set the size
             renderer = new THREE.WebGLRenderer();
             renderer.setClearColor(new THREE.Color(0xEEEEEE));
             renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            // add the output of the renderer to the html element
+            document.getElementById("WebGL-output").appendChild(renderer.domElement);
+            
+            // trackballControls
+            trackballControls = new THREE.TrackballControls(camera, renderer.domElement);
+            trackballControls.rotateSpeed = controls.rotateSpeed;
+            trackballControls.zoomSpeed = controls.zoomSpeed;
+            trackballControls.panSpeed = controls.panSpeed;
+            trackballControls.staticMoving = controls.staticMoving;
+            
+            // // casting
+            // var projector = new THREE.Projector();
+
+            // document.addEventListener('mousedown', onDocumentMouseDown, false);
+            // document.addEventListener('mousemove', onDocumentMouseMove, false);
 
             // show axes in the screen
             var axes = new THREE.AxisHelper(20);
@@ -83,153 +126,223 @@
             var planeMaterial = new THREE.MeshBasicMaterial({color: 0xcccccc});
             plane = new THREE.Mesh(planeGeometry, planeMaterial);
 
-            // rotate and position the plane
-            // plane.rotation.x = -0.5 * Math.PI;
-            // plane.position.x = 15;
-            // plane.position.y = 0;
-            // plane.position.z = 0;
-
             // add the plane to the scene
             scene.add(plane);
 
             // add joints
-            joint = new Joint();
-            scene.add(joint);
-
+            // joint = new Joint();
+            // scene.add(joint);
+            
             // controls
             var gui = new dat.GUI();
             gui.add(controls, 'jointSize', 0.1, 1);
             gui.add(controls, 'rotateSpeed', 0, 1);
             gui.add(controls, 'zoomSpeed', 0, 1);
             gui.add(controls, 'panSpeed', 0, 1);
-
-            // add the output of the renderer to the html element
-            document.getElementById("WebGL-output").appendChild(renderer.domElement);
             
-            // setupKeyLogger();
-            setupKeyControls();
+            
+            // // setupKeyLogger();
+            // setupKeyControls();
 
-            // render the scene
+            // // render the scene
             render();
         }
 
-        function showInfo() {
-            var info = [];
+        // function showInfo() {
+        //     var info = [];
 
-            // plane
-            info.push("plane [l]ong: " + controls.planeLong.toFixed(2));
-            info.push("plane [w]idth: " + controls.planeWidth.toFixed(2));
+        //     // camera
+        //     var type_camera = function() {
+        //         if (controls.toggle_camera) {
+        //             return "perspective";
+        //         } else
+        //             return "orthographic";
+        //     };
 
-            // joint
-            info.push("[j]ointSize: " + controls.jointSize.toFixed(2));
+        //     info.push("camera: " + type_camera);
 
-            // camera
-            info.push("[r]otateSpeed: " + controls.rotateSpeed.toFixed(2));
-            info.push("[z]oomSpeed: " + controls.zoomSpeed.toFixed(2));
-            info.push("[p]anSpeed: " + controls.panSpeed.toFixed(2));
+        //     // perspective
+        //     // info.push("[f]ov: " + controls.fov.toFixed(2));
+
+        //     // plane
+        //     info.push("plane [l]ong: " + controls.planeLong.toFixed(2));
+        //     info.push("plane [w]idth: " + controls.planeWidth.toFixed(2));
+
+        //     // joint
+        //     info.push("[j]ointSize: " + controls.jointSize.toFixed(2));
+
+        //     // camera
+        //     info.push("[r]otateSpeed: " + controls.rotateSpeed.toFixed(2));
+        //     info.push("[z]oomSpeed: " + controls.zoomSpeed.toFixed(2));
+        //     info.push("[p]anSpeed: " + controls.panSpeed.toFixed(2));
+
+
             
-            var infoString = '';
-            for (i = 0; i < info.length; i++) {
-                infoString += info[i] + '\n';
-            }
+        //     var infoString = '';
+        //     for (i = 0; i < info.length; i++) {
+        //         infoString += info[i] + '\n';
+        //     }
 
-            document.getElementById("info").innerHTML = infoString;
-        }
+        //     document.getElementById("info").innerHTML = infoString;
+        // }
         
-        function setupKeyControls() {
-            var map = {};
+        // function setupKeyControls() {
+        //     console.log("holi");
 
-            document.onkeydown = document.onkeyup = function (e) {
-                e = e || event;
-                map[e.keyCode] = e.type == 'keydown';
+        //     var map = {};
 
-                // plane
-                if (map[76] && (map[107] || map[171])) { // l + '+'
-                    controls.planeLong += 1;
-                }
-                if (map[76] && (map[109] || map[173])) { // l + '+'
-                    controls.planeLong -= 1;
-                }
+        //     document.onkeydown = document.onkeyup = function (e) {
+        //         e = e || event;
+        //         map[e.keyCode] = e.type == 'keydown';
+
+        //         // camera
+        //         // perspective
+        //         if (map[70] && (map[107] || map[171])) { // f + '+'
+        //             controls.fov += 1;
+        //         }
+        //         if (map[70] && (map[109] || map[173])) { // f + '-'
+        //             controls.fov -= 1;
+        //         }
+
+        //         // plane
+        //         if (map[76] && (map[107] || map[171])) { // l + '+'
+        //             controls.planeLong += 1;
+        //         }
+        //         if (map[76] && (map[109] || map[173])) { // l + '+'
+        //             controls.planeLong -= 1;
+        //         }
                 
-                if (map[87] && (map[107] || map[171])) { // w + '+'
-                    controls.planeWidth += 1;
-                }
-                if (map[87] && (map[109] || map[173])) { // w + '+'
-                    controls.planeWidth -= 1;
-                }
+        //         if (map[87] && (map[107] || map[171])) { // w + '+'
+        //             controls.planeWidth += 1;
+        //         }
+        //         if (map[87] && (map[109] || map[173])) { // w + '+'
+        //             controls.planeWidth -= 1;
+        //         }
 
-                // jointSize
-                if (map[74] && (map[107] || map[171])) { // j + '+'
-                    controls.jointSize += 0.1;
-                }
-                if (map[74] && (map[109] || map[173])) { // j + '-'
-                    controls.jointSize -= 0.1;
-                }
+        //         // jointSize
+        //         if (map[74] && (map[107] || map[171])) { // j + '+'
+        //             controls.jointSize += 0.1;
+        //         }
+        //         if (map[74] && (map[109] || map[173])) { // j + '-'
+        //             controls.jointSize -= 0.1;
+        //         }
 
-                // rotateSpeed
-                if (map[82] && (map[107] || map[171])) { // r + '+'
-                    controls.rotateSpeed += 0.1;
-                }
-                if (map[82] && (map[109] || map[173])) { // r + '-'
-                    controls.rotateSpeed -= 0.1;
-                }
+        //         // rotateSpeed
+        //         if (map[82] && (map[107] || map[171])) { // r + '+'
+        //             controls.rotateSpeed += 0.1;
+        //         }
+        //         if (map[82] && (map[109] || map[173])) { // r + '-'
+        //             controls.rotateSpeed -= 0.1;
+        //         }
 
-                if (map[90] && (map[107] || map[171])) { // z + '+'
-                    controls.zoomSpeed += 0.1;
-                }
-                if (map[90] && (map[109] || map[173])) { // z + '-'
-                    controls.zoomSpeed -= 0.1;
-                }
+        //         if (map[90] && (map[107] || map[171])) { // z + '+'
+        //             controls.zoomSpeed += 0.1;
+        //         }
+        //         if (map[90] && (map[109] || map[173])) { // z + '-'
+        //             controls.zoomSpeed -= 0.1;
+        //         }
 
-                if (map[80] && (map[107] || map[171])) { // p + '+'
-                    controls.panSpeed += 0.1;
-                }
-                if (map[80] && (map[109] || map[173])) { // p + '-'
-                    controls.panSpeed -= 0.1;
-                }
-            };
+        //         if (map[80] && (map[107] || map[171])) { // p + '+'
+        //             controls.panSpeed += 0.1;
+        //         }
+        //         if (map[80] && (map[109] || map[173])) { // p + '-'
+        //             controls.panSpeed -= 0.1;
+        //         }
+        //     };
 
-        }
+        // }
 
-        function Joint() {
-            this.type = "Joint";
+        // function Joint() {
+        //     this.type = "Joint";
             
-            this.geometry = new THREE.SphereGeometry(5);
-            this.material = new THREE.MeshBasicMaterial({color: 0xff0000});
+        //     this.geometry = new THREE.SphereGeometry(controls.jointSize);
+        //     this.material = new THREE.MeshBasicMaterial({color: 0xff0000});
             
-            THREE.Mesh.call(this, this.geometry, this.material);
-        }
+        //     THREE.Mesh.call(this, this.geometry, this.material);
+        // }
         
-        Joint.prototype = Object.create(THREE.Mesh.prototype);
-        Joint.prototype.constructor = Joint;
+        // Joint.prototype = Object.create(THREE.Mesh.prototype);
+        // Joint.prototype.constructor = Joint;
         
-        Joint.prototype.getMesh = function() {
-            return this.mesh;
-        }
+        // Joint.prototype.getMesh = function() {
+        //     return this.mesh;
+        // }
         
         function render() {
             // show info
-            showInfo();
+            // showInfo();
 
             // update the camera
             var delta = clock.getDelta();
             trackballControls.update(delta)
-            trackballControls.rotateSpeed = controls.rotateSpeed;
-            trackballControls.zoomSpeed = controls.zoomSpeed;
-            trackballControls.panSpeed = controls.panSpeed;
+            // trackballControls.rotateSpeed = controls.rotateSpeed;
+            // trackballControls.zoomSpeed = controls.zoomSpeed;
+            // trackballControls.panSpeed = controls.panSpeed;
             
             // update the statistics
             stats.update();
+
+            // update the camera
+            // console.log(camera.position);
+            // controls.position_x = camera.position.x;
+            // controls.position_y = camera.position.y;
+            // controls.position_z = camera.position.z;
+            
+            // camera = new THREE.PerspectiveCamera(controls.fov, controls.aspect, controls.near, controls.far, controls.zoom);
+
+            // camera.up.set(0, 0, 1);
+
+            // camera.position.x = controls.position_x;
+            // camera.position.y = controls.position_y;
+            // camera.position.z = controls.position_z;
+            
+            // camera.lookAt(scene.position);
             
             // update the joint
-            joint.geometry = new THREE.SphereGeometry(controls.jointSize);
+            // joint.geometry = new THREE.SphereGeometry(controls.jointSize);
 
             // update the plane
-            plane.geometry = new THREE.PlaneGeometry(controls.planeLong, controls.planeWidth);
+            // plane.geometry = new THREE.PlaneGeometry(controls.planeLong, controls.planeWidth);
 
             // update the scene
             requestAnimationFrame(render);
             renderer.render(scene, camera);
+        }
+
+        function onDocumentMouseDown(event) {
+            var vector = new THREE.Vector3((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1, 0.5);
+            vector = vector.unproject(camera);
+            
+            var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+            
+            var intersects = raycaster.intersectObjects([joint]);
+
+            if (intersects.length > 0) {
+                console.log(intersects[0]);
+
+                intersects[0].object.material.transparent = !intersects[0].object.material.transparent;
+                intersects[0].object.material.opacity = 0.1;
+            }
+        }
+
+        function onDocumentMouseMove(event) {
+            // var vector = new THREE.Vector3((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1, 0.5);
+            // var vector = vector.unproject(camera);
+
+            // var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+            // var intersects = raycaster.intersectObjects([joint]);
+
+            // if (intersects.length > 0) {
+            //     var points = [];
+            //     points.push(new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z));
+            //     points.push(intersects[0].point);
+
+            //     var mat = new THREE.MeshBasicMaterial({color: 0xff0000, transparent: true, opacity: 0.6});
+            //     var tubeGeometry = new THREE.TubeGeometry(new THREE.SplineCurve3(points), 60, 0.001);
+
+            //     tube = new THREE.Mesh(tubeGeometry, mat);
+            //     scene.add(tube);
+            // }
         }
         
         function initStats() {
