@@ -1,5 +1,5 @@
 # FEM.js
-Model Civil Engineering Structures
+Model Civil Engineering Structures.
 
 ## Getting Started
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
