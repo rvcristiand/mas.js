@@ -1,0 +1,50 @@
+{
+  "preset": "Default",
+  "closed": false,
+  "remembered": {
+    "Default": {
+      "0": {
+        "rendererType": "WebGL",
+        "topBackgroundColor": "#000000",
+        "bottomBackgroundColor": "#818181",
+        "cameraType": "perspective",
+        "perspectiveCameraFOV": 50,
+        "perspectiveCameraNear": 0.1,
+        "perspectiveCameraFar": 1000,
+        "orthographicCameraNear": -200,
+        "orthographicCameraFar": 500,
+        "cameraPosition_x": 15,
+        "cameraPosition_y": 15,
+        "cameraPosition_z": 15,
+        "axisUpwards": "z",
+        "rotateSpeed": 1,
+        "zoomSpeed": 1.2,
+        "panSpeed": 0.3,
+        "staticMoving": true,
+        "planeSize": 10,
+        "planeDivisions": 10,
+        "planeColor": "#000000",
+        "planeTransparent": true,
+        "planeOpacity": 0.5,
+        "planeColorCenterLine": "#ff0000",
+        "planeColorGrid": "#000000"
+      }
+    }
+  },
+  "folders": {
+    "General": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    }, "TrackballControls": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    },
+    "Plane": {
+      "preset": "Default",
+      "closed": false,
+      "folders": {}
+    }
+  }
+}
