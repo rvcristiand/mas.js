@@ -36,25 +36,17 @@
 
         var renderer_output = document.getElementById("renderer-output");
 
-        var stats;
-        var gui;
+        var stats, gui;
 
         var clock, trackballControls;
 
         var config;
 
         var plane;
-        // var joint;
+        
+        var joints;
+        var jointMaterial;
 
-        //TODO:
-        //- Almacenar todas estas variables en la variable config
-        // var controls = new function() {
-        //     // joint
-        //     this.jointSize = 0.1;
-        // }
-
-        //TODO:
-        //- crear mis propios ejes
         function init() {
             // load the json config
             loadJSON("./config.json")
@@ -94,7 +86,7 @@
                         camera = perspectiveCamera;
                     } else if (config.cameraType == "orthographic") {
                         camera = orthographicCamera;
-                    }   
+                    }
                     // set the upwards axis
                     switch (config.axisUpwards) {
                         case "x":
@@ -116,7 +108,7 @@
                     // set the look at
                     camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-                    // create the renderer
+                    // create the WebGL renderer and canvas renderer
                     if (detectWebGL()) {
                         rendererWebGL = new THREE.WebGLRenderer({ alpha: true });
                     } else {
@@ -128,6 +120,7 @@
                         rendererWebGL.setSize(window.innerWidth, window.innerHeight);
                     }
                     rendererCanvas.setSize(window.innerWidth, window.innerHeight);
+
                     // set the renderer
                     if (config.rendererType == "WebGL") {
                         renderer = rendererWebGL;
@@ -158,7 +151,7 @@
                     trackballControls.panSpeed = config.panSpeed;
                     trackballControls.staticMoving = config.staticMoving;
 
-                    // create and add the ground plane to the scene
+                    // create and add the plane to the scene
                     plane = new THREE.Object3D();
                     // create the grid
                     var grid = new THREE.GridHelper(
@@ -198,6 +191,15 @@
                     }
                     // add the plane to the scene
                     scene.add(plane);
+
+                    // set the joints
+                    joints = new THREE.Object3D();
+
+                    // set the joint material
+                    jointMaterial = new THREE.MeshBasicMaterial({ color: config.jointColor});
+
+                    // add the joints to the scene
+                    scene.add(joints);
 
                     // show axes in the screen
                     var axes = new THREE.AxisHelper(1);
@@ -410,7 +412,9 @@
                                 break;
                         }
                         // set the position
-                        camera.position.set(position.x, position.y, position.z);
+                        camera.position.x = position.x;
+                        camera.position.y = position.y;
+                        camera.position.z = position.z;
                         // set the look at
                         camera.lookAt(lookAtVector);
 
@@ -437,7 +441,6 @@
 
                     // add a perspective/orthographic camera options folder
                     let cameraTypeOptionsFolder = cameraFolder.addFolder("Options");
-                    cameraTypeOptionsFolder.open();
 
                     // set control camera's properties
                     if (config.cameraType == "perspective") {
@@ -499,7 +502,6 @@
 
                     // add a cameraPosition folder
                     let cameraPositionFolder = cameraFolder.addFolder("Position");
-                    cameraPositionFolder.open();
 
                     // set control cameraPosition_x
                     let cameraPosition_xController = cameraPositionFolder
@@ -744,7 +746,6 @@
 
                     // add a Color folder
                     let planeColorsFolder = planeFolder.addFolder("Colors");
-                    planeColorsFolder.open();
                     
                     // set control planeColor
                     let planeColorController = planeColorsFolder
@@ -954,8 +955,37 @@
                         scene.add(plane);
                     });
 
-                    //
-                    // gui.add(controls, 'jointSize', 0.1, 1);
+                    // add a Joint folder
+                    let jointFolder = gui.addFolder("Joint");
+                    jointFolder.open();
+
+                    // set control joint size
+                    let jointSizeController = jointFolder
+                        .add(config, "jointSize")
+                        .min(0.01)
+                        .max(1)
+                        .step(0.01);
+                    jointSizeController.name("Size");
+                    jointSizeController.onChange(function (jointSize) {
+                        var joint;
+
+                        for (var i = 0; i < joints.children.length; i++) {
+                            joint = joints.children[i]
+
+                            joint.scale.x = jointSize;
+                            joint.scale.y = jointSize;
+                            joint.scale.z = jointSize;
+                        }
+                    });
+
+                    let jointColorController = jointFolder
+                        .addColor(config, "jointColor");
+                    jointColorController.name("Color");
+                    jointColorController.onChange(function (color) {
+                        jointMaterial.color = new THREE.Color(color);
+                    }); 
+
+                    manyJoints(10, 20);
 
                     render();
                 })
@@ -972,47 +1002,9 @@
             // document.addEventListener('mousedown', onDocumentMouseDown, false);
             // document.addEventListener('mousemove', onDocumentMouseMove, false);
 
-            // // add joints
-            // joint = new Joint();
-            // scene.add(joint);
-
             // // // setupKeyLogger();
             // // setupKeyControls();
         }
-
-        // function setupKeyControls() {
-        //     var map = {};
-
-        //     document.onkeydown = document.onkeyup = function (e) {
-        //         e = e || event;
-        //         map[e.keyCode] = e.type == 'keydown';
-
-        //         // jointSize
-        //         if (map[74] && (map[107] || map[171])) { // j + '+'
-        //             controls.jointSize += 0.1;
-        //         }
-        //         if (map[74] && (map[109] || map[173])) { // j + '-'
-        //             controls.jointSize -= 0.1;
-        //         }
-        //     };
-
-        // }
-
-        // function Joint() {
-        //     this.type = "Joint";
-
-        //     this.geometry = new THREE.SphereGeometry(controls.jointSize);
-        //     this.material = new THREE.MeshBasicMaterial({color: 0xff0000});
-
-        //     THREE.Mesh.call(this, this.geometry, this.material);
-        // }
-
-        // Joint.prototype = Object.create(THREE.Mesh.prototype);
-        // Joint.prototype.constructor = Joint;
-
-        // Joint.prototype.getMesh = function() {
-        //     return this.mesh;
-        // }
 
         // function onDocumentMouseDown(event) {
         //     var vector = new THREE.Vector3((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1, 0.5);
@@ -1072,6 +1064,36 @@
         // }
 
         window.onload = init;
+
+        function manyJoints(radius, quantite) {
+            for (var i = 0; i < quantite; i++) {
+                addJoint(
+                    radius * (Math.random() - 1 / 2),
+                    radius * (Math.random() - 1 / 2),
+                    radius * (Math.random() - 1 / 2)
+                );
+            }
+        }
+        
+        function addJoint(x, y, z) {
+            var joint = createJoint(config.jointSize);
+            joint.position.x = x;
+            joint.position.y = y;
+            joint.position.z = z;
+            
+            joints.add(joint);
+        }
+        
+        function createJoint(size) {
+            var geometry = new THREE.SphereGeometry(1, 32, 32);
+            
+            var mesh = new THREE.Mesh(geometry, jointMaterial);
+            mesh.scale.x = size;
+            mesh.scale.y = size;
+            mesh.scale.z = size;
+            
+            return mesh
+        }
         
         function render() {
             // update the camera
@@ -1131,8 +1153,6 @@
             xhrLoader.load(
                 json + "?nocache=" + new Date().getTime(),
                 function (loaded) {
-                    console.log("Loaded JSON file:", json);
-
                     deferred.resolve(JSON.parse(loaded));
                 },
                 function (progress) {

@@ -13,9 +13,9 @@
         "perspectiveCameraFar": 1000,
         "orthographicCameraNear": -200,
         "orthographicCameraFar": 500,
-        "cameraPosition_x": 15,
-        "cameraPosition_y": 15,
-        "cameraPosition_z": 15,
+        "cameraPosition_x": 20,
+        "cameraPosition_y": 20,
+        "cameraPosition_z": 20,
         "axisUpwards": "z",
         "rotateSpeed": 1,
         "zoomSpeed": 1.2,
@@ -27,7 +27,9 @@
         "planeTransparent": true,
         "planeOpacity": 0.5,
         "planeColorCenterLine": "#ff0000",
-        "planeColorGrid": "#000000"
+        "planeColorGrid": "#000000",
+        "jointSize": 0.1,
+        "jointColor": "#00FF00"
       }
     }
   },
