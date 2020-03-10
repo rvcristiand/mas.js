@@ -36,6 +36,10 @@ Details about the functions provides by FEM.js.
 
 ### Functions
 ---
+#### loadModel(filename)
+Load a model.
+- filename: filename.
+
 #### addJoint(x, y, z)
 Add a joint to the model at position (x, y, z).
 - x: coordinate x.
