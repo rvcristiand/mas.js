@@ -28,8 +28,10 @@
         "planeOpacity": 0.5,
         "planeColorCenterLine": "#ff0000",
         "planeColorGrid": "#000000",
-        "jointSize": 0.1,
-        "jointColor": "#00FF00"
+        "jointSize": 0.05,
+        "jointColor": "#00FF00",
+        "frameColor": "#0000FF",
+        "frameSize": 0.02
       }
     }
   },

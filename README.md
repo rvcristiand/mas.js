@@ -42,10 +42,21 @@ Add a joint to the model at position (x, y, z).
 - y: coordinate y.
 - z: coordinate z.
 
+#### addFrame(name, j, k)
+Add a frame to the model with _j_ as the near joint and _k_ as the far joint.
+- name: name of the frame.
+- j: near joint.
+- k: far joint.
+
 #### manyJoints(radius, quantite)
 Add many joints to the model at random positions inside a sphere.
 - radius: sphere's radius.
 - quantite: quantite joints.
+
+#### manyFrames(radius, quantite)
+Add many frames to the model at random positions inside a sphere.
+- radius: sphereś radius.
+- quantite: quantite frames.
 
 ## Built with
 * [three.js](https://threejs.org/)

@@ -44,8 +44,8 @@
 
         var plane;
         
-        var joints;
-        var jointMaterial;
+        var joints, jointMaterial;
+        var frames, frameMaterial;
 
         function init() {
             // load the json config
@@ -194,12 +194,17 @@
 
                     // set the joints
                     joints = new THREE.Object3D();
-
-                    // set the joint material
-                    jointMaterial = new THREE.MeshBasicMaterial({ color: config.jointColor});
-
-                    // add the joints to the scene
+                    // set the material
+                    jointMaterial = new THREE.MeshBasicMaterial({ color: config.jointColor });
+                    // add to the scene
                     scene.add(joints);
+
+                    // set the frames
+                    frames = new THREE.Object3D();
+                    // set the material
+                    frameMaterial = new THREE.MeshBasicMaterial({ color: config.frameColor })
+                    // add to the scene
+                    scene.add(frames);
 
                     // show axes in the screen
                     var axes = new THREE.AxisHelper(1);
@@ -956,7 +961,7 @@
                     });
 
                     // add a Joint folder
-                    let jointFolder = gui.addFolder("Joint");
+                    let jointFolder = gui.addFolder("Joints");
                     jointFolder.open();
 
                     // set control joint size
@@ -983,9 +988,39 @@
                     jointColorController.name("Color");
                     jointColorController.onChange(function (color) {
                         jointMaterial.color = new THREE.Color(color);
-                    }); 
+                    });
+
+                    // add a Frame folder
+                    let frameFolder = gui.addFolder("Frames");
+                    frameFolder.open();
+
+                    // set the control frame size
+                    let frameSizeController = frameFolder
+                        .add(config, "frameSize")
+                        .min(0.01)
+                        .max(1)
+                        .step(0.01);
+                    frameSizeController.name("Size");
+                    frameSizeController.onChange(function (frameSize) {
+                        var frame;
+
+                        for ( var i = 0; i < frames.children.length; i++) {
+                            frame = frames.children[i];
+
+                            frame.scale.x = frameSize;
+                            frame.scale.z = frameSize;
+                        }
+                    });
+
+                    let frameColorController = frameFolder
+                        .addColor(config, "frameColor");
+                    frameColorController.name("Color");
+                    frameColorController.onChange(function (color) {
+                        frameMaterial.color = new THREE.Color(color);
+                    })
 
                     manyJoints(10, 20);
+                    manyFrames(10, 10);
 
                     render();
                 })
@@ -1068,15 +1103,59 @@
         function manyJoints(radius, quantite) {
             for (var i = 0; i < quantite; i++) {
                 addJoint(
+                    Math.random(),
                     radius * (Math.random() - 1 / 2),
                     radius * (Math.random() - 1 / 2),
                     radius * (Math.random() - 1 / 2)
                 );
             }
         }
+
+        function manyFrames(radius, quantite) {
+            for (var i = 0; i < quantite; i++) {
+                addFrame(
+                    Math.random(),
+                    joints.children[Math.floor(Math.random() * joints.children.length)],
+                    joints.children[Math.floor(Math.random() * joints.children.length)]
+                )
+            }
+        }
+
+        function addFrame(name, j, k) {
+            for ( var i = 0; i < frames.children.length; i++) {
+                if ( name === frames.children[i].name ) {
+                    return ;
+                }
+            }
+            
+            var vector = new THREE.Vector3(
+                k.position.x - j.position.x,
+                k.position.y - j.position.y,
+                k.position.z - j.position.z,
+            );
+
+            var axis = new THREE.Vector3(0, 1, 0);
+
+            var frame = createFrame(config.frameSize, vector.length());
+            frame.name = name;
+            frame.quaternion.setFromUnitVectors(axis, vector.clone().normalize());
+            frame.position.copy(vector.clone().multiplyScalar(0.5));
+            frame.position.x += j.position.x;
+            frame.position.y += j.position.y;
+            frame.position.z += j.position.z;
+            
+            frames.add(frame);
+        }
         
-        function addJoint(x, y, z) {
+        function addJoint(name, x, y, z) {
+            for ( var i = 0; i < joints.children.length; i++ ) {
+                if ( name === joints.children[i].name ) {
+                    return;
+                }
+            }
+
             var joint = createJoint(config.jointSize);
+            joint.name = name;
             joint.position.x = x;
             joint.position.y = y;
             joint.position.z = z;
@@ -1084,6 +1163,16 @@
             joints.add(joint);
         }
         
+        function createFrame(size, length) {
+            var geometry = new THREE.CylinderGeometry(1, 1, length);
+
+            var mesh = new THREE.Mesh(geometry, frameMaterial);
+            mesh.scale.x = size;
+            mesh.scale.z = size;
+
+            return mesh
+        }
+
         function createJoint(size) {
             var geometry = new THREE.SphereGeometry(1, 32, 32);
             
