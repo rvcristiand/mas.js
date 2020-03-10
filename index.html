@@ -1100,6 +1100,39 @@
 
         window.onload = init;
 
+        function loadModel(filename) {
+            loadJSON(filename)
+                .then(function (json) {
+                    while (!(joints.children.length === 0)) {
+                        joints.remove(joints.children[0]);
+                    }
+                    
+                    for (var key in json.joints) {
+                        addJoint(
+                            key,
+                            json.joints[key].x,
+                            json.joints[key].y,
+                            json.joints[key].z)
+                    }
+                    while (!(frames.children.length === 0)) {
+                        frames.remove(frames.children[0]);
+                    }
+
+                    for (var key in json.frames) {
+                        addFrame(
+                            key,
+                            json.frames[key].j,
+                            json.frames[key].k)
+                    }
+                })
+                .catch(function (error) {
+                    console.log("Error ocurred in sequence:", error);
+                })
+                .progress(function (e) {
+                    console.log("Progress event received: ", e);
+                })
+        }
+
         function manyJoints(radius, quantite) {
             for (var i = 0; i < quantite; i++) {
                 addJoint(
@@ -1115,8 +1148,8 @@
             for (var i = 0; i < quantite; i++) {
                 addFrame(
                     Math.random(),
-                    joints.children[Math.floor(Math.random() * joints.children.length)],
-                    joints.children[Math.floor(Math.random() * joints.children.length)]
+                    joints.children[Math.floor(Math.random() * joints.children.length)].name,
+                    joints.children[Math.floor(Math.random() * joints.children.length)].name
                 )
             }
         }
@@ -1127,24 +1160,29 @@
                     return ;
                 }
             }
-            
-            var vector = new THREE.Vector3(
-                k.position.x - j.position.x,
-                k.position.y - j.position.y,
-                k.position.z - j.position.z,
-            );
 
-            var axis = new THREE.Vector3(0, 1, 0);
+            var j = joints.getObjectByName(j);
+            var k = joints.getObjectByName(k);
 
-            var frame = createFrame(config.frameSize, vector.length());
-            frame.name = name;
-            frame.quaternion.setFromUnitVectors(axis, vector.clone().normalize());
-            frame.position.copy(vector.clone().multiplyScalar(0.5));
-            frame.position.x += j.position.x;
-            frame.position.y += j.position.y;
-            frame.position.z += j.position.z;
-            
-            frames.add(frame);
+            if (j && k) {
+                var vector = new THREE.Vector3(
+                    k.position.x - j.position.x,
+                    k.position.y - j.position.y,
+                    k.position.z - j.position.z,
+                );
+                
+                var axis = new THREE.Vector3(0, 1, 0);
+
+                var frame = createFrame(config.frameSize, vector.length());
+                frame.name = name;
+                frame.quaternion.setFromUnitVectors(axis, vector.clone().normalize());
+                frame.position.copy(vector.clone().multiplyScalar(0.5));
+                frame.position.x += j.position.x;
+                frame.position.y += j.position.y;
+                frame.position.z += j.position.z;
+                
+                frames.add(frame);
+            }
         }
         
         function addJoint(name, x, y, z) {
