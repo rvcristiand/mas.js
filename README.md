@@ -55,7 +55,7 @@ Add many joints to the model at random positions inside a sphere.
 
 #### manyFrames(radius, quantite)
 Add many frames to the model at random positions inside a sphere.
-- radius: sphereś radius.
+- radius: sphere's radius.
 - quantite: quantite frames.
 
 ## Built with
