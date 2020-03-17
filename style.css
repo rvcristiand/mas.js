@@ -1,0 +1,19 @@
+* {
+    width: 100%;
+    margin: 0px;
+}
+html {
+    height: 100%;
+}
+body {
+    height: 100%;
+    overflow: hidden;
+}
+.console {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+}
+input[type="text"] {
+    background: white;
+}
