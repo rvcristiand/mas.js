@@ -11,3 +11,8 @@ body {
     height: 100vh;
     width: 100vw;
 }
+
+#gui {
+    position: fixed;
+    right: 0;
+}
