@@ -187,8 +187,7 @@ function init() {
       gui = new dat.GUI({ load: json, preset: json.preset, autoPlace: false });
 
       // place the gui
-      var customContainer = document.getElementById('gui');
-      customContainer.appendChild(gui.domElement);
+      renderer_output.appendChild(gui.domElement);
 
       // remember config
       gui.remember(config);
