@@ -7,6 +7,9 @@
 
     <title>Example 01.01 - Basic skeleton</title>
 
+    <!-- Bootstrap CSS CDN -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
+
     <!-- three.js -->
     <script src="./libs/three.js"></script>
     <script src="./libs/CanvasRenderer.js"></script>
@@ -23,17 +26,74 @@
 
     <!-- Style -->
     <link rel="stylesheet" href="style.css" />
+
+    <!-- Font Awesome JS -->
+    <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/solid.js" integrity="sha384-tzzSw1/Vo+0N5UhStP3bvwWPq+uvzCMfrN1fEFe+xBmv1C/AtVX5K0uZtmcHitFZ" crossorigin="anonymous"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/fontawesome.js" integrity="sha384-6OIrr52G08NpOFSZdxxz1xdNSndlD4vdcf/q2myIUVO0VsqaGHJsB0RaBE01VTOY" crossorigin="anonymous"></script>
   </head>
 
   <body>
+    <!-- Start of wrapper -->
     <div class="wrapper">
+      <!-- Start of sidebar -->
+      <div id="sidebar">
+        <!-- Start hide the sidebar -->
+        <div id="dismiss">
+          <i class="fas fa-arrow-left"></i>
+        </div>
+        <!-- End hide the sidebar -->
+      </div>
+      <!-- End of sidebar -->
+
+      <!-- Start renderer-output -->
       <div id="renderer-output">
+        <!-- Start top-navbar -->
+        <nav id="top-navbar" class="navbar navbar-expand-lg navbar-transparent">
+          <!-- Start show sidebar -->
+          <button type="button" id="sidebarCollapse" class="btn btn-info">
+            <i class="fas fa-align-left"></i>
+          </button>
+          <!-- End show sidebar -->
+        </nav>
+        <!-- End top-navbar -->
       </div>
-        <!-- <div id="Stats-output"></div> -->
-        <!-- <input class="console" type="text"> -->
+      <!-- End renderer-output -->
+
+      <!-- <div id="Stats-output"></div> -->
+      <!-- <input class="console" type="text"> -->
+
       </div>
+      <!-- End renderer-output -->
     </div>
+    <!-- End of wrapper -->
+
+    <!-- Start overlay -->
+    <div class="overlay"></div>
+    <!-- Start overlay -->
     
     <script src="./FEM.js"></script>
+
+    <!-- jQuery CDN - Slim version (=without AJAX) -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+
+    <script>
+      $(document).ready(function () {
+        $('#sidebarCollapse').on('click', function () {
+            // open sidebar
+            $('#sidebar').addClass('active');
+            // fade in the overlay
+            $('.overlay').addClass('active');
+            // $('.collapse.in').toggleClass('in');
+            // $('a[aria-expanded=true]').attr('aria-expanded', 'false');
+        });
+        
+        $('#dismiss, .overlay').on('click', function () {
+          // hide sidebar
+          $('#sidebar').removeClass('active');
+          // fade in the overlay
+          $('.overlay').removeClass('active')
+        })
+      })
+    </script>
   </body>
 </html>
