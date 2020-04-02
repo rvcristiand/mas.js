@@ -13,6 +13,6 @@ body {
 }
 
 #gui {
-    position: absolute;
+    position: fixed;
     right: 0;
 }
