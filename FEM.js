@@ -184,11 +184,7 @@ function init() {
     //   stats = initStats();
 
       // create the dat gui
-      gui = new dat.GUI({ load: json, preset: json.preset, autoPlace: false });
-
-      // place the gui
-      var customContainer = document.getElementById('gui');
-      customContainer.appendChild(gui.domElement);
+      gui = new dat.GUI({ load: json, preset: json.preset });
 
       // remember config
       gui.remember(config);
