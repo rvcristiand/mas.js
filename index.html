@@ -7,9 +7,6 @@
 
     <title>Example 01.01 - Basic skeleton</title>
 
-    <!-- Bootstrap CSS CDN -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
-
     <!-- three.js -->
     <script src="./libs/three.js"></script>
     <script src="./libs/CanvasRenderer.js"></script>
@@ -38,6 +35,14 @@
   <body>
     <!-- Start of wrapper -->
     <div class="wrapper">
+      <div id="button">
+        <!-- Start show sidebar -->
+        <button type="button" id="sidebarCollapse" class="myButton">
+          <i class="fas fa-align-left"></i>
+        </button>
+        <!-- End show sidebar -->
+      </div>
+
       <!-- Start of sidebar -->
       <div id="sidebar">
         <!-- Start hide the sidebar -->
@@ -49,17 +54,7 @@
       <!-- End of sidebar -->
 
       <!-- Start renderer-output -->
-      <div id="renderer-output">
-        <!-- Start top-navbar -->
-        <nav id="top-navbar" class="navbar navbar-expand-lg navbar-transparent">
-          <!-- Start show sidebar -->
-          <button type="button" id="sidebarCollapse" class="btn btn-info">
-            <i class="fas fa-align-left"></i>
-          </button>
-          <!-- End show sidebar -->
-        </nav>
-        <!-- End top-navbar -->
-      </div>
+      <div id="renderer-output"></div>
       <!-- End renderer-output -->
 
       <!-- <div id="Stats-output"></div> -->
