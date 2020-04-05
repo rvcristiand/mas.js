@@ -27,7 +27,8 @@ function init() {
       renderer_output.style.backgroundColor = config.topBackgroundColor;
       renderer_output.style.backgroundImage =
         "linear-gradient(" +
-        config.topBackgroundColor + ", " +
+        config.topBackgroundColor +
+        ", " +
         config.bottomBackgroundColor +
         ")";
 
@@ -86,9 +87,15 @@ function init() {
       rendererCanvas = new THREE.CanvasRenderer({ alpha: true });
       // set the size
       if (!(rendererWebGL == null)) {
-        rendererWebGL.setSize(renderer_output.clientWidth, renderer_output.clientHeight);
+        rendererWebGL.setSize(
+          renderer_output.clientWidth,
+          renderer_output.clientHeight
+        );
       }
-      rendererCanvas.setSize(renderer_output.clientWidth, renderer_output.clientHeight);
+      rendererCanvas.setSize(
+        renderer_output.clientWidth,
+        renderer_output.clientHeight
+      );
 
       // set the renderer
       if (config.rendererType == "WebGL") {
@@ -125,12 +132,13 @@ function init() {
       // create the grid
       var grid = new THREE.GridHelper(
         config.planeSize,
-        2 * config.planeSize / config.planeDivisions,
+        (2 * config.planeSize) / config.planeDivisions
       );
       // set the colors
       grid.setColors(
         new THREE.Color(config.planeColorCenterLine),
-        new THREE.Color(config.planeColorGrid));
+        new THREE.Color(config.planeColorGrid)
+      );
       // set the rotation
       grid.rotation.x = 0.5 * Math.PI;
       // add the grid to the plane
@@ -140,23 +148,25 @@ function init() {
         new THREE.Mesh(
           new THREE.PlaneBufferGeometry(
             2 * config.planeSize,
-            2 * config.planeSize),
+            2 * config.planeSize
+          ),
           new THREE.MeshBasicMaterial({
             color: config.planeColor,
             transparent: config.planeTransparent,
             opacity: config.planeOpacity,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
           })
-        ));
+        )
+      );
       // set the orientation
       switch (config.axisUpwards) {
-        case 'x':
+        case "x":
           plane.rotation.y = 0.5 * Math.PI;
           break;
-        case 'y':
+        case "y":
           plane.rotation.x = 0.5 * Math.PI;
-          break
-        case 'z':
+          break;
+        case "z":
           break;
       }
       // add the plane to the scene
@@ -172,7 +182,7 @@ function init() {
       // set the frames
       frames = new THREE.Object3D();
       // set the material
-      frameMaterial = new THREE.MeshBasicMaterial({ color: config.frameColor })
+      frameMaterial = new THREE.MeshBasicMaterial({ color: config.frameColor });
       // add to the scene
       scene.add(frames);
 
@@ -181,7 +191,7 @@ function init() {
       scene.add(axes);
 
       // create the stats
-    //   stats = initStats();
+      stats = initStats();
 
       // create the dat gui
       gui = new dat.GUI({ load: json, preset: json.preset });
@@ -245,29 +255,37 @@ function init() {
       backgroundFolder.open();
 
       // set control topBackgroundColor
-      let topBackgroundColorController = backgroundFolder
-        .addColor(config, "topBackgroundColor");
+      let topBackgroundColorController = backgroundFolder.addColor(
+        config,
+        "topBackgroundColor"
+      );
       topBackgroundColorController.name("Top color");
       topBackgroundColorController.onChange(function (topBackgroundColor) {
         // set the background
         renderer_output.style.backgroundColor = config.topBackgroundColor;
         renderer_output.style.backgroundImage =
           "linear-gradient(" +
-          config.topBackgroundColor + ", " +
+          config.topBackgroundColor +
+          ", " +
           config.bottomBackgroundColor +
           ")";
       });
 
       // set control bottomBackgroundColor
-      let bottomBackgroundColorController = backgroundFolder
-        .addColor(config, "bottomBackgroundColor");
+      let bottomBackgroundColorController = backgroundFolder.addColor(
+        config,
+        "bottomBackgroundColor"
+      );
       bottomBackgroundColorController.name("Bottom color");
-      bottomBackgroundColorController.onChange(function (bottomBackgroundColor) {
+      bottomBackgroundColorController.onChange(function (
+        bottomBackgroundColor
+      ) {
         // set the background
         renderer_output.style.backgroundColor = config.topBackgroundColor;
         renderer_output.style.backgroundImage =
           "linear-gradient(" +
-          config.topBackgroundColor + ", " +
+          config.topBackgroundColor +
+          ", " +
           config.bottomBackgroundColor +
           ")";
       });
@@ -588,7 +606,7 @@ function init() {
         .min(0.12)
         .max(12)
         .step(0.12);
-      zoomSpeedController.name("Zoom speed")
+      zoomSpeedController.name("Zoom speed");
       zoomSpeedController.onFinishChange(function (zoomSpeed) {
         trackballControls.zoomSpeed = zoomSpeed;
       });
@@ -605,7 +623,10 @@ function init() {
       });
 
       // set control staticMoving
-      let staticMovingController = trackbackControlsFolder.add(config, "staticMoving");
+      let staticMovingController = trackbackControlsFolder.add(
+        config,
+        "staticMoving"
+      );
       staticMovingController.name("Static moving");
       staticMovingController.onFinishChange(function (staticMoving) {
         trackballControls.staticMoving = staticMoving;
@@ -630,12 +651,13 @@ function init() {
         // create the grid
         var grid = new THREE.GridHelper(
           config.planeSize,
-          2 * config.planeSize / config.planeDivisions,
+          (2 * config.planeSize) / config.planeDivisions
         );
         // set the colors
         grid.setColors(
           new THREE.Color(config.planeColorCenterLine),
-          new THREE.Color(config.planeColorGrid));
+          new THREE.Color(config.planeColorGrid)
+        );
         // set the rotation
         grid.rotation.x = 0.5 * Math.PI;
         // add the grid to the plane
@@ -645,23 +667,25 @@ function init() {
           new THREE.Mesh(
             new THREE.PlaneBufferGeometry(
               2 * config.planeSize,
-              2 * config.planeSize),
+              2 * config.planeSize
+            ),
             new THREE.MeshBasicMaterial({
               color: config.planeColor,
               transparent: config.planeTransparent,
               opacity: config.planeOpacity,
-              side: THREE.DoubleSide
+              side: THREE.DoubleSide,
             })
-          ));
+          )
+        );
         // set the orientation
         switch (config.axisUpwards) {
-          case 'x':
+          case "x":
             plane.rotation.y = 0.5 * Math.PI;
             break;
-          case 'y':
+          case "y":
             plane.rotation.x = 0.5 * Math.PI;
-            break
-          case 'z':
+            break;
+          case "z":
             break;
         }
         // add the plane to the scene
@@ -683,12 +707,13 @@ function init() {
         // create the grid
         var grid = new THREE.GridHelper(
           config.planeSize,
-          2 * config.planeSize / config.planeDivisions,
+          (2 * config.planeSize) / config.planeDivisions
         );
         // set the colors
         grid.setColors(
           new THREE.Color(config.planeColorCenterLine),
-          new THREE.Color(config.planeColorGrid));
+          new THREE.Color(config.planeColorGrid)
+        );
         // set the rotation
         grid.rotation.x = 0.5 * Math.PI;
         // add the grid to the plane
@@ -698,23 +723,25 @@ function init() {
           new THREE.Mesh(
             new THREE.PlaneBufferGeometry(
               2 * config.planeSize,
-              2 * config.planeSize),
+              2 * config.planeSize
+            ),
             new THREE.MeshBasicMaterial({
               color: config.planeColor,
               transparent: config.planeTransparent,
               opacity: config.planeOpacity,
-              side: THREE.DoubleSide
+              side: THREE.DoubleSide,
             })
-          ));
+          )
+        );
         // set the orientation
         switch (config.axisUpwards) {
-          case 'x':
+          case "x":
             plane.rotation.y = 0.5 * Math.PI;
             break;
-          case 'y':
+          case "y":
             plane.rotation.x = 0.5 * Math.PI;
-            break
-          case 'z':
+            break;
+          case "z":
             break;
         }
         // add the plane to the scene
@@ -725,8 +752,10 @@ function init() {
       let planeColorsFolder = planeFolder.addFolder("Colors");
 
       // set control planeColor
-      let planeColorController = planeColorsFolder
-        .addColor(config, "planeColor");
+      let planeColorController = planeColorsFolder.addColor(
+        config,
+        "planeColor"
+      );
       planeColorController.name("Plane");
       planeColorController.onChange(function () {
         // remove the plane
@@ -736,12 +765,13 @@ function init() {
         // create the grid
         var grid = new THREE.GridHelper(
           config.planeSize,
-          2 * config.planeSize / config.planeDivisions,
+          (2 * config.planeSize) / config.planeDivisions
         );
         // set the colors
         grid.setColors(
           new THREE.Color(config.planeColorCenterLine),
-          new THREE.Color(config.planeColorGrid));
+          new THREE.Color(config.planeColorGrid)
+        );
         // set the rotation
         grid.rotation.x = 0.5 * Math.PI;
         // add the grid to the plane
@@ -751,33 +781,36 @@ function init() {
           new THREE.Mesh(
             new THREE.PlaneBufferGeometry(
               2 * config.planeSize,
-              2 * config.planeSize),
+              2 * config.planeSize
+            ),
             new THREE.MeshBasicMaterial({
               color: config.planeColor,
               transparent: config.planeTransparent,
               opacity: config.planeOpacity,
-              side: THREE.DoubleSide
+              side: THREE.DoubleSide,
             })
-          ));
+          )
+        );
         // set the orientation
         switch (config.axisUpwards) {
-          case 'x':
+          case "x":
             plane.rotation.y = 0.5 * Math.PI;
             break;
-          case 'y':
+          case "y":
             plane.rotation.x = 0.5 * Math.PI;
-            break
-          case 'z':
+            break;
+          case "z":
             break;
         }
         // add the plane to the scene
         scene.add(plane);
-      })
-
+      });
 
       // set control planeColorCenterLine
-      let planeColorCenterLineController = planeColorsFolder
-        .addColor(config, "planeColorCenterLine");
+      let planeColorCenterLineController = planeColorsFolder.addColor(
+        config,
+        "planeColorCenterLine"
+      );
       planeColorCenterLineController.name("Center line");
       planeColorCenterLineController.onChange(function () {
         // remove the plane
@@ -787,12 +820,13 @@ function init() {
         // create the grid
         var grid = new THREE.GridHelper(
           config.planeSize,
-          2 * config.planeSize / config.planeDivisions,
+          (2 * config.planeSize) / config.planeDivisions
         );
         // set the colors
         grid.setColors(
           new THREE.Color(config.planeColorCenterLine),
-          new THREE.Color(config.planeColorGrid));
+          new THREE.Color(config.planeColorGrid)
+        );
         // set the rotation
         grid.rotation.x = 0.5 * Math.PI;
         // add the grid to the plane
@@ -802,23 +836,25 @@ function init() {
           new THREE.Mesh(
             new THREE.PlaneBufferGeometry(
               2 * config.planeSize,
-              2 * config.planeSize),
+              2 * config.planeSize
+            ),
             new THREE.MeshBasicMaterial({
               color: config.planeColor,
               transparent: config.planeTransparent,
               opacity: config.planeOpacity,
-              side: THREE.DoubleSide
+              side: THREE.DoubleSide,
             })
-          ));
+          )
+        );
         // set the orientation
         switch (config.axisUpwards) {
-          case 'x':
+          case "x":
             plane.rotation.y = 0.5 * Math.PI;
             break;
-          case 'y':
+          case "y":
             plane.rotation.x = 0.5 * Math.PI;
-            break
-          case 'z':
+            break;
+          case "z":
             break;
         }
         // add the plane to the scene
@@ -826,8 +862,10 @@ function init() {
       });
 
       // set control planeColorGrid
-      let planeColorGridController = planeColorsFolder
-        .addColor(config, "planeColorGrid");
+      let planeColorGridController = planeColorsFolder.addColor(
+        config,
+        "planeColorGrid"
+      );
       planeColorGridController.name("Grid");
       planeColorGridController.onChange(function () {
         // remove the plane
@@ -837,12 +875,13 @@ function init() {
         // create the grid
         var grid = new THREE.GridHelper(
           config.planeSize,
-          2 * config.planeSize / config.planeDivisions,
+          (2 * config.planeSize) / config.planeDivisions
         );
         // set the colors
         grid.setColors(
           new THREE.Color(config.planeColorCenterLine),
-          new THREE.Color(config.planeColorGrid));
+          new THREE.Color(config.planeColorGrid)
+        );
         // set the rotation
         grid.rotation.x = 0.5 * Math.PI;
         // add the grid to the plane
@@ -852,23 +891,25 @@ function init() {
           new THREE.Mesh(
             new THREE.PlaneBufferGeometry(
               2 * config.planeSize,
-              2 * config.planeSize),
+              2 * config.planeSize
+            ),
             new THREE.MeshBasicMaterial({
               color: config.planeColor,
               transparent: config.planeTransparent,
               opacity: config.planeOpacity,
-              side: THREE.DoubleSide
+              side: THREE.DoubleSide,
             })
-          ));
+          )
+        );
         // set the orientation
         switch (config.axisUpwards) {
-          case 'x':
+          case "x":
             plane.rotation.y = 0.5 * Math.PI;
             break;
-          case 'y':
+          case "y":
             plane.rotation.x = 0.5 * Math.PI;
-            break
-          case 'z':
+            break;
+          case "z":
             break;
         }
         // add the plane to the scene
@@ -876,8 +917,10 @@ function init() {
       });
 
       // set control planeTransparent
-      let planeTransparentController = planeFolder.
-        add(config, "planeTransparent");
+      let planeTransparentController = planeFolder.add(
+        config,
+        "planeTransparent"
+      );
       planeTransparentController.name("Transparent");
       planeTransparentController.onChange(function (transparent) {
         plane.children[1].material.transparent = transparent;
@@ -898,12 +941,13 @@ function init() {
         // create the grid
         var grid = new THREE.GridHelper(
           config.planeSize,
-          2 * config.planeSize / config.planeDivisions,
+          (2 * config.planeSize) / config.planeDivisions
         );
         // set the colors
         grid.setColors(
           new THREE.Color(config.planeColorCenterLine),
-          new THREE.Color(config.planeColorGrid));
+          new THREE.Color(config.planeColorGrid)
+        );
         // set the rotation
         grid.rotation.x = 0.5 * Math.PI;
         // add the grid to the plane
@@ -913,23 +957,25 @@ function init() {
           new THREE.Mesh(
             new THREE.PlaneBufferGeometry(
               2 * config.planeSize,
-              2 * config.planeSize),
+              2 * config.planeSize
+            ),
             new THREE.MeshBasicMaterial({
               color: config.planeColor,
               transparent: config.planeTransparent,
               opacity: config.planeOpacity,
-              side: THREE.DoubleSide
+              side: THREE.DoubleSide,
             })
-          ));
+          )
+        );
         // set the orientation
         switch (config.axisUpwards) {
-          case 'x':
+          case "x":
             plane.rotation.y = 0.5 * Math.PI;
             break;
-          case 'y':
+          case "y":
             plane.rotation.x = 0.5 * Math.PI;
-            break
-          case 'z':
+            break;
+          case "z":
             break;
         }
         // add the plane to the scene
@@ -951,7 +997,7 @@ function init() {
         var joint;
 
         for (var i = 0; i < joints.children.length; i++) {
-          joint = joints.children[i]
+          joint = joints.children[i];
 
           joint.scale.x = jointSize;
           joint.scale.y = jointSize;
@@ -959,8 +1005,7 @@ function init() {
         }
       });
 
-      let jointColorController = jointFolder
-        .addColor(config, "jointColor");
+      let jointColorController = jointFolder.addColor(config, "jointColor");
       jointColorController.name("Color");
       jointColorController.onChange(function (color) {
         jointMaterial.color = new THREE.Color(color);
@@ -988,12 +1033,11 @@ function init() {
         }
       });
 
-      let frameColorController = frameFolder
-        .addColor(config, "frameColor");
+      let frameColorController = frameFolder.addColor(config, "frameColor");
       frameColorController.name("Color");
       frameColorController.onChange(function (color) {
         frameMaterial.color = new THREE.Color(color);
-      })
+      });
 
       manyJoints(10, 20);
       manyFrames(10, 10);
@@ -1088,17 +1132,15 @@ function loadModel(filename) {
           key,
           json.joints[key].x,
           json.joints[key].y,
-          json.joints[key].z)
+          json.joints[key].z
+        );
       }
       while (!(frames.children.length === 0)) {
         frames.remove(frames.children[0]);
       }
 
       for (var key in json.frames) {
-        addFrame(
-          key,
-          json.frames[key].j,
-          json.frames[key].k)
+        addFrame(key, json.frames[key].j, json.frames[key].k);
       }
     })
     .catch(function (error) {
@@ -1106,7 +1148,7 @@ function loadModel(filename) {
     })
     .progress(function (e) {
       console.log("Progress event received: ", e);
-    })
+    });
 }
 
 function manyJoints(radius, quantite) {
@@ -1126,7 +1168,7 @@ function manyFrames(radius, quantite) {
       Math.random(),
       joints.children[Math.floor(Math.random() * joints.children.length)].name,
       joints.children[Math.floor(Math.random() * joints.children.length)].name
-    )
+    );
   }
 }
 
@@ -1144,7 +1186,7 @@ function addFrame(name, j, k) {
     var vector = new THREE.Vector3(
       k.position.x - j.position.x,
       k.position.y - j.position.y,
-      k.position.z - j.position.z,
+      k.position.z - j.position.z
     );
 
     var axis = new THREE.Vector3(0, 1, 0);
@@ -1184,7 +1226,7 @@ function createFrame(size, length) {
   mesh.scale.x = size;
   mesh.scale.z = size;
 
-  return mesh
+  return mesh;
 }
 
 function createJoint(size) {
@@ -1195,7 +1237,7 @@ function createJoint(size) {
   mesh.scale.y = size;
   mesh.scale.z = size;
 
-  return mesh
+  return mesh;
 }
 
 function render() {
@@ -1204,7 +1246,7 @@ function render() {
   trackballControls.update(delta);
 
   // update the statistics
-//   stats.update();
+    stats.update();
 
   // update the scene
   renderer.render(scene, camera);
@@ -1216,9 +1258,6 @@ function render() {
 function initStats() {
   var stats = new Stats();
 
-  stats.domElement.style.position = "absolute";
-  stats.domElement.style.left = "0px";
-  stats.domElement.style.top = "0px";
   document.getElementById("Stats-output").appendChild(stats.domElement);
 
   return stats;

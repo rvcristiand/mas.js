@@ -7,7 +7,10 @@ html, body {
 body {
   overflow: hidden;
   margin: 0;
-  font-family: "Poppins", sans-serif;
+}
+
+.wrapper {
+  display: block;
 }
 
 #button {
@@ -17,6 +20,7 @@ body {
   z-index: 9999;
 }
 
+/* for dat gui */
 .dg.ac {
   z-index: 999999;
 }
@@ -35,6 +39,14 @@ body {
   left: 0px;
 }
 
+#dismiss {
+  width: 35px;
+  height: 35px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
 #renderer-output {
   position: relative;
   left: 0;
@@ -44,16 +56,24 @@ body {
   z-index: 9;
 }
 
-.wrapper {
-  display: block;
+#Stats-output {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  z-index: 99;
 }
 
-#dismiss {
-  width: 35px;
-  height: 35px;
-  position: absolute;
-  top: 10px;
-  right: 10px;
+#console {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  background-color: red;
+  width: 100%;
+  height: auto;
+  z-index: 9999;
 }
 
 .overlay {
@@ -75,7 +95,6 @@ body {
 }
 
 #sidebar {
-  /* don't forget to add all the previously mentioned styles here too */
   background: #7386d5;
   color: #fff;
   transition: all 0.3s;
@@ -102,6 +121,17 @@ body {
 	top:1px;
 }
 
+/* console */
+.console input[type=text] {
+  position: relative;
+  top: 20px;
+  width: 95%;
+  /* padding: 12px 20px; */
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
 
 input[type="text"],
 input[type="number"],
