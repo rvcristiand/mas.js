@@ -30,6 +30,9 @@
     <!-- Font Awesome JS -->
     <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/solid.js" integrity="sha384-tzzSw1/Vo+0N5UhStP3bvwWPq+uvzCMfrN1fEFe+xBmv1C/AtVX5K0uZtmcHitFZ" crossorigin="anonymous"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/fontawesome.js" integrity="sha384-6OIrr52G08NpOFSZdxxz1xdNSndlD4vdcf/q2myIUVO0VsqaGHJsB0RaBE01VTOY" crossorigin="anonymous"></script>
+    <!-- Font Inconsolata -->
+    <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@700&display=swap" rel="stylesheet">
+
   </head>
 
   <body>
@@ -59,11 +62,22 @@
       <div id="renderer-output"></div>
       <!-- End renderer-output -->
 
+      <!-- Start of Stats-output -->
       <div id="Stats-output"></div>
-      <!-- <input class="console" type="text"> -->
-      <!-- <div id="console" class="console">
+      <!-- End of Stats-outut -->
+
+      <!-- Start of console -->
+      <div id="console" class="console">
+        <!-- Start of prompt -->
+        <input type="text" id="prompt" value=">" disabled>
+        <!-- End of prompt -->
+        
+        <!-- Start of command-line -->
         <input type="text" id="command-line">
-      </div> -->
+        <!-- End of command-line -->
+      </div>
+      </div>
+      <!-- End of console -->
 
       </div>
       <!-- End renderer-output -->
