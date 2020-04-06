@@ -131,6 +131,7 @@ body {
 .console #prompt {
   width: 34px;
   background-color: rgb(0, 0, 0);
+  opacity: 1;
   padding: 12px 0 12px 12px;
   border-left: 2px solid #000000;
   border-right: none;
