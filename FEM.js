@@ -196,6 +196,9 @@ function init() {
       // create the dat gui
       gui = new dat.GUI({ load: json, preset: json.preset });
 
+      // close gui
+      gui.close();
+
       // remember config
       gui.remember(config);
 
