@@ -4,7 +4,6 @@
   "remembered": {
     "Default": {
       "0": {
-        "rendererType": "WebGL",
         "topBackgroundColor": "#000000",
         "bottomBackgroundColor": "#818181",
         "cameraType": "perspective",

@@ -2,9 +2,6 @@ html, body {
   width: 100vw;
   height: 100vh;
   background-color: #000000;
-}
-
-body {
   overflow: hidden;
   margin: 0;
 }
@@ -42,6 +39,15 @@ body {
 }
 
 #renderer-output {
+  position: relative;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 100vw;
+  z-index: 1;
+}
+
+#renderer-output canvas {
   position: relative;
   left: 0;
   top: 0;
@@ -123,7 +129,6 @@ body {
   color: #00ff00;
   outline: none;
 }
-
 
 .console #prompt {
   width: auto;

@@ -59,7 +59,9 @@
       <!-- End of sidebar -->
 
       <!-- Start renderer-output -->
-      <div id="renderer-output"></div>
+      <div id="renderer-output">
+        <canvas id="canvas" onmousedown="remove_focus()"></canvas>
+      </div>
       <!-- End renderer-output -->
 
       <!-- Start of Stats-output -->
@@ -69,12 +71,11 @@
       <!-- Start of console -->
       <div id="console" class="console">
         <!-- Start of prompt -->
-        <span id="prompt">></span>
-        <!-- <input type="text" id="prompt" value=">" disabled> -->
+        <label id="prompt" for="command-line">></label>
         <!-- End of prompt -->
         
         <!-- Start of command-line -->
-        <input type="text" id="command-line">
+        <input type="text" id="command-line" onkeydown="run(this)">
         <!-- End of command-line -->
       </div>
       </div>
@@ -91,6 +92,7 @@
 
     <!-- FEM.js -->
     <script src="./FEM.js"></script>
+    <script src="./console.js"></script>
 
     <script>
       $(document).ready(function () {

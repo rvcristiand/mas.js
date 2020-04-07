@@ -1,9 +1,10 @@
 // global variables
 var scene;
 var camera, orthographicCamera, perspectiveCamera;
-var rennderer, rendererWebGL, rendererCanvas;
+var renderer;
 
 var renderer_output = document.getElementById("renderer-output");
+var canvas = document.getElementById("canvas");
 
 var stats, gui;
 
@@ -24,8 +25,8 @@ function init() {
       config = json.remembered[json.preset]["0"];
 
       // set the background
-      renderer_output.style.backgroundColor = config.topBackgroundColor;
-      renderer_output.style.backgroundImage =
+      canvas.style.backgroundColor = config.topBackgroundColor;
+      canvas.style.backgroundImage =
         "linear-gradient(" +
         config.topBackgroundColor +
         ", " +
@@ -78,31 +79,11 @@ function init() {
       // set the look at
       camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-      // create the WebGL renderer and canvas renderer
-      if (detectWebGL()) {
-        rendererWebGL = new THREE.WebGLRenderer({ alpha: true });
-      } else {
-        config.rendererType = "canvas";
-      }
-      rendererCanvas = new THREE.CanvasRenderer({ alpha: true });
+      // create the WebGL renderer
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
       // set the size
-      if (!(rendererWebGL == null)) {
-        rendererWebGL.setSize(
-          renderer_output.clientWidth,
-          renderer_output.clientHeight
-        );
-      }
-      rendererCanvas.setSize(
-        renderer_output.clientWidth,
-        renderer_output.clientHeight
-      );
+      renderer.setSize(canvas.clientWidth, canvas.clientHeight);
 
-      // set the renderer
-      if (config.rendererType == "WebGL") {
-        renderer = rendererWebGL;
-      } else if (config.rendererType == "canvas") {
-        renderer = rendererCanvas;
-      }
       // add the output to the html element
       renderer_output.appendChild(renderer.domElement);
 
@@ -202,57 +183,6 @@ function init() {
       // remember config
       gui.remember(config);
 
-      // add a renderer folder
-      let rendererFolder = gui.addFolder("Renderer");
-      rendererFolder.open();
-
-      // set control rendererType
-      let rendererTypeController = rendererFolder
-        .add(config, "rendererType")
-        .options(detectWebGL() ? ["WebGL", "canvas"] : ["canvas"]);
-      rendererTypeController.name("Type");
-      rendererTypeController.onFinishChange(function (rendererType) {
-        // save the trackballControls target
-        var target = trackballControls.target;
-
-        // replace the html element output and set the renderer type
-        if (rendererType == "WebGL") {
-          renderer_output.replaceChild(
-            rendererWebGL.domElement,
-            rendererCanvas.domElement
-          );
-
-          renderer = rendererWebGL;
-        } else {
-          renderer_output.replaceChild(
-            rendererCanvas.domElement,
-            rendererWebGL.domElement
-          );
-
-          renderer = rendererCanvas;
-        }
-
-        // create the trackballControls
-        if (config.cameraType == "perspective") {
-          trackballControls = new THREE.TrackballControls(
-            camera,
-            renderer.domElement
-          );
-        } else if (config.cameraType == "orthographic") {
-          trackballControls = new THREE.OrthographicTrackballControls(
-            camera,
-            renderer.domElement
-          );
-        }
-        // set the target
-        trackballControls.target = target;
-        // set the properties
-        trackballControls.rotateSpeed = config.rotateSpeed;
-        trackballControls.zoomSpeed = config.zoomSpeed;
-        trackballControls.panSpeed = config.panSpeed;
-        trackballControls.staticMoving = config.staticMoving;
-      });
-
       // add a Background folder
       let backgroundFolder = gui.addFolder("Background");
       backgroundFolder.open();
@@ -265,8 +195,8 @@ function init() {
       topBackgroundColorController.name("Top color");
       topBackgroundColorController.onChange(function (topBackgroundColor) {
         // set the background
-        renderer_output.style.backgroundColor = config.topBackgroundColor;
-        renderer_output.style.backgroundImage =
+        canvas.style.backgroundColor = config.topBackgroundColor;
+        canvas.style.backgroundImage =
           "linear-gradient(" +
           config.topBackgroundColor +
           ", " +
@@ -284,8 +214,8 @@ function init() {
         bottomBackgroundColor
       ) {
         // set the background
-        renderer_output.style.backgroundColor = config.topBackgroundColor;
-        renderer_output.style.backgroundImage =
+        canvas.style.backgroundColor = config.topBackgroundColor;
+        canvas.style.backgroundImage =
           "linear-gradient(" +
           config.topBackgroundColor +
           ", " +
@@ -1264,31 +1194,6 @@ function initStats() {
   document.getElementById("Stats-output").appendChild(stats.domElement);
 
   return stats;
-}
-
-function detectWebGL() {
-  var testCanvas = document.createElement("canvas");
-  var gl = null;
-
-  try {
-    gl = testCanvas.getContext("webgl");
-  } catch (x) {
-    gl = null;
-  }
-
-  if (gl == null) {
-    try {
-      gl = testCanvas.getContext("experimental-webgl");
-    } catch (x) {
-      gl = null;
-    }
-  }
-
-  if (gl) {
-    return true;
-  } else {
-    return false;
-  }
 }
 
 function loadJSON(json) {
