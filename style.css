@@ -65,15 +65,15 @@ html, body {
 
 #console {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   position: fixed;
   left: 0;
   bottom: 0;
-  font-family: 'Inconsolata', monospace;
-  color: #00ff00;
-  background-color: transparent;
   width: 100%;
+  font-family: 'Inconsolata', monospace;
+  background-color: transparent;
   z-index: 9999;
 }
 
@@ -121,41 +121,84 @@ html, body {
 	position:relative;
 	top:1px;
 }
-
 /* console */
-.console input[type=text] {
+.console div {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: 12px;
+}
+
+.console div:first-child {
+  margin-bottom: 0;
+}
+
+.console #message {
+  margin: 0;
+}
+
+.console #mesagge.remove-message {
+  animation: remove 5s;
+}
+
+@keyframes remove {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* .console .message.new-message {
+  opacity: 1;
+} */
+/* .console .message.delete-message {
+  opacity: 0;
+} */
+
+.console .message.message-successful {
+  color: green;
+}
+
+.console .message.message-error {
+  color: red;
+  opacity: 0;
+}
+
+.console span, input[type=text] {
   display: inline;
   font-family: 'Inconsolata', monospace;
   color: #00ff00;
-  outline: none;
+  padding: 12px;
 }
 
-.console #prompt {
-  width: auto;
-  background-color: rgb(0, 0, 0);
-  padding: 12px;
-  border-left: 2px solid #000000;
-  border-right: none;
-  border-top: 2px solid #000000;
-  border-bottom: 2px solid #000000;
-  border-radius: 8px 0 0 8px;
-  margin: 12px 0px 12px 12px;
+.console input[type=text] {
+  outline: none;
 }
 
 ::placeholder {
   color: #00ff00
 }
 
+.console #prompt {
+  background-color: rgb(0, 0, 0);
+  border-left: 2px solid #000000;
+  border-right: none;
+  border-top: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  border-radius: 8px 0 0 8px;
+  transition: opacity 0.3s;
+}
+
 .console #command-line {
   width: 100%;
   background-color: rgba(0, 0, 0, 0.7);
-  padding: 12px 12px 12px 6px;
   border-radius: 0 8px 8px 0;
   border-left: none;
   border-right: 2px solid #000000;
   border-top: 2px solid #000000;
   border-bottom: 2px solid #000000;
-  margin: 12px 12px 12px 0;
 }
 
 /* for dat gui */
