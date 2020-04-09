@@ -133,11 +133,11 @@ html, body {
   margin-bottom: 0;
 }
 
-.console #message {
+.console .message {
   margin: 0;
 }
 
-.console #mesagge.remove-message {
+.console .message.remove-message {
   animation: remove 5s;
 }
 
@@ -150,20 +150,12 @@ html, body {
   }
 }
 
-/* .console .message.new-message {
-  opacity: 1;
-} */
-/* .console .message.delete-message {
-  opacity: 0;
-} */
-
 .console .message.message-successful {
   color: green;
 }
 
 .console .message.message-error {
   color: red;
-  opacity: 0;
 }
 
 .console span, input[type=text] {
@@ -188,7 +180,7 @@ html, body {
   border-top: 2px solid #000000;
   border-bottom: 2px solid #000000;
   border-radius: 8px 0 0 8px;
-  transition: opacity 0.3s;
+  /* transition: opacity 0.3s; */
 }
 
 .console #command-line {

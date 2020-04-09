@@ -19,7 +19,7 @@ function run_command(event) {
     command_line.value = "";
 
     message.style.animation = 'none';
-    message.offsetHeight; /* trigger reflow */
+    void(message.offsetHeight); /* trigger reflow */
     message.style.animation = null; 
   }
 }
