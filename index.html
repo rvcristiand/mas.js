@@ -21,9 +21,6 @@
     <!-- jQuery CDN - Slim version (=without AJAX) -->
     <script src="./libs/jquery-3.4.1.slim.min.js"></script>
 
-    <!-- others -->
-    <script src="./libs/q.js"></script>
-
     <!-- Style -->
     <link rel="stylesheet" href="style.css" />
 
@@ -32,6 +29,8 @@
     <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/fontawesome.js" integrity="sha384-6OIrr52G08NpOFSZdxxz1xdNSndlD4vdcf/q2myIUVO0VsqaGHJsB0RaBE01VTOY" crossorigin="anonymous"></script>
     <!-- Font Inconsolata -->
     <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@700&display=swap" rel="stylesheet">
+
+    <script type="module" src="main.js"></script>
 
   </head>
 
@@ -60,8 +59,7 @@
 
       <!-- Start renderer-output -->
       <div id="renderer-output">
-        <canvas id="canvas" onmousedown="remove_focus()"></canvas>
-        <!-- onkeypress="give_focus()" -->
+        <canvas id="canvas"></canvas>
       </div>
       <!-- End renderer-output -->
 
@@ -71,10 +69,13 @@
 
       <!-- Start of console -->
       <div id="console" class="console">
-          
-        <div onmouseover="show_message()" onmouseout="hide_message()">
-          <p id="message" onanimationend="end_animation()" class="message"></p>
+        <!-- Start of output -->
+        <div id="output">
+          <!-- Start of log -->
+          <p id="log" class="message"></p>
+          <!-- End of log -->
         </div>
+        <!-- End of output -->
 
         <div>
           <!-- Start of prompt -->
@@ -82,7 +83,7 @@
           <!-- End of prompt -->
           
           <!-- Start of command-line -->
-          <input type="text" id="command-line" onkeydown="run_command(event)">
+          <input id="command-line" type="text">
           <!-- End of command-line -->
         </div>
       </div>
@@ -97,17 +98,7 @@
     <div class="overlay"></div>
     <!-- Start overlay -->
 
-    <!-- FEM.js -->
-    <script src="./FEM.js"></script>
-    <script src="./console.js"></script>
-
     <script>
-      // document.getElementById("renderer-output").addEventListener('onkeypress', function (event) {
-      //   console.log("holi");
-      //   // document.getElementById("command-line").focus();
-      // }, false);
-
-
       $(document).ready(function () {
         // sidebar
         $('#sidebarCollapse').on('click', function () {

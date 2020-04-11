@@ -980,9 +980,6 @@ function init() {
     .catch(function (error) {
       console.log("Error occurred in sequence:", error);
     })
-    .progress(function (e) {
-      console.log("Progress event received: ", e);
-    });
 
   // // casting
   // var projector = new THREE.Projector();
@@ -1054,12 +1051,16 @@ function init() {
 window.onload = init;
 
 function loadModel(filename) {
-  loadJSON(filename)
+  // load a model
+
+  var promise = loadJSON(filename)
     .then(function (json) {
+      // remove joints
       while (!(joints.children.length === 0)) {
         joints.remove(joints.children[0]);
       }
-
+      
+      // add joints
       for (var key in json.joints) {
         addJoint(
           key,
@@ -1068,20 +1069,24 @@ function loadModel(filename) {
           json.joints[key].z
         );
       }
+
+      // remove frames
       while (!(frames.children.length === 0)) {
         frames.remove(frames.children[0]);
       }
-
+      
+      // add frames
       for (var key in json.frames) {
         addFrame(key, json.frames[key].j, json.frames[key].k);
       }
+
+      return;
     })
-    .catch(function (error) {
-      console.log("Error ocurred in sequence:", error);
+    .catch(function (e) {
+      throw e;
     })
-    .progress(function (e) {
-      console.log("Progress event received: ", e);
-    });
+
+  return promise;
 }
 
 function manyJoints(radius, quantite) {
@@ -1197,23 +1202,22 @@ function initStats() {
 }
 
 function loadJSON(json) {
-  var deferred = Q.defer();
+  var promise = fetch(json + "?nocache=" + new Date().getTime())
+    .then(function (response) {
+      if ( response.status == 404 ) {
+        throw new Error("404 File Not Found")
+      }
+      
+      return response;
+    })
+    .then(function (response) {
+      return response.json();
+    })
+    .catch(function (e) {
+      throw e;
+    })
 
-  var xhrLoader = new THREE.XHRLoader();
-  xhrLoader.load(
-    json + "?nocache=" + new Date().getTime(),
-    function (loaded) {
-      deferred.resolve(JSON.parse(loaded));
-    },
-    function (progress) {
-      deferred.notify(progress);
-    },
-    function (error) {
-      deferred.reject(error);
-    }
-  );
-
-  return deferred.promise;
+  return promise;
 }
 
 function onResize() {
@@ -1224,3 +1228,6 @@ function onResize() {
 }
 
 window.addEventListener("resize", onResize, false);
+
+
+export { loadModel }
