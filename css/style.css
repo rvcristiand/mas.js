@@ -64,17 +64,12 @@ html, body {
 }
 
 #console {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
   position: fixed;
   left: 0;
   bottom: 0;
   width: 100%;
-  font-family: 'Inconsolata', monospace;
-  background-color: transparent;
-  z-index: 9999;
+  height: auto;
+  /* border: 1px solid blue; */
 }
 
 .overlay {
@@ -121,24 +116,44 @@ html, body {
 	position:relative;
 	top:1px;
 }
+
 /* console */
-.console div {
+.console {
+  /* display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent; */
+  font-family: 'Inconsolata', monospace;
+  box-sizing: border-box;
+  padding: 12px;
+  z-index: 9999;
+}
+
+/* .console div {
   display: flex;
   align-items: center;
   width: 100%;
   margin: 12px;
+} */
+
+/* output */
+.output {
+  /* border: 1px solid red; */
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  /* margin-bottom: 0; */
 }
 
-.console div:first-child {
-  margin-bottom: 0;
-}
-
-.console .message {
+.log {
+  color: green;
+  /* position: relative; */
   margin: 0;
 }
 
-.console .message.remove-message {
-  animation: remove 5s;
+.log.remove-message {
+  animation: remove 5s ease 2s;
 }
 
 @keyframes remove {
@@ -150,48 +165,121 @@ html, body {
   }
 }
 
-.console .message.message-successful {
+.log.message-successful {
   color: green;
 }
 
-.console .message.message-error {
+.log.message-error {
   color: red;
 }
 
-.console span, input[type=text] {
-  display: inline;
+.terminal {
+  position: relative;
+  display: flex;
+  width: 100%;
   font-family: 'Inconsolata', monospace;
+  box-sizing: border-box;
+  /* border: red solid 1px; */
+}
+
+.prompt, .command-line, .autocomplete {
+  font-family: 'Inconsolata', monospace;
+}
+
+.prompt, .command-line {
   color: #00ff00;
   padding: 12px;
 }
 
-.console input[type=text] {
+.command-line {
+  width: 100%;
   outline: none;
 }
 
-::placeholder {
-  color: #00ff00
+/* border: 0; */
+.autocomplete {
+  position: absolute;
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  width: auto;
+  color: red;
+  /* border: 2px solid blue; */
+  box-sizing: border-box;
+  top: 0;
+  right: 0;
+  /* width: auto; */
+  padding: 3px;
+  /* margin: 0; */
+  /* z-index: 999999; */
 }
 
-.console #prompt {
+.option {
+  box-sizing: border-box;
+  border: 2px solid red;
+  padding: 9px;
+  margin: 0 4px;
+  width: auto;
+}
+
+.option.option-selected, .option:hover {
+  color: green;
+  border: 2px solid green;
+}
+
+/* .option:hover {
+  color: green;
+} */
+
+
+.prompt {
+  /* style */
   background-color: rgb(0, 0, 0);
   border-left: 2px solid #000000;
   border-right: none;
   border-top: 2px solid #000000;
   border-bottom: 2px solid #000000;
   border-radius: 8px 0 0 8px;
-  /* transition: opacity 0.3s; */
 }
 
-.console #command-line {
-  width: 100%;
+.command-line {
+  /* style */
   background-color: rgba(0, 0, 0, 0.7);
-  border-radius: 0 8px 8px 0;
   border-left: none;
   border-right: 2px solid #000000;
   border-top: 2px solid #000000;
   border-bottom: 2px solid #000000;
+  border-radius: 0 8px 8px 0;
 }
+
+.option {
+  /* style */
+  background-color: none;
+  border: 2px solid red;
+  border-radius: 8px;
+
+  /* box-sizing: border-box;
+  border: 2px solid red;
+  padding: 10px; */
+  /* margin: 1px; */
+  /* background-color: green;
+  width: auto; */
+}
+
+
+.terminal > ::placeholder {
+  /* style */
+  color: #00ff00
+}
+
+/* .autocomplete {
+  background-color: rgba(0, 0, 0, 0.7);
+  border-left: none;
+  border-right: 2px solid #000000;
+  border-top: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  border-radius: 0 8px 8px 0;
+} */
 
 /* for dat gui */
 .dg.ac {

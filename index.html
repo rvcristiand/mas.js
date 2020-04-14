@@ -69,22 +69,29 @@
       <!-- Start of console -->
       <div id="console" class="console">
         <!-- Start of output -->
-        <div id="output">
+        <div id="output" class="output">
           <!-- Start of log -->
-          <p id="log" class="message"></p>
+          <p id="log" class="log remove-message">Hi !</p>
           <!-- End of log -->
         </div>
         <!-- End of output -->
 
-        <div>
+        <!-- Start of terminal -->
+        <div id="terminal" class="terminal">
           <!-- Start of prompt -->
-          <span id="prompt">></span>
+          <span id="prompt" class="prompt" autocomplete="false">></span>
           <!-- End of prompt -->
           
           <!-- Start of command-line -->
-          <input id="command-line" type="text">
+          <input id="command-line" class="command-line" type="text">
           <!-- End of command-line -->
+          <!-- Start of autocomplete -->
+          <div id="autocomplete" class="autocomplete">
+            <!-- <p class="option">Holi</p> -->
+          </div>
+          <!-- End of autocomplete -->
         </div>
+        <!-- End of terminal -->
       </div>
       <!-- End of console -->
 
