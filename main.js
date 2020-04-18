@@ -1,6 +1,8 @@
 import * as console from "./modules/console.js";
 import * as FEM from "./modules/FEM.js";
 
+var canvas = document.getElementById("canvas");
+
 var output = document.getElementById("output");
 var log = document.getElementById("log");
 var command_line = document.getElementById("command-line");
@@ -18,9 +20,9 @@ console.add_function("loadModel", {
 });
 
 // set events
-document.addEventListener("keypress", console.give_focus);
-// document.addEventListener("mousedown", console.remove_focus);
+canvas.addEventListener("mousedown", console.remove_focus);
 
+document.addEventListener("keypress", console.give_focus);
 output.addEventListener("mouseover", console.show_message);
 output.addEventListener("mouseout", console.hide_message);
 
