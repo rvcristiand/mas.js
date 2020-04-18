@@ -1,5 +1,4 @@
 var functions = {};
-var functions_name = ['loadModel','loadFile'];
 
 var option_selected = -1;
 
@@ -196,12 +195,12 @@ export function add_function(name, obj) {
 
 function get_functions_name() {
   // get an array with all function's name registred through add_function
-  // var functions_name = [];
-  // const keys = Object.keys(functions);
+  var functions_name = [];
+  const keys = Object.keys(functions);
 
-  // for ( const key of keys) {
-  //   functions_name.push(key);
-  // }
+  for ( const key of keys) {
+    functions_name.push(key);
+  }
 
   return functions_name;
 }

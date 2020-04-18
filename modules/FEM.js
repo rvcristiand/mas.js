@@ -58,18 +58,6 @@ function init() {
       } else if (config.cameraType == "orthographic") {
         camera = orthographicCamera;
       }
-      // set the upwards axis
-      switch (config.axisUpwards) {
-        case "x":
-          camera.up.set(1, 0, 0);
-          break;
-        case "y":
-          camera.up.set(0, 1, 0);
-          break;
-        case "z":
-          camera.up.set(0, 0, 1);
-          break;
-      }
       // set the position
       camera.position.set(
         config.cameraPosition_x,
@@ -110,6 +98,8 @@ function init() {
 
       // create and add the plane to the scene
       plane = new THREE.Object3D();
+      // set the upwards axis
+      setUpwardsAxis(config.axisUpwards);
       // create the grid
       var grid = new THREE.GridHelper(
         config.planeSize,
@@ -174,6 +164,9 @@ function init() {
       // create the stats
       stats = initStats();
 
+      return json;
+    })
+    .then(function ( json ) {
       // create the dat gui
       gui = new dat.GUI({ load: json, preset: json.preset });
 
@@ -326,17 +319,7 @@ function init() {
           });
         }
         // set the upwards axis
-        switch (config.axisUpwards) {
-          case "x":
-            camera.up.set(1, 0, 0);
-            break;
-          case "y":
-            camera.up.set(0, 1, 0);
-            break;
-          case "z":
-            camera.up.set(0, 0, 1);
-            break;
-        }
+        setUpwardsAxis(config.axisUpwards);
         // set the position
         camera.position.x = position.x;
         camera.position.y = position.y;
@@ -498,24 +481,7 @@ function init() {
         .options(["x", "y", "z"]);
       axisUpwardsController.name("Upwards axis");
       axisUpwardsController.onChange(function (axisUpwards) {
-        // set the upwards axis
-        switch (axisUpwards) {
-          case "x":
-            camera.up.set(1, 0, 0);
-            plane.rotation.x = 0;
-            plane.rotation.y = 0.5 * Math.PI;
-            break;
-          case "y":
-            camera.up.set(0, 1, 0);
-            plane.rotation.y = 0;
-            plane.rotation.x = 0.5 * Math.PI;
-            break;
-          case "z":
-            camera.up.set(0, 0, 1);
-            plane.rotation.x = 0;
-            plane.rotation.y = 0;
-            break;
-        }
+        setUpwardsAxis(axisUpwards);
       });
 
       // add a Trackball controls folder
@@ -971,7 +937,8 @@ function init() {
       frameColorController.onChange(function (color) {
         frameMaterial.color = new THREE.Color(color);
       });
-
+    })
+    .then(function() {
       manyJoints(10, 20);
       manyFrames(10, 10);
 
@@ -1050,7 +1017,37 @@ function init() {
 
 window.onload = init;
 
-function loadModel(filename) {
+export function setUpwardsAxis( axis ) {
+  // set the upwards axis
+  var promise = new Promise( (resolve, reject) => {
+    if (axis =='x' || axis == 'y' || axis == 'z' ) {
+      switch(axis) {
+        case 'x':
+          camera.up.set(1, 0, 0);
+          plane.rotation.x = 0;
+          plane.rotation.y = 0.5 * Math.PI;
+          break;
+        case 'y':
+          camera.up.set(0, 1, 0);
+          plane.rotation.y = 0;
+          plane.rotation.x = 0.5 * Math.PI;
+          break;
+        case 'z':
+          camera.up.set(0, 0, 1);
+          plane.rotation.x = 0;
+          plane.rotation.y = 0;
+          break;        
+      }
+      resolve();
+    } else {
+      reject(new Error("'" + axis + "' axis does not exist"));
+    }
+  })
+
+  return promise;
+}
+
+export function loadModel(filename) {
   // load a model
 
   var promise = loadJSON(filename)
@@ -1228,6 +1225,3 @@ function onResize() {
 }
 
 window.addEventListener("resize", onResize, false);
-
-
-export { loadModel }

@@ -9,6 +9,15 @@ var command_line = document.getElementById("command-line");
 var autocomplete = document.getElementById("autocomplete");
 
 // set the functions
+console.add_function("setUpwardsAxis", {
+  func: FEM.setUpwardsAxis,
+  successful: function ( axisUpwards ) {
+    return "upwards axis set to " + axisUpwards;
+  },
+  error: function ( axisUpwards ) {
+    return "upwards axis was not seted";
+  }
+});
 console.add_function("loadModel", {
   func: FEM.loadModel,
   successful: function (model) {
@@ -16,8 +25,9 @@ console.add_function("loadModel", {
   },
   error: function (model) {
     return "the " + "'" + model + "'" + " has not been loaded";
-  },
+  }
 });
+
 
 // set events
 canvas.addEventListener("mousedown", console.remove_focus);
