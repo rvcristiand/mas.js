@@ -33,7 +33,7 @@ command_line.addEventListener("keydown", console.esc);  // esc
 command_line.addEventListener("input", console.show_autocomplete); // show autocomplete
 command_line.addEventListener("keydown", console.choose_option);  // tab
 
-// autocomplete.addEventListener("mouseover", console.remove_selection);
+autocomplete.addEventListener("mouseover", console.remove_selection);
 
 // disable tab
 document.onkeydown = function (event) {

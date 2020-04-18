@@ -78,6 +78,8 @@ export function show_autocomplete(event) {
     return;
   }
 
+  option_selected = -1;
+
   var functions_name = get_functions_name();
   // show the options
   for ( const function_name of functions_name) {
@@ -240,6 +242,8 @@ export function remove_selection() {
   for ( var i = 0; i < num_options; i++ ) {
     options[i].classList.remove("option-selected");
   }
+
+  option_selected = -1;
 }
 
 export function show_message() {
