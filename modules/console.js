@@ -82,7 +82,7 @@ export function show_autocomplete(event) {
   var functions_name = get_functions_name();
   // show the options
   for ( const function_name of functions_name) {
-    if ( function_name.includes(command) ) {
+    if ( function_name.toLowerCase().includes(command.toLowerCase()) ) {
       var p = document.createElement("span");
 
       p.addEventListener('click', option_clicked);
