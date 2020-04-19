@@ -16,9 +16,7 @@ var autocomplete = document.getElementById("autocomplete");
 terminal.add_function('addJoint', {
   func: FEM.addJoint,
   successful: function ( name, x, y, z ) { 
-    if ( FEM.get_joints_name().has(name) ) {
-      return "joint " + name + " was added";
-    }
+    return "joint " + name + " was added";
   }
 });
 terminal.add_function("setUpwardsAxis", {
