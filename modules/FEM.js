@@ -18,6 +18,7 @@ var joints, jointMaterial;
 var frames, frameMaterial;
 
 var joints_name = new Set();
+var joints_coordiante = [];
 
 function init() {
   // load the json config
@@ -1056,8 +1057,8 @@ export function loadModel(filename) {
   var promise = loadJSON(filename)
     .then(function (json) {
       // remove joints
-      while (!(joints.children.length === 0)) {
-        joints.remove(joints.children[0]);
+      for (let name of joints_name ) {
+        removeJoint(name);
       }
       
       // add joints
@@ -1145,8 +1146,17 @@ export function addJoint(name, x, y, z) {
   // add a joint
 
   var promise = new Promise( (resolve, reject) => {
-    if ( joints_name.has(name) ) {
-      reject(new Error("joint's name '" + name + "' already exist" ));
+    // check if joint's name or joint's coordinate already exits
+
+    // only strings acceptec as name
+    name = name.toString();
+
+    if ( joints_name.has(name) || joints_coordiante.some(xyz => coordinatesEqual(xyz, [x, y, z]))) {
+      if ( joints_name.has(name) ) {
+        reject(new Error("joint's name '" + name + "' already exist" ));
+      } else {
+        reject(new Error("joint's coordinate [" + x + ", " + y + ", " + z + "] already exist" ));
+      }
     } else {
       // create the joint
       var joint = createJoint(config.jointSize);
@@ -1163,11 +1173,35 @@ export function addJoint(name, x, y, z) {
       // track joint's name
       joints_name.add(name);
 
+      // track joint's coordinate
+      joints_coordiante.push([x, y, z]);
+
       resolve();
     }
   })
 
   return promise;
+}
+
+export function removeJoint(name) {
+  // remove a joint
+
+  var promise = new Promise( (resolve, reject) => {
+    if ( joints_name.has(name) ) {
+      // remove joint of the scene
+      let joint = joints.getObjectByName(name);
+      joints.remove(joint);
+
+      // remove joint's name
+      joints_name.delete(name);
+
+      resolve();
+    } else {
+      reject(new Error("joint " + name + " does not exist"))
+    }
+    
+    return promise;
+  })
 }
 
 function createFrame(size, length) {
@@ -1190,6 +1224,16 @@ function createJoint(size) {
   mesh.scale.z = size;
 
   return mesh;
+}
+
+function coordinatesEqual(a, b) {
+  // check if coordinate a is equal to coordinate b
+
+  for ( var i = 0; i < a.length; ++i ) {
+    if ( a[i] !== b[i] ) return false;
+  }
+
+  return true;
 }
 
 function render() {
