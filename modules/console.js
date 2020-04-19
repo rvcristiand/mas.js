@@ -177,11 +177,14 @@ function get_param_function(command) {
   var params = command.match(pattern)[1].split(',');
   
   for ( var i = 0; i < params.length; i++ ) {
-    params[i] = params[i].match(/^["']?([\w\s.,]*)["']?$/i)[1];
+    let param = params[i].match(/^["']?([\w\s.,]*)["']?$/i)[1];
+    let paramNum = Number(param);
 
-    if ( params[i] == "" ) {
-      params[i] = undefined;
-    }
+    params[i] = isNaN(param) ? param : paramNum;
+
+    // if ( params[i] == "" ) {
+    //   params[i] = undefined;
+    // }
   }
 
   return params;

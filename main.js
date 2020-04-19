@@ -9,6 +9,15 @@ var command_line = document.getElementById("command-line");
 var autocomplete = document.getElementById("autocomplete");
 
 // set the functions
+console.add_function('addJoint', {
+  func: FEM.addJoint,
+  successful: function ( name, x, y, z ) { 
+    return "joint " + name + " was added";
+  },
+  error: function ( name, x, y, z ) {
+    return "joint " + name + " was not added";
+  }
+});
 console.add_function("setUpwardsAxis", {
   func: FEM.setUpwardsAxis,
   successful: function ( axisUpwards ) {

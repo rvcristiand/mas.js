@@ -17,6 +17,8 @@ var plane;
 var joints, jointMaterial;
 var frames, frameMaterial;
 
+var joints_name = new Set();
+
 function init() {
   // load the json config
   loadJSON("./config.json")
@@ -939,8 +941,8 @@ function init() {
       });
     })
     .then(function() {
-      manyJoints(10, 20);
-      manyFrames(10, 10);
+      // manyJoints(10, 20);
+      // manyFrames(10, 10);
 
       render();
     })
@@ -1019,6 +1021,7 @@ window.onload = init;
 
 export function setUpwardsAxis( axis ) {
   // set the upwards axis
+  
   var promise = new Promise( (resolve, reject) => {
     if (axis =='x' || axis == 'y' || axis == 'z' ) {
       switch(axis) {
@@ -1088,7 +1091,7 @@ export function loadModel(filename) {
 
 function manyJoints(radius, quantite) {
   for (var i = 0; i < quantite; i++) {
-    addJoint(
+     addJoint(
       Math.random(),
       radius * (Math.random() - 1 / 2),
       radius * (Math.random() - 1 / 2),
@@ -1138,20 +1141,33 @@ function addFrame(name, j, k) {
   }
 }
 
-function addJoint(name, x, y, z) {
-  for (var i = 0; i < joints.children.length; i++) {
-    if (name === joints.children[i].name) {
-      return;
+export function addJoint(name, x, y, z) {
+  // add a joint
+
+  var promise = new Promise( (resolve, reject) => {
+    if ( joints_name.has(name) ) {
+      reject(new Error("joint's name '" + name + "' already exist" ));
+    } else {
+      // create the joint
+      var joint = createJoint(config.jointSize);
+
+      // set the joint
+      joint.name = name;
+      joint.position.x = x;
+      joint.position.y = y;
+      joint.position.z = z;
+    
+      // save it
+      joints.add(joint);
+
+      // track joint's name
+      joints_name.add(name);
+
+      resolve();
     }
-  }
+  })
 
-  var joint = createJoint(config.jointSize);
-  joint.name = name;
-  joint.position.x = x;
-  joint.position.y = y;
-  joint.position.z = z;
-
-  joints.add(joint);
+  return promise;
 }
 
 function createFrame(size, length) {
@@ -1165,6 +1181,7 @@ function createFrame(size, length) {
 }
 
 function createJoint(size) {
+  // create a joint
   var geometry = new THREE.SphereGeometry(1, 32, 32);
 
   var mesh = new THREE.Mesh(geometry, jointMaterial);
