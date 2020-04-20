@@ -1177,9 +1177,9 @@ export function addFrame(name, j, k) {
         resolve();
       } else {  
         if ( joint_j ) {
-          reject(new Error("joint's '" + joint_j + "' does not exits"));
-      } else {
-        reject(new Error("joint's '" + joint_k + "' does not exits"));
+          reject(new Error("joint's '" + k + "' does not exits"));
+        } else {
+          reject(new Error("joint's '" + j + "' does not exits"));
         }
       }
     }
