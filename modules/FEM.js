@@ -18,7 +18,10 @@ var joints, jointMaterial;
 var frames, frameMaterial;
 
 var joints_name = new Set();
-var joints_coordiante = [];
+var joints_coordinate = [];
+
+var frames_name = new Set();
+var frames_joints = [];
 
 function init() {
   // load the json config
@@ -1060,6 +1063,11 @@ export function loadModel(filename) {
       for (let name of joints_name ) {
         removeJoint(name);
       }
+
+      // remove frames
+      for ( let name of frames_name ) {
+        removeFrame(name);
+      }
       
       // add joints
       for (var key in json.joints) {
@@ -1111,35 +1119,73 @@ function manyFrames(radius, quantite) {
   }
 }
 
-function addFrame(name, j, k) {
-  for (var i = 0; i < frames.children.length; i++) {
-    if (name === frames.children[i].name) {
-      return;
+export function addFrame(name, j, k) {
+  // add a frame
+  var promise = new Promise( (resolve, reject) => {
+    // check if frame's name of frame's joints already exits
+
+    // only strings accepted as name
+    name = name.toString();
+    j = j.toString();
+    k = k.toString();
+
+    if ( frames_name.has(name) || frames_joints.some(jk => jointsEqual(jk, [j, k])) ) {
+      if ( frames_name.has(name) ) {
+        reject(new Error("frame's name '" + name + "' already exits"));
+      } else {
+        reject(new Error("frame's joints [" + j + ", " + k + "] already taked"));
+      }
+    } else {
+      // get frame's joints
+      var joint_j = joints.getObjectByName(j);
+      var joint_k = joints.getObjectByName(k);
+    
+      if ( joint_j && joint_k ) {
+        // get vector director
+        var vector = new THREE.Vector3(
+          joint_k.position.x - joint_j.position.x,
+          joint_k.position.y - joint_j.position.y,
+          joint_k.position.z - joint_j.position.z
+        );
+          
+        // 'x' axis
+        var axis = new THREE.Vector3(0, 1, 0);
+    
+        // create frame
+        var frame = createFrame(config.frameSize, vector.length());
+        frame.name = name;
+    
+        // set position
+        frame.quaternion.setFromUnitVectors(axis, vector.clone().normalize());
+        frame.position.copy(vector.clone().multiplyScalar(0.5));
+        frame.position.x += joint_j.position.x;
+        frame.position.y += joint_j.position.y;
+        frame.position.z += joint_j.position.z;
+
+        // add frame's joints info
+        frame.joints = [j, k];
+        
+        // add frame to scene
+        frames.add(frame);
+  
+        // track frame's name
+        frames_name.add(name);
+  
+        // track frame's joints
+        frames_joints.push([j, k]);
+  
+        resolve();
+      } else {  
+        if ( joint_j ) {
+          reject(new Error("joint's '" + joint_j + "' does not exits"));
+      } else {
+        reject(new Error("joint's '" + joint_k + "' does not exits"));
+        }
+      }
     }
-  }
+  });
 
-  var j = joints.getObjectByName(j);
-  var k = joints.getObjectByName(k);
-
-  if (j && k) {
-    var vector = new THREE.Vector3(
-      k.position.x - j.position.x,
-      k.position.y - j.position.y,
-      k.position.z - j.position.z
-    );
-
-    var axis = new THREE.Vector3(0, 1, 0);
-
-    var frame = createFrame(config.frameSize, vector.length());
-    frame.name = name;
-    frame.quaternion.setFromUnitVectors(axis, vector.clone().normalize());
-    frame.position.copy(vector.clone().multiplyScalar(0.5));
-    frame.position.x += j.position.x;
-    frame.position.y += j.position.y;
-    frame.position.z += j.position.z;
-
-    frames.add(frame);
-  }
+  return promise;
 }
 
 export function addJoint(name, x, y, z) {
@@ -1148,10 +1194,10 @@ export function addJoint(name, x, y, z) {
   var promise = new Promise( (resolve, reject) => {
     // check if joint's name or joint's coordinate already exits
 
-    // only strings acceptec as name
+    // only strings accepted as name
     name = name.toString();
 
-    if ( joints_name.has(name) || joints_coordiante.some(xyz => coordinatesEqual(xyz, [x, y, z]))) {
+    if ( joints_name.has(name) || joints_coordinate.some(xyz => coordinatesEqual(xyz, [x, y, z]))) {
       if ( joints_name.has(name) ) {
         reject(new Error("joint's name '" + name + "' already exist" ));
       } else {
@@ -1174,13 +1220,39 @@ export function addJoint(name, x, y, z) {
       joints_name.add(name);
 
       // track joint's coordinate
-      joints_coordiante.push([x, y, z]);
+      joints_coordinate.push([x, y, z]);
 
       resolve();
     }
   })
 
   return promise;
+}
+
+
+export function removeFrame( name ) {
+  // remove a frame
+
+  var promise = new Promise( (resolve, reject) => {
+    if ( frames_name.has(name) ) {
+      // remove frame of the scene
+      let frame = frames.getObjectByName(name);
+      frames.remove(frame);
+
+      // remove frame's name
+      frames_name.delete(name);
+
+      // remove frame's joints
+      let frame_joints = frame.joints;
+      frames_joints = frames_joints.filter(jk => !jointsEqual(jk, frame_joints));
+
+      resolve();
+    } else {
+      reject(new Error("frame " + name + " does not exits"));
+    }
+
+    return promise;
+  });
 }
 
 export function removeJoint(name) {
@@ -1195,13 +1267,17 @@ export function removeJoint(name) {
       // remove joint's name
       joints_name.delete(name);
 
+      // remove joint's coordinate
+      let joint_coordinate = [joint.position.x, joint.position.y, joint.position.z];
+      joints_coordinate = joints_coordinate.filter(xyz => !coordinatesEqual(xyz, joint_coordinate));
+
       resolve();
     } else {
       reject(new Error("joint " + name + " does not exist"))
     }
     
     return promise;
-  })
+  });
 }
 
 function createFrame(size, length) {
@@ -1226,14 +1302,26 @@ function createJoint(size) {
   return mesh;
 }
 
-function coordinatesEqual(a, b) {
-  // check if coordinate a is equal to coordinate b
-
+function listsEqual(a, b) {
+  // check if the a's elements are equals to b's elements
+  
   for ( var i = 0; i < a.length; ++i ) {
     if ( a[i] !== b[i] ) return false;
   }
-
+  
   return true;
+}
+
+function coordinatesEqual(a, b) {
+  // check if coordinate 'a' is equal to coordinate 'b'
+
+  return listsEqual(a, b);
+}
+
+function jointsEqual(a, b) {
+  // check if frame 'a' is equal to frame 'b'
+  
+  return listsEqual(a, b);
 }
 
 function render() {

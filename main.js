@@ -13,18 +13,32 @@ var autocomplete = document.getElementById("autocomplete");
 
 
 // set the functions
+
+// addFrame
+terminal.add_function('addFrame', {
+  func: FEM.addFrame,
+  successful: function ( name ) {
+    return "frame " + name + " was added";
+  }
+})
+
+// addJoint
 terminal.add_function('addJoint', {
   func: FEM.addJoint,
   successful: function ( name, x, y, z ) { 
     return "joint " + name + " was added";
   }
 });
+
+// setUpwardsAxis
 terminal.add_function("setUpwardsAxis", {
   func: FEM.setUpwardsAxis,
   successful: function ( axisUpwards ) {
     return "upwards axis set to " + axisUpwards;
   }
 });
+
+// loadModel
 terminal.add_function("loadModel", {
   func: FEM.loadModel,
   successful: function (model) {
