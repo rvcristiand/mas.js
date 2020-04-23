@@ -30,6 +30,38 @@ terminal.add_function('addJoint', {
   }
 });
 
+// showJointsLabel
+terminal.add_function('showJointsLabel', {
+  func: FEM.showJointsLabel,
+  successful: function () {
+    return "joints' label was showed"
+  }
+});
+
+// hideJointsLabel
+terminal.add_function('hideJointsLabel', {
+  func: FEM.hideJointsLabel,
+  successful: function () {
+    return "joints' label was hidden"
+  }
+});
+
+// showFramesLabel
+terminal.add_function('showFramesLabel', {
+  func: FEM.showFramesLabel,
+  successful: function () {
+    return "frames' label was showed"
+  }
+})
+
+// hideFramesLabel
+terminal.add_function('hideFramesLabel', {
+  func: FEM.hideFramesLabel,
+  successful: function () {
+    return "frames' label was hidden"
+  }
+})
+
 // setUpwardsAxis
 terminal.add_function("setUpwardsAxis", {
   func: FEM.setUpwardsAxis,

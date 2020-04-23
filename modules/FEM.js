@@ -6,6 +6,11 @@ var renderer;
 var renderer_output = document.getElementById("renderer-output");
 var canvas = document.getElementById("canvas");
 
+// labels
+var labels = document.getElementById("labels");
+var _showJointsLabel = true;
+var _showFramesLabel = true;
+
 var stats, gui;
 
 var clock, trackballControls;
@@ -14,7 +19,7 @@ var config;
 
 var plane;
 
-var joints, jointMaterial;
+var joints, jointMaterial, jointGeometry;
 var frames, frameMaterial;
 
 var joints_name = new Set();
@@ -102,55 +107,16 @@ function init() {
       trackballControls.panSpeed = config.panSpeed;
       trackballControls.staticMoving = config.staticMoving;
 
-      // create and add the plane to the scene
-      plane = new THREE.Object3D();
-      // set the upwards axis
-      setUpwardsAxis(config.axisUpwards);
-      // create the grid
-      var grid = new THREE.GridHelper(
-        config.planeSize,
-        (2 * config.planeSize) / config.planeDivisions
-      );
-      // set the colors
-      grid.setColors(
-        new THREE.Color(config.planeColorCenterLine),
-        new THREE.Color(config.planeColorGrid)
-      );
-      // set the rotation
-      grid.rotation.x = 0.5 * Math.PI;
-      // add the grid to the plane
-      plane.add(grid);
-      // add the rectangle to the plane
-      plane.add(
-        new THREE.Mesh(
-          new THREE.PlaneBufferGeometry(
-            2 * config.planeSize,
-            2 * config.planeSize
-          ),
-          new THREE.MeshBasicMaterial({
-            color: config.planeColor,
-            transparent: config.planeTransparent,
-            opacity: config.planeOpacity,
-            side: THREE.DoubleSide,
-          })
-        )
-      );
-      // set the orientation
-      switch (config.axisUpwards) {
-        case "x":
-          plane.rotation.y = 0.5 * Math.PI;
-          break;
-        case "y":
-          plane.rotation.x = 0.5 * Math.PI;
-          break;
-        case "z":
-          break;
-      }
+      // create the plane
+      plane = createPlane();
+
       // add the plane to the scene
       scene.add(plane);
 
       // set the joints
       joints = new THREE.Object3D();
+      // set the geometry
+      jointGeometry = new THREE.SphereGeometry(1, 32, 32);
       // set the material
       jointMaterial = new THREE.MeshBasicMaterial({ color: config.jointColor });
       // add to the scene
@@ -164,7 +130,7 @@ function init() {
       scene.add(frames);
 
       // show axes in the screen
-      var axes = new THREE.AxisHelper(1);
+      var axes = new THREE.AxesHelper(1);
       scene.add(axes);
 
       // create the stats
@@ -549,52 +515,8 @@ function init() {
         .step(1);
       planeSizeController.name("Size");
       planeSizeController.onChange(function () {
-        // remove the plane
-        scene.remove(plane);
-        // create and add the ground plane to the scene
-        plane = new THREE.Object3D();
-        // create the grid
-        var grid = new THREE.GridHelper(
-          config.planeSize,
-          (2 * config.planeSize) / config.planeDivisions
-        );
-        // set the colors
-        grid.setColors(
-          new THREE.Color(config.planeColorCenterLine),
-          new THREE.Color(config.planeColorGrid)
-        );
-        // set the rotation
-        grid.rotation.x = 0.5 * Math.PI;
-        // add the grid to the plane
-        plane.add(grid);
-        // add the rectangle to the plane
-        plane.add(
-          new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(
-              2 * config.planeSize,
-              2 * config.planeSize
-            ),
-            new THREE.MeshBasicMaterial({
-              color: config.planeColor,
-              transparent: config.planeTransparent,
-              opacity: config.planeOpacity,
-              side: THREE.DoubleSide,
-            })
-          )
-        );
-        // set the orientation
-        switch (config.axisUpwards) {
-          case "x":
-            plane.rotation.y = 0.5 * Math.PI;
-            break;
-          case "y":
-            plane.rotation.x = 0.5 * Math.PI;
-            break;
-          case "z":
-            break;
-        }
-        // add the plane to the scene
-        scene.add(plane);
+        // update the plane
+        updatePlane();
       });
 
       // set control planeDivisions
@@ -605,52 +527,8 @@ function init() {
         .step(5);
       planeDivisions.name("Divisions");
       planeDivisions.onChange(function () {
-        // remove the plane
-        scene.remove(plane);
-        // create and add the ground plane to the scene
-        plane = new THREE.Object3D();
-        // create the grid
-        var grid = new THREE.GridHelper(
-          config.planeSize,
-          (2 * config.planeSize) / config.planeDivisions
-        );
-        // set the colors
-        grid.setColors(
-          new THREE.Color(config.planeColorCenterLine),
-          new THREE.Color(config.planeColorGrid)
-        );
-        // set the rotation
-        grid.rotation.x = 0.5 * Math.PI;
-        // add the grid to the plane
-        plane.add(grid);
-        // add the rectangle to the plane
-        plane.add(
-          new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(
-              2 * config.planeSize,
-              2 * config.planeSize
-            ),
-            new THREE.MeshBasicMaterial({
-              color: config.planeColor,
-              transparent: config.planeTransparent,
-              opacity: config.planeOpacity,
-              side: THREE.DoubleSide,
-            })
-          )
-        );
-        // set the orientation
-        switch (config.axisUpwards) {
-          case "x":
-            plane.rotation.y = 0.5 * Math.PI;
-            break;
-          case "y":
-            plane.rotation.x = 0.5 * Math.PI;
-            break;
-          case "z":
-            break;
-        }
-        // add the plane to the scene
-        scene.add(plane);
+        // update the plane
+        updatePlane();
       });
 
       // add a Color folder
@@ -663,52 +541,8 @@ function init() {
       );
       planeColorController.name("Plane");
       planeColorController.onChange(function () {
-        // remove the plane
-        scene.remove(plane);
-        // create and add the ground plane to the scene
-        plane = new THREE.Object3D();
-        // create the grid
-        var grid = new THREE.GridHelper(
-          config.planeSize,
-          (2 * config.planeSize) / config.planeDivisions
-        );
-        // set the colors
-        grid.setColors(
-          new THREE.Color(config.planeColorCenterLine),
-          new THREE.Color(config.planeColorGrid)
-        );
-        // set the rotation
-        grid.rotation.x = 0.5 * Math.PI;
-        // add the grid to the plane
-        plane.add(grid);
-        // add the rectangle to the plane
-        plane.add(
-          new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(
-              2 * config.planeSize,
-              2 * config.planeSize
-            ),
-            new THREE.MeshBasicMaterial({
-              color: config.planeColor,
-              transparent: config.planeTransparent,
-              opacity: config.planeOpacity,
-              side: THREE.DoubleSide,
-            })
-          )
-        );
-        // set the orientation
-        switch (config.axisUpwards) {
-          case "x":
-            plane.rotation.y = 0.5 * Math.PI;
-            break;
-          case "y":
-            plane.rotation.x = 0.5 * Math.PI;
-            break;
-          case "z":
-            break;
-        }
-        // add the plane to the scene
-        scene.add(plane);
+        // update the plane
+        updatePlane();
       });
 
       // set control planeColorCenterLine
@@ -718,107 +552,8 @@ function init() {
       );
       planeColorCenterLineController.name("Center line");
       planeColorCenterLineController.onChange(function () {
-        // remove the plane
-        scene.remove(plane);
-        // create and add the ground plane to the scene
-        plane = new THREE.Object3D();
-        // create the grid
-        var grid = new THREE.GridHelper(
-          config.planeSize,
-          (2 * config.planeSize) / config.planeDivisions
-        );
-        // set the colors
-        grid.setColors(
-          new THREE.Color(config.planeColorCenterLine),
-          new THREE.Color(config.planeColorGrid)
-        );
-        // set the rotation
-        grid.rotation.x = 0.5 * Math.PI;
-        // add the grid to the plane
-        plane.add(grid);
-        // add the rectangle to the plane
-        plane.add(
-          new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(
-              2 * config.planeSize,
-              2 * config.planeSize
-            ),
-            new THREE.MeshBasicMaterial({
-              color: config.planeColor,
-              transparent: config.planeTransparent,
-              opacity: config.planeOpacity,
-              side: THREE.DoubleSide,
-            })
-          )
-        );
-        // set the orientation
-        switch (config.axisUpwards) {
-          case "x":
-            plane.rotation.y = 0.5 * Math.PI;
-            break;
-          case "y":
-            plane.rotation.x = 0.5 * Math.PI;
-            break;
-          case "z":
-            break;
-        }
-        // add the plane to the scene
-        scene.add(plane);
-      });
-
-      // set control planeColorGrid
-      let planeColorGridController = planeColorsFolder.addColor(
-        config,
-        "planeColorGrid"
-      );
-      planeColorGridController.name("Grid");
-      planeColorGridController.onChange(function () {
-        // remove the plane
-        scene.remove(plane);
-        // create and add the ground plane to the scene
-        plane = new THREE.Object3D();
-        // create the grid
-        var grid = new THREE.GridHelper(
-          config.planeSize,
-          (2 * config.planeSize) / config.planeDivisions
-        );
-        // set the colors
-        grid.setColors(
-          new THREE.Color(config.planeColorCenterLine),
-          new THREE.Color(config.planeColorGrid)
-        );
-        // set the rotation
-        grid.rotation.x = 0.5 * Math.PI;
-        // add the grid to the plane
-        plane.add(grid);
-        // add the rectangle to the plane
-        plane.add(
-          new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(
-              2 * config.planeSize,
-              2 * config.planeSize
-            ),
-            new THREE.MeshBasicMaterial({
-              color: config.planeColor,
-              transparent: config.planeTransparent,
-              opacity: config.planeOpacity,
-              side: THREE.DoubleSide,
-            })
-          )
-        );
-        // set the orientation
-        switch (config.axisUpwards) {
-          case "x":
-            plane.rotation.y = 0.5 * Math.PI;
-            break;
-          case "y":
-            plane.rotation.x = 0.5 * Math.PI;
-            break;
-          case "z":
-            break;
-        }
-        // add the plane to the scene
-        scene.add(plane);
+        // update the plane
+        updatePlane();
       });
 
       // set control planeTransparent
@@ -839,52 +574,8 @@ function init() {
         .step(0.01);
       planeOpacityController.name("Opacity");
       planeOpacityController.onChange(function (opacity) {
-        // remove the plane
-        scene.remove(plane);
-        // create and add the ground plane to the scene
-        plane = new THREE.Object3D();
-        // create the grid
-        var grid = new THREE.GridHelper(
-          config.planeSize,
-          (2 * config.planeSize) / config.planeDivisions
-        );
-        // set the colors
-        grid.setColors(
-          new THREE.Color(config.planeColorCenterLine),
-          new THREE.Color(config.planeColorGrid)
-        );
-        // set the rotation
-        grid.rotation.x = 0.5 * Math.PI;
-        // add the grid to the plane
-        plane.add(grid);
-        // add the rectangle to the plane
-        plane.add(
-          new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(
-              2 * config.planeSize,
-              2 * config.planeSize
-            ),
-            new THREE.MeshBasicMaterial({
-              color: config.planeColor,
-              transparent: config.planeTransparent,
-              opacity: config.planeOpacity,
-              side: THREE.DoubleSide,
-            })
-          )
-        );
-        // set the orientation
-        switch (config.axisUpwards) {
-          case "x":
-            plane.rotation.y = 0.5 * Math.PI;
-            break;
-          case "y":
-            plane.rotation.x = 0.5 * Math.PI;
-            break;
-          case "z":
-            break;
-        }
-        // add the plane to the scene
-        scene.add(plane);
+        // update the plane
+        updatePlane();
       });
 
       // add a Joint folder
@@ -1059,14 +750,14 @@ export function loadModel(filename) {
 
   var promise = loadJSON(filename)
     .then(function (json) {
-      // remove joints
+      // delete joints
       for (let name of joints_name ) {
-        removeJoint(name);
+        deleteJoint(name);
       }
 
-      // remove frames
+      // delete frames
       for ( let name of frames_name ) {
-        removeFrame(name);
+        deleteFrame(name);
       }
       
       // add joints
@@ -1077,11 +768,6 @@ export function loadModel(filename) {
           json.joints[key].y,
           json.joints[key].z
         );
-      }
-
-      // remove frames
-      while (!(frames.children.length === 0)) {
-        frames.remove(frames.children[0]);
       }
       
       // add frames
@@ -1121,14 +807,14 @@ function manyFrames(radius, quantite) {
 
 export function addFrame(name, j, k) {
   // add a frame
-  var promise = new Promise( (resolve, reject) => {
-    // check if frame's name of frame's joints already exits
 
+  var promise = new Promise( (resolve, reject) => {  
     // only strings accepted as name
     name = name.toString();
     j = j.toString();
     k = k.toString();
-
+    
+    // check if frame's name of frame's joints already exits
     if ( frames_name.has(name) || frames_joints.some(jk => jointsEqual(jk, [j, k])) ) {
       if ( frames_name.has(name) ) {
         reject(new Error("frame's name '" + name + "' already exits"));
@@ -1148,11 +834,13 @@ export function addFrame(name, j, k) {
           joint_k.position.z - joint_j.position.z
         );
           
-        // 'x' axis
+        // 'x' axis (?)
         var axis = new THREE.Vector3(0, 1, 0);
     
         // create frame
         var frame = createFrame(config.frameSize, vector.length());
+
+        // set name
         frame.name = name;
     
         // set position
@@ -1162,18 +850,25 @@ export function addFrame(name, j, k) {
         frame.position.y += joint_j.position.y;
         frame.position.z += joint_j.position.z;
 
+        // add label
+        const label = document.createElement('div');
+        label.classList.add('frame');
+        label.textContent = name;
+        labels.appendChild(label);
+        frame.label = label;
+
         // add frame's joints info
         frame.joints = [j, k];
         
         // add frame to scene
         frames.add(frame);
-  
+
         // track frame's name
         frames_name.add(name);
-  
+        
         // track frame's joints
         frames_joints.push([j, k]);
-  
+        
         resolve();
       } else {  
         if ( joint_j ) {
@@ -1192,11 +887,10 @@ export function addJoint(name, x, y, z) {
   // add a joint
 
   var promise = new Promise( (resolve, reject) => {
-    // check if joint's name or joint's coordinate already exits
-
     // only strings accepted as name
     name = name.toString();
-
+    
+    // check if joint's name or joint's coordinate already exits
     if ( joints_name.has(name) || joints_coordinate.some(xyz => coordinatesEqual(xyz, [x, y, z]))) {
       if ( joints_name.has(name) ) {
         reject(new Error("joint's name '" + name + "' already exist" ));
@@ -1204,16 +898,25 @@ export function addJoint(name, x, y, z) {
         reject(new Error("joint's coordinate [" + x + ", " + y + ", " + z + "] already exist" ));
       }
     } else {
-      // create the joint
+      // create joint
       var joint = createJoint(config.jointSize);
 
-      // set the joint
+      // set name
       joint.name = name;
+
+      // set position
       joint.position.x = x;
       joint.position.y = y;
       joint.position.z = z;
-    
-      // save it
+      
+      // add label
+      const label = document.createElement('div');
+      label.classList.add('joint');
+      label.textContent = name;
+      labels.appendChild(label);
+      joint.label = label;
+
+      // add joint to scene
       joints.add(joint);
 
       // track joint's name
@@ -1228,78 +931,191 @@ export function addJoint(name, x, y, z) {
 
   return promise;
 }
-
-
 export function removeFrame( name ) {
   // remove a frame
 
   var promise = new Promise( (resolve, reject) => {
     if ( frames_name.has(name) ) {
-      // remove frame of the scene
       let frame = frames.getObjectByName(name);
-      frames.remove(frame);
 
-      // remove frame's name
-      frames_name.delete(name);
+      // delete frame
+      deleteFrame(name);
 
-      // remove frame's joints
-      let frame_joints = frame.joints;
-      frames_joints = frames_joints.filter(jk => !jointsEqual(jk, frame_joints));
+      // delete joint
+      for (let joint of frame.joints) {
+        if ( isJointInUse(joint) == 0) {
+          deleteJoint(joint);
+        }
+      }
 
       resolve();
     } else {
       reject(new Error("frame " + name + " does not exits"));
     }
-
-    return promise;
   });
+  
+  return promise;
+}
+
+function deleteFrame( name ) {
+  // delete a frame
+
+  // get the frame
+  let frame = frames.getObjectByName(name);
+  
+  // remove the label
+  labels.removeChild(frame.label);
+  
+  // remove frame of the scene
+  frames.remove(frame);
+  
+  // remove frame's name
+  frames_name.delete(name);
+  
+  // remove frame's joints
+  let frame_joints = frame.joints;
+  frames_joints = frames_joints.filter(jk => !jointsEqual(jk, frame_joints));
+}
+
+function isJointInUse( name ) {
+  // check if joint is in use
+  let count = 0;
+
+  for ( let frame_joints of frames_joints ) {
+    for ( let joint of frame_joints ) {
+      if ( joint == name ) {
+        count += 1;
+      }
+    }
+  }
+
+  return count;
 }
 
 export function removeJoint(name) {
   // remove a joint
-
+  
   var promise = new Promise( (resolve, reject) => {
-    if ( joints_name.has(name) ) {
-      // remove joint of the scene
-      let joint = joints.getObjectByName(name);
-      joints.remove(joint);
-
-      // remove joint's name
-      joints_name.delete(name);
-
-      // remove joint's coordinate
-      let joint_coordinate = [joint.position.x, joint.position.y, joint.position.z];
-      joints_coordinate = joints_coordinate.filter(xyz => !coordinatesEqual(xyz, joint_coordinate));
+    if ( joints_name.has(name) && (isJointInUse(name) > 1)) {
+      deleteJoint(name);
 
       resolve();
     } else {
-      reject(new Error("joint " + name + " does not exist"))
+      if ( joints_name.has(name) ) {
+        reject(new Error("joint '" + name + "' is in use"));
+      } else {
+        reject(new Error("joint '" + name + "' does not exist"))
+      }
     }
-    
-    return promise;
   });
+   
+  return promise;
+}
+
+function deleteJoint( name ) {
+  // delete a joint
+
+  // get the joint
+  let joint = joints.getObjectByName(name);
+
+  // remove the label
+  labels.removeChild(joint.label);
+
+  // remove joint of the scene
+  joints.remove(joint);
+
+  // remove joint's name
+  joints_name.delete(name);
+
+  // remove joint's coordinate
+  let joint_coordinate = [joint.position.x, joint.position.y, joint.position.z];
+  joints_coordinate = joints_coordinate.filter(xyz => !coordinatesEqual(xyz, joint_coordinate));
 }
 
 function createFrame(size, length) {
-  var geometry = new THREE.CylinderGeometry(1, 1, length);
+  // create a frame
 
-  var mesh = new THREE.Mesh(geometry, frameMaterial);
-  mesh.scale.x = size;
-  mesh.scale.z = size;
+  var frameGeometry = new THREE.CylinderGeometry(1, 1, length);
 
-  return mesh;
+  var frame = new THREE.Mesh(frameGeometry, frameMaterial); 
+  frame.scale.x = size;
+  frame.scale.z = size;
+
+  return frame;
 }
 
 function createJoint(size) {
   // create a joint
-  var geometry = new THREE.SphereGeometry(1, 32, 32);
 
-  var mesh = new THREE.Mesh(geometry, jointMaterial);
-  mesh.scale.x = size;
-  mesh.scale.y = size;
-  mesh.scale.z = size;
+  var joint = new THREE.Mesh(jointGeometry, jointMaterial);
+  joint.scale.x = size;
+  joint.scale.y = size;
+  joint.scale.z = size;
 
-  return mesh;
+  scene.add(joint);
+  
+  return joint;
+}
+
+function updatePlane() {
+  // update the plane
+
+  // remove the plane
+  scene.remove(plane);
+  
+  // create the plane
+  createPlane();
+
+  // add the plane to the scene
+  scene.add(plane);
+}
+
+function createPlane() {
+  // create the plane
+
+  plane = new THREE.Object3D();
+  // set the upwards axis
+  setUpwardsAxis(config.axisUpwards);
+  // create the grid
+  var grid = new THREE.GridHelper(
+    config.planeSize,
+    config.planeDivisions,
+    new THREE.Color(config.planeColorCenterLine),
+    new THREE.Color(config.planeColorGrid)
+  );
+
+  // set the rotation
+  grid.rotation.x = 0.5 * Math.PI;
+  // add the grid to the plane
+  plane.add(grid);
+  // add the rectangle to the plane
+  plane.add(
+    new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(
+        config.planeSize,
+        config.planeSize
+      ),
+      new THREE.MeshBasicMaterial({
+        color: config.planeColor,
+        transparent: config.planeTransparent,
+        opacity: config.planeOpacity,
+        side: THREE.DoubleSide,
+      })
+    )
+  );
+  // set the orientation
+  switch (config.axisUpwards) {
+    case "x":
+      plane.rotation.y = 0.5 * Math.PI;
+      break;
+    case "y":
+      plane.rotation.x = 0.5 * Math.PI;
+      break;
+    case "z":
+      break;
+  }
+
+  return plane;
 }
 
 function listsEqual(a, b) {
@@ -1324,6 +1140,128 @@ function jointsEqual(a, b) {
   return listsEqual(a, b);
 }
 
+export function showFramesLabel() {
+  // hide joints' label
+
+  var promise = new Promise( (resolve, reject) =>  {
+    _showFramesLabel = true;
+    
+    setFramesLabelDisplay('');
+    
+    resolve()
+  });
+  
+  return promise;
+}
+
+export function hideFramesLabel() {
+  // hide joints' label
+
+  var promise = new Promise( (resolve, reject) =>  {
+    _showFramesLabel = false;
+    
+    setFramesLabelDisplay('none');
+
+    resolve()
+  });
+  
+  return promise;
+}
+
+function setFramesLabelDisplay( display ) {
+  // set joint's label display
+
+  for ( let frame of frames.children ) {
+    frame.label.style.display = display;
+  }
+}
+
+export function showJointsLabel() {
+  // hide joints' label
+
+  var promise = new Promise( (resolve, reject) =>  {
+    _showJointsLabel = true;
+    
+    setJointsLabelDisplay('');
+    
+    resolve()
+  });
+  
+  return promise;
+}
+
+export function hideJointsLabel() {
+  // hide joints' label
+
+  var promise = new Promise( (resolve, reject) =>  {
+    _showJointsLabel = false;
+    
+    setJointsLabelDisplay('none');
+
+    resolve()
+  });
+  
+  return promise;
+}
+
+function setJointsLabelDisplay( display ) {
+  // set joint's label display
+
+  for ( let joint of joints.children ) {
+    joint.label.style.display = display;
+  }
+}
+
+var tempV = new THREE.Vector3();
+const raycaster = new THREE.Raycaster();
+
+function updateLabel(obj, parent) {
+  // update the obj's label
+  
+  // get obj's world coordiantes
+  obj.getWorldPosition(tempV);
+
+  // get obj's screen coordiantes
+  tempV.project(camera);
+  
+  // set the raycaster
+  raycaster.setFromCamera(tempV, camera);
+  
+  // cast
+  var intersectedObjects = raycaster.intersectObjects(parent.children);
+  const show = intersectedObjects.length && obj.name === intersectedObjects[0].object.name;
+  
+  if (show && Math.abs(tempV.z) < 1) {
+    // show if label is in front and inside frustum
+    
+    const x_screen = (tempV.x *  0.5 + 0.5) * canvas.clientWidth + 10;
+    const y_screen = (tempV.y * -0.5 + 0.5) * canvas.clientHeight - 10;
+    obj.label.style.display = ''; 
+    obj.label.style.transform = `translate(-50%, -50%) translate(${x_screen}px,${y_screen}px)`;
+    obj.label.style.zIndex = (-tempV.z * .5 + .5) * 100000 | 0;
+  } else {
+    obj.label.style.display = 'none';
+  }
+}
+
+function updateLabels() {
+  // update the labels' position
+
+  // update the joints' label
+  if ( _showJointsLabel ) {
+    for (const joint of joints.children) {
+      updateLabel(joint, joints);
+    }
+  }
+
+  // update the frames' label
+  if ( _showFramesLabel ) {
+    for (const frame of frames.children) {
+      updateLabel(frame, frames);
+    }
+  }
+}
+
 function render() {
   // update the camera
   var delta = clock.getDelta();
@@ -1334,6 +1272,9 @@ function render() {
 
   // update the scene
   renderer.render(scene, camera);
+
+  // update the labels
+  updateLabels();
 
   // call the render function
   requestAnimationFrame(render);
