@@ -1,6 +1,6 @@
 // global variables
 var scene;
-var camera, orthographicCamera, perspectiveCamera;
+var camera;
 var renderer;
 
 var renderer_output = document.getElementById("renderer-output");
@@ -47,35 +47,20 @@ function init() {
       // create the scene
       scene = new THREE.Scene();
 
-      // create the perspective camera and orthographic camera
-      perspectiveCamera = new THREE.PerspectiveCamera(
+      // create the camera
+      camera = new THREE.PerspectiveCamera(
         config.perspectiveCameraFOV,
         window.innerWidth / window.innerHeight,
         config.perspectiveCameraNear,
         config.perspectiveCameraFar
       );
-      orthographicCamera = new THREE.OrthographicCamera(
-        window.innerWidth / -16,
-        window.innerWidth / 16,
-        window.innerHeight / 16,
-        window.innerHeight / -16,
-        config.orthographicCameraNear,
-        config.orthographicCameraFar
-      );
-
-      // set the camera
-      if (config.cameraType == "perspective") {
-        camera = perspectiveCamera;
-      } else if (config.cameraType == "orthographic") {
-        camera = orthographicCamera;
-      }
-      // set the position
+      // set 'position'
       camera.position.set(
         config.cameraPosition_x,
         config.cameraPosition_y,
         config.cameraPosition_z
       );
-      // set the look at
+      // set 'look at'
       camera.lookAt(new THREE.Vector3(0, 0, 0));
 
       // create the WebGL renderer
@@ -90,17 +75,8 @@ function init() {
       clock = new THREE.Clock();
 
       // create the trackballControls
-      if (config.cameraType == "perspective") {
-        trackballControls = new THREE.TrackballControls(
-          camera,
-          renderer.domElement
-        );
-      } else if (config.cameraType == "orthographic") {
-        trackballControls = new THREE.OrthographicTrackballControls(
-          camera,
-          renderer.domElement
-        );
-      }
+      trackballControls = new THREE.TrackballControls(camera, renderer.domElement);
+
       // set the properties
       trackballControls.rotateSpeed = config.rotateSpeed;
       trackballControls.zoomSpeed = config.zoomSpeed;
@@ -192,194 +168,39 @@ function init() {
       let cameraFolder = gui.addFolder("Camera");
       cameraFolder.open();
 
-      // perspective camera
-      let perspectiveCameraFOVController;
-      let perspectiveCameraNearController;
-      let perspectiveCameraFarController;
-      // orthographic camera
-      let orthographicCameraNearController;
-      let orthographicCameraFarController;
-
-      // set control cameraType
-      let cameraTypeController = cameraFolder
-        .add(config, "cameraType")
-        .options(["perspective", "orthographic"]);
-      cameraTypeController.name("Type");
-      cameraTypeController.onChange(function (cameraType) {
-        // save the trackballControls target
-        var target = trackballControls.target;
-
-        // save the camera position
-        var position = camera.position;
-        // save the lookAt
-        var lookAtVector = new THREE.Vector3();
-        camera.getWorldDirection(lookAtVector);
-        // set the camera, add and remove controllers
-        if (config.cameraType == "perspective") {
-          // set the camera
-          camera = perspectiveCamera;
-
-          // remove controls
-          orthographicCameraNearController.remove();
-          orthographicCameraFarController.remove();
-
-          // add controls
-          // set control FOV
-          perspectiveCameraFOVController = cameraTypeOptionsFolder
-            .add(config, "perspectiveCameraFOV")
-            .min(45)
-            .max(90)
-            .step(1);
-          perspectiveCameraFOVController.name("FOV");
-          perspectiveCameraFOVController.onChange(function (fov) {
-            camera.fov = fov;
-            camera.updateProjectionMatrix();
-          });
-          // set control near
-          perspectiveCameraNearController = cameraTypeOptionsFolder
-            .add(config, "perspectiveCameraNear")
-            .min(0.01)
-            .max(1)
-            .step(0.01);
-          perspectiveCameraNearController.name("Near");
-          perspectiveCameraNearController.onChange(function (near) {
-            camera.near = near;
-            camera.updateProjectionMatrix();
-          });
-          // set control far
-          perspectiveCameraFarController = cameraTypeOptionsFolder
-            .add(config, "perspectiveCameraFar")
-            .min(100)
-            .max(10000)
-            .step(100);
-          perspectiveCameraFarController.name("Far");
-          perspectiveCameraFarController.onChange(function (far) {
-            camera.far = far;
-            camera.updateProjectionMatrix();
-          });
-        } else if (config.cameraType == "orthographic") {
-          // set the camera
-          camera = orthographicCamera;
-
-          // remove controls
-          perspectiveCameraFOVController.remove();
-          perspectiveCameraNearController.remove();
-          perspectiveCameraFarController.remove();
-
-          // add controls
-          // set control near
-          orthographicCameraNearController = cameraTypeOptionsFolder
-            .add(config, "orthographicCameraNear")
-            .min(-2000)
-            .max(-20)
-            .step(20);
-          orthographicCameraNearController.name("Near");
-          orthographicCameraNearController.onChange(function (near) {
-            camera.near = near;
-            camera.updateProjectionMatrix();
-          });
-          // set control far
-          orthographicCameraFarController = cameraTypeOptionsFolder
-            .add(config, "orthographicCameraFar")
-            .min(50)
-            .max(5000)
-            .step(50);
-          orthographicCameraFarController.name("Far");
-          orthographicCameraFarController.onChange(function (far) {
-            camera.far = far;
-            camera.updateProjectionMatrix();
-          });
-        }
-        // set the upwards axis
-        setUpwardsAxis(config.axisUpwards);
-        // set the position
-        camera.position.x = position.x;
-        camera.position.y = position.y;
-        camera.position.z = position.z;
-        // set the look at
-        camera.lookAt(lookAtVector);
-
-        // create the trackballControls
-        if (config.cameraType == "perspective") {
-          trackballControls = new THREE.TrackballControls(
-            camera,
-            renderer.domElement
-          );
-        } else if (config.cameraType == "orthographic") {
-          trackballControls = new THREE.OrthographicTrackballControls(
-            camera,
-            renderer.domElement
-          );
-        }
-        // set the target
-        trackballControls.target = target;
-        // set the properties
-        trackballControls.rotateSpeed = config.rotateSpeed;
-        trackballControls.zoomSpeed = config.zoomSpeed;
-        trackballControls.panSpeed = config.panSpeed;
-        trackballControls.staticMoving = config.staticMoving;
+      // set control FOV
+      let cameraFOVController = cameraFolder
+        .add(config, "cameraFOV")
+        .min(45)
+        .max(90)
+        .step(1);
+      cameraFOVController.name("FOV");
+      cameraFOVController.onChange(function (fov) {
+        camera.fov = fov;
+        camera.updateProjectionMatrix();
       });
-
-      // add a perspective/orthographic camera options folder
-      let cameraTypeOptionsFolder = cameraFolder.addFolder("Options");
-
-      // set control camera's properties
-      if (config.cameraType == "perspective") {
-        // set control FOV
-        perspectiveCameraFOVController = cameraTypeOptionsFolder
-          .add(config, "perspectiveCameraFOV")
-          .min(45)
-          .max(90)
-          .step(1);
-        perspectiveCameraFOVController.name("FOV");
-        perspectiveCameraFOVController.onChange(function (fov) {
-          camera.fov = fov;
-          camera.updateProjectionMatrix();
-        });
-        // set control near
-        perspectiveCameraNearController = cameraTypeOptionsFolder
-          .add(config, "perspectiveCameraNear")
-          .min(0.01)
-          .max(1)
-          .step(0.01);
-        perspectiveCameraNearController.name("Near");
-        perspectiveCameraNearController.onChange(function (near) {
-          camera.near = near;
-          camera.updateProjectionMatrix();
-        });
-        // set control far
-        perspectiveCameraFarController = cameraTypeOptionsFolder
-          .add(config, "perspectiveCameraFar")
-          .min(100)
-          .max(10000)
-          .step(100);
-        perspectiveCameraFarController.name("Far");
-        perspectiveCameraFarController.onChange(function (far) {
-          camera.far = far;
-          camera.updateProjectionMatrix();
-        });
-      } else if (config.cameraType == "orthographic") {
-        // set control near
-        orthographicCameraNearController = cameraTypeOptionsFolder
-          .add(config, "orthographicCameraNear")
-          .min(-2000)
-          .max(-20)
-          .step(20);
-        orthographicCameraNearController.name("Near");
-        orthographicCameraNearController.onChange(function (near) {
-          camera.near = near;
-          camera.updateProjectionMatrix();
-        });
-        // set control far
-        orthographicCameraFarController = cameraTypeOptionsFolder
-          .add(config, "orthographicCameraFar", 50, 5000)
-          .step(50);
-        orthographicCameraFarController.name("Far");
-        orthographicCameraFarController.onChange(function (far) {
-          camera.far = far;
-          camera.updateProjectionMatrix();
-        });
-      }
+      // set control near
+      let cameraNearController = cameraFolder
+        .add(config, "cameraNear")
+        .min(0.01)
+        .max(1)
+        .step(0.01);
+      cameraNearController.name("Near");
+      cameraNearController.onChange(function (near) {
+        camera.near = near;
+        camera.updateProjectionMatrix();
+      });
+      // set control far
+      let cameraFarController = cameraFolder
+        .add(config, "cameraFar")
+        .min(100)
+        .max(10000)
+        .step(100);
+      cameraFarController.name("Far");
+      cameraFarController.onChange(function (far) {
+        camera.far = far;
+        camera.updateProjectionMatrix();
+      });
 
       // add a cameraPosition folder
       let cameraPositionFolder = cameraFolder.addFolder("Position");
