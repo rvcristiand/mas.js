@@ -3,13 +3,13 @@ import * as FEM from "./modules/FEM.js";
 
 
 // scene
-var canvas = document.getElementById("canvas");
+var canvas = document.getElementById( "canvas" );
 
 // console
-var output = document.getElementById("output");
-var log = document.getElementById("log");
-var command_line = document.getElementById("command-line");
-var autocomplete = document.getElementById("autocomplete");
+var output = document.getElementById( "output" );
+var log = document.getElementById( "log" );
+var command_line = document.getElementById( "command-line" );
+var autocomplete = document.getElementById( "autocomplete" );
 
 
 // set the functions
@@ -20,7 +20,7 @@ terminal.add_function('addFrame', {
   successful: function ( name ) {
     return "frame " + name + " was added";
   }
-})
+});
 
 // addJoint
 terminal.add_function('addJoint', {
@@ -34,7 +34,7 @@ terminal.add_function('addJoint', {
 terminal.add_function('showJointsLabel', {
   func: FEM.showJointsLabel,
   successful: function () {
-    return "joints' label was showed"
+    return "joints' label was showed";
   }
 });
 
@@ -42,7 +42,7 @@ terminal.add_function('showJointsLabel', {
 terminal.add_function('hideJointsLabel', {
   func: FEM.hideJointsLabel,
   successful: function () {
-    return "joints' label was hidden"
+    return "joints' label was hidden";
   }
 });
 
@@ -50,17 +50,17 @@ terminal.add_function('hideJointsLabel', {
 terminal.add_function('showFramesLabel', {
   func: FEM.showFramesLabel,
   successful: function () {
-    return "frames' label was showed"
+    return "frames' label was showed";
   }
-})
+});
 
 // hideFramesLabel
 terminal.add_function('hideFramesLabel', {
   func: FEM.hideFramesLabel,
   successful: function () {
-    return "frames' label was hidden"
+    return "frames' label was hidden";
   }
-})
+});
 
 // setUpwardsAxis
 terminal.add_function("setUpwardsAxis", {

@@ -3,7 +3,6 @@ var scene;
 var camera;
 var renderer;
 
-var renderer_output = document.getElementById("renderer-output");
 var canvas = document.getElementById("canvas");
 
 // labels
@@ -13,7 +12,7 @@ var _showFramesLabel = true;
 
 var stats, gui;
 
-var clock, trackballControls;
+var controls;
 
 var config;
 
@@ -60,34 +59,20 @@ function init() {
         config.cameraPosition_y,
         config.cameraPosition_z
       );
-      // set 'look at'
-      camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-      // create the WebGL renderer
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
-      // set the size
-      renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-
-      // add the output to the html element
-      renderer_output.appendChild(renderer.domElement);
-
-      // create the clock
-      clock = new THREE.Clock();
-
-      // create the trackballControls
-      trackballControls = new THREE.TrackballControls(camera, renderer.domElement);
-
-      // set the properties
-      trackballControls.rotateSpeed = config.rotateSpeed;
-      trackballControls.zoomSpeed = config.zoomSpeed;
-      trackballControls.panSpeed = config.panSpeed;
-      trackballControls.staticMoving = config.staticMoving;
-
+      // set orientation
+      setCameraOrientation( config.axisUpwards );
+      
       // create the plane
       plane = createPlane();
-
+      // set orientation
+      setPlaneOrientation( config.axisUpwards );
+ 
       // add the plane to the scene
       scene.add(plane);
+
+      // show axes in the screen
+      var axes = new THREE.AxesHelper();
+      scene.add(axes);
 
       // set the joints
       joints = new THREE.Object3D();
@@ -105,12 +90,16 @@ function init() {
       // add to the scene
       scene.add(frames);
 
-      // show axes in the screen
-      var axes = new THREE.AxesHelper(1);
-      scene.add(axes);
-
       // create the stats
       stats = initStats();
+
+      // create the WebGL renderer
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+      // set the size
+      renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+
+      // create the controls
+      controls = createControls();
 
       return json;
     })
@@ -278,51 +267,51 @@ function init() {
       });
 
       // add a Trackball controls folder
-      let trackbackControlsFolder = gui.addFolder("Trackball controls");
-      trackbackControlsFolder.open();
+      let controlsFolder = gui.addFolder("Trackball controls");
+      controlsFolder.open();
 
       // set control rotateSpeed
-      let rotateSpeedController = trackbackControlsFolder
+      let rotateSpeedController = controlsFolder
         .add(config, "rotateSpeed")
         .min(0.1)
         .max(10)
         .step(0.1);
       rotateSpeedController.name("Rotate speed");
       rotateSpeedController.onFinishChange(function (rotateSpeed) {
-        trackballControls.rotateSpeed = rotateSpeed;
+        controls.rotateSpeed = rotateSpeed;
       });
 
       // set control zoomSpeed
-      let zoomSpeedController = trackbackControlsFolder
+      let zoomSpeedController = controlsFolder
         .add(config, "zoomSpeed")
         .min(0.12)
         .max(12)
         .step(0.12);
       zoomSpeedController.name("Zoom speed");
       zoomSpeedController.onFinishChange(function (zoomSpeed) {
-        trackballControls.zoomSpeed = zoomSpeed;
+        controls.zoomSpeed = zoomSpeed;
       });
 
       // set control panSpeed
-      let panSpeedController = trackbackControlsFolder
+      let panSpeedController = controlsFolder
         .add(config, "panSpeed")
         .min(0.03)
         .max(3)
         .step(0.03);
       panSpeedController.name("Pan speed");
       panSpeedController.onFinishChange(function (panSpeed) {
-        trackballControls.panSpeed = panSpeed;
+        controls.panSpeed = panSpeed;
       });
 
       // set control staticMoving
-      let staticMovingController = trackbackControlsFolder.add(
-        config,
-        "staticMoving"
-      );
-      staticMovingController.name("Static moving");
-      staticMovingController.onFinishChange(function (staticMoving) {
-        trackballControls.staticMoving = staticMoving;
-      });
+      // let staticMovingController = trackbackControlsFolder.add(
+      //   config,
+      //   "staticMoving"
+      // );
+      // staticMovingController.name("Static moving");
+      // staticMovingController.onFinishChange(function (staticMoving) {
+      //   trackballControls.staticMoving = staticMoving;
+      // });
 
       // add a Plane folder
       let planeFolder = gui.addFolder("Plane");
@@ -535,28 +524,88 @@ function init() {
 
 window.onload = init;
 
+function createControls() {
+  // create the controls
+
+  // create the controls
+  var controls = new THREE.OrbitControls( camera, canvas );
+
+  // set the properties
+  controls.rotateSpeed = config.rotateSpeed;
+  controls.zoomSpeed = config.zoomSpeed;
+  controls.panSpeed = config.panSpeed;
+  // controls.staticMoving = config.staticMoving;
+
+  return controls;
+}
+
+function setCameraOrientation( axis ) {
+  // set the camera's orientation
+
+  // save the lookAt vector
+  var lookAt = new THREE.Vector3();
+  camera.getWorldDirection(lookAt);
+  
+  if (axis =='x' || axis == 'y' || axis == 'z' ) {
+    switch(axis) {
+      case 'x':
+        camera.up.set(1, 0, 0);
+        break;
+      case 'y':
+        camera.up.set(0, 1, 0);
+        break;
+      case 'z':
+        camera.up.set(0, 0, 1);
+        break;
+    }
+
+    // update the camera
+    camera.updateProjectionMatrix();
+    camera.lookAt(lookAt);
+  }
+}
+
+function setPlaneOrientation( axis ) {
+  // set the plane's orientation
+  
+  if (axis =='x' || axis == 'y' || axis == 'z' ) {
+    switch(axis) {
+      case 'x':
+        plane.rotation.x = 0;
+        plane.rotation.y = 0.5 * Math.PI;
+        break;
+      case 'y':
+        plane.rotation.y = 0;
+        plane.rotation.x = -0.5 * Math.PI;
+        break;
+      case 'z':
+        plane.rotation.x = 0;
+        plane.rotation.y = 0;
+        break;
+    }
+  }
+}
+
 export function setUpwardsAxis( axis ) {
   // set the upwards axis
   
   var promise = new Promise( (resolve, reject) => {
     if (axis =='x' || axis == 'y' || axis == 'z' ) {
-      switch(axis) {
-        case 'x':
-          camera.up.set(1, 0, 0);
-          plane.rotation.x = 0;
-          plane.rotation.y = 0.5 * Math.PI;
-          break;
-        case 'y':
-          camera.up.set(0, 1, 0);
-          plane.rotation.y = 0;
-          plane.rotation.x = 0.5 * Math.PI;
-          break;
-        case 'z':
-          camera.up.set(0, 0, 1);
-          plane.rotation.x = 0;
-          plane.rotation.y = 0;
-          break;        
-      }
+      // set the camera orientation
+      setCameraOrientation( axis );
+
+      // set plane orientation
+      setPlaneOrientation( axis );
+
+      // remove the event listeners
+      controls.dispose();
+
+      // create the controls
+      controls = createControls();
+
+      // save the changes
+      config.axisUpwards = axis;
+
       resolve();
     } else {
       reject(new Error("'" + axis + "' axis does not exist"));
@@ -883,9 +932,11 @@ function updatePlane() {
 
   // remove the plane
   scene.remove(plane);
-  
+
   // create the plane
-  createPlane();
+  plane = createPlane();
+  // set the orientation
+  setPlaneOrientation(config.axisUpwards);
 
   // add the plane to the scene
   scene.add(plane);
@@ -894,9 +945,9 @@ function updatePlane() {
 function createPlane() {
   // create the plane
 
+  // create the plane obj
   plane = new THREE.Object3D();
-  // set the upwards axis
-  setUpwardsAxis(config.axisUpwards);
+
   // create the grid
   var grid = new THREE.GridHelper(
     config.planeSize,
@@ -924,17 +975,6 @@ function createPlane() {
       })
     )
   );
-  // set the orientation
-  switch (config.axisUpwards) {
-    case "x":
-      plane.rotation.y = 0.5 * Math.PI;
-      break;
-    case "y":
-      plane.rotation.x = 0.5 * Math.PI;
-      break;
-    case "z":
-      break;
-  }
 
   return plane;
 }
@@ -1084,21 +1124,18 @@ function updateLabels() {
 }
 
 function render() {
-  // update the camera
-  var delta = clock.getDelta();
-  trackballControls.update(delta);
+  
+  // call the render function
+  requestAnimationFrame(render);
 
   // update the statistics
-    stats.update();
+  stats.update();
 
   // update the scene
   renderer.render(scene, camera);
 
   // update the labels
   updateLabels();
-
-  // call the render function
-  requestAnimationFrame(render);
 }
 
 function initStats() {
