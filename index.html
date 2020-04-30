@@ -9,6 +9,7 @@
 
     <!-- three.js -->
     <script src="./libs/three.js"></script>
+    <script src="./libs/CSS2DRenderer.js"></script>
     <script src="./libs/OrbitControls.js"></script>
     <!-- <script src="./libs/Projector.js"></script> -->
 
@@ -31,7 +32,7 @@
 
   <body>
     <!-- Start of wrapper -->
-    <div class="wrapper">
+    <div id="wrapper">
       <!-- Start of div button -->
       <div id="button">
         <!-- Start show sidebar -->
@@ -41,16 +42,6 @@
         <!-- End show sidebar -->
       </div>
       <!-- End of div button -->
-
-      <!-- Start of sidebar -->
-      <div id="sidebar">
-        <!-- Start hide the sidebar -->
-        <div id="dismiss">
-          <i class="fas fa-arrow-left"></i>
-        </div>
-        <!-- End hide the sidebar -->
-      </div>
-      <!-- End of sidebar -->
 
       <!-- Start renderer-output -->
       <div id="renderer-output">
@@ -94,8 +85,18 @@
     </div>
     <!-- End of wrapper -->
 
+    <!-- Start of sidebar -->
+    <div id="sidebar" class="sidebar">
+      <!-- Start hide the sidebar -->
+      <div id="dismiss">
+        <i class="fas fa-arrow-left"></i>
+      </div>
+      <!-- End hide the sidebar -->
+    </div>
+    <!-- End of sidebar -->
+
     <!-- Start overlay -->
-    <div id="overlay" class="overlay"></div>
+    <div id="overlay"></div>
     <!-- Start overlay -->
 
     <script>

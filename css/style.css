@@ -1,4 +1,5 @@
-html, body {
+body {
+  position: fixed;
   width: 100vw;
   height: 100vh;
   background-color: #000000;
@@ -6,28 +7,44 @@ html, body {
   margin: 0;
 }
 
-.wrapper {
-  display: block;
-}
-
-#button {
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: 9999;
+#wrapper {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 9;
 }
 
 #sidebar {
-  position: fixed;
+  position: absolute;
   left: -250px;
   top: 0;
   width: 250px;
-  height: 100vh;
-  z-index: 99999;
+  height: 100%;
+  z-index: 999999;
 }
 
 #sidebar.active {
   left: 0px;
+}
+
+#overlay {
+  display: none;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  transition: all 0.5s ease-in-out;
+}
+
+#overlay.active {
+  display: block;
+  opacity: 1;
+}
+
+#button {
+  position: absolute;
+  z-index: 9999;
 }
 
 #dismiss {
@@ -39,90 +56,63 @@ html, body {
 }
 
 #renderer-output {
-  position: relative;
+  position: absolute;
   left: 0;
   top: 0;
-  height: 100vh;
-  width: 100vw;
-  z-index: 1;
+  height: 100%;
+  width: 100%;
+  z-index: 99;
 }
 
 #canvas {
-  position: relative;
+  position: absolute;
   left: 0;
   top: 0;
-  height: 100vh;
-  width: 100vw;
-  z-index: 9;
+  height: 100%;
+  width: 100%;
+  z-index: 99;
 }
 
 #labels {
   position: absolute;
   left: 0;
   top: 0;
+  width: 100%;
+  height: 100%;
   color: white;
-  z-index: 99;
+  z-index: 9999;
 }
 
-#labels>div {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 1px;
-  white-space: nowrap;
-  cursor: pointer;
-  font-size: large;
-  user-select: none;
-  text-shadow:
-    -1px -1px 0 #000,
-    0    -1px 0 #000,
-    1px  -1px 0 #000,
-    1px  0    0 #000,
-    1px  1px  0 #000,
-    0    1px  0 #000,
-    -1px 1px  0 #000,
-    -1px 0    0 #000;
+#labels > div {
+  outline: none;
+  /* mobile webkit */
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
 }
 
-#labels>div:hover {
-  color: red;
+.joint, .frame {
+  color: #FFF;
+  font-family: sans-serif;
+  padding: 2px;
+  background: rgba( 0, 0, 0, .6 );
 }
 
 #Stats-output {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  z-index: 99;
+  position: absolute;
+  right: 50px;
+  bottom: 100px;
+  z-index: 9999;
 }
 
 #console {
-  position: fixed;
+  position: absolute;
   left: 0;
   bottom: 0;
   width: 100%;
   height: auto;
-  /* border: 1px solid blue; */
-}
-
-.overlay {
-  display: none;
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
-  opacity: 0;
   z-index: 9999;
-  transition: all 0.5s ease-in-out;
 }
 
-.overlay.active {
-  display: block;
-  opacity: 1;
-}
-
-#sidebar {
+.sidebar {
   background: #7386d5;
   color: #fff;
   transition: all 0.3s;
@@ -151,36 +141,20 @@ html, body {
 
 /* console */
 .console {
-  /* display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent; */
   font-family: 'Inconsolata', monospace;
   box-sizing: border-box;
   padding: 12px;
-  z-index: 9999;
 }
-
-/* .console div {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  margin: 12px;
-} */
 
 /* output */
 .output {
-  /* border: 1px solid red; */
   box-sizing: border-box;
   width: 100%;
   padding: 12px;
-  /* margin-bottom: 0; */
 }
 
 .log {
   color: green;
-  /* position: relative; */
   margin: 0;
 }
 
@@ -211,7 +185,6 @@ html, body {
   width: 100%;
   font-family: 'Inconsolata', monospace;
   box-sizing: border-box;
-  /* border: red solid 1px; */
 }
 
 .prompt, .command-line, .autocomplete {
@@ -228,7 +201,6 @@ html, body {
   outline: none;
 }
 
-/* border: 0; */
 .autocomplete {
   position: absolute;
   display: flex;
@@ -236,14 +208,10 @@ html, body {
   align-items: center;
   width: auto;
   color: red;
-  /* border: 2px solid blue; */
   box-sizing: border-box;
   top: 0;
   right: 0;
-  /* width: auto; */
   padding: 3px;
-  /* margin: 0; */
-  /* z-index: 999999; */
 }
 
 .option {
@@ -258,11 +226,6 @@ html, body {
   color: green;
   border: 2px solid green;
 }
-
-/* .option:hover {
-  color: green;
-} */
-
 
 .prompt {
   /* style */
@@ -289,13 +252,6 @@ html, body {
   background-color: none;
   border: 2px solid red;
   border-radius: 8px;
-
-  /* box-sizing: border-box;
-  border: 2px solid red;
-  padding: 10px; */
-  /* margin: 1px; */
-  /* background-color: green;
-  width: auto; */
 }
 
 
@@ -304,18 +260,9 @@ html, body {
   color: #00ff00
 }
 
-/* .autocomplete {
-  background-color: rgba(0, 0, 0, 0.7);
-  border-left: none;
-  border-right: 2px solid #000000;
-  border-top: 2px solid #000000;
-  border-bottom: 2px solid #000000;
-  border-radius: 0 8px 8px 0;
-} */
-
 /* for dat gui */
 .dg.ac {
-  z-index: 999999;
+  z-index: 99;
 }
 
 input[type="text"],
