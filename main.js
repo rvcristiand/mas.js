@@ -22,6 +22,22 @@ terminal.add_function('addFrame', {
   }
 });
 
+// add section
+terminal.add_function( 'addRectangleSection', {
+  func: FEM.addRectangleSection,
+  successful: function( name, width, height ) {
+    return "rectangle section " + name + " was added";
+  }
+});
+
+// add material
+terminal.add_function( 'addMaterial', {
+  func: FEM.addMaterial, 
+  successful: function( name, e, g) {
+    return "material " + name + " was added";
+  }
+});
+
 // addJoint
 terminal.add_function('addJoint', {
   func: FEM.addJoint,

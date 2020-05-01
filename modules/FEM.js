@@ -1,24 +1,37 @@
 // global variables
+
+//
 var scene;
 var camera;
 var renderer, labelRenderer;
 
+//
 var canvas = document.getElementById( "canvas" );
 var canvasLabels = document.getElementById( "labels" );
 
+//
 var stats, gui;
 
+//
 var controls;
 
+//
 var config;
 
+//
 var plane;
 
+//
 var joints, jointMaterial, jointGeometry;
 var frames, frameMaterial;
 
+//
 var joints_name = new Set();
 var joints_coordinate = [];
+
+//
+var materials = {};
+var sections = {};
 
 var frames_name = new Set();
 var frames_joints = [];
@@ -733,6 +746,60 @@ export function addFrame( name, j, k ) {
   return promise;
 }
 
+export function addRectangleSection( name, widht, height ) {
+  // add a rectangle section
+
+  var promise = new Promise( ( resolve, reject ) => {
+    // only strings accepted as name
+    name = name.toString();
+
+    // check if section's name already exits
+    if ( sections.hasOwnProperty( name ) ) {
+      reject( new Error( "section's name '" + name + "' already exits" ) );
+    } else {
+      // create rectangle section
+      var rectangleSection = createRectangleSection( widht, height );
+
+      // set name
+      rectangleSection.name = name;
+
+      // track rectangle section
+      sections[name] = rectangleSection;
+
+      resolve();
+    }
+  });
+
+  return promise;
+}
+
+export function addMaterial( name, e, g ) {
+  // add a material
+
+  var promise = new Promise( ( resolve, reject ) => {
+    // only strings accepted as name
+    name = name.toString();
+
+    // check if material's name already exits
+    if ( materials.hasOwnProperty( name ) ) {
+      reject( new Error( "material's name '" + name + "' already exist" ) );
+    } else {
+      // create material
+      var material = createMaterial( e, g );
+
+      // set name
+      material.name = name;
+
+      // track material
+      materials[name] = material;
+
+      resolve();
+    }
+  });
+
+  return promise;
+}
+
 export function addJoint( name, x, y, z ) {
   // add a joint
 
@@ -783,6 +850,7 @@ export function addJoint( name, x, y, z ) {
 
   return promise;
 }
+
 export function removeFrame( name ) {
   // remove a frame
 
@@ -809,6 +877,73 @@ export function removeFrame( name ) {
   return promise;
 }
 
+export function removeSection( name ) {
+  // remove a section
+
+  var promise = new Promise( ( resolve, reject ) => {
+    if ( sections.hasOwnProperty( name ) ) {
+      delete sections[name];
+
+      resolve();
+    } else {
+      reject( new Error( "section '" + name + "' does not exist" ) );
+    }
+  });
+
+  return promise;
+}
+
+export function removeMaterial( name ) {
+  // remove a material
+
+  var promise = new Promise( ( resolve, reject ) => {
+    if ( materials.hasOwnProperty( name ) ) {
+      delete materials[name];
+
+      resolve();
+    } else {
+      reject( new Error( "section '" + name + "' does not exist" ) );
+    }
+  });
+
+  return promise;
+}
+
+function isJointInUse( name ) {
+  // check if joint is in use
+  let count = 0;
+  
+  for ( let frame_joints of frames_joints ) {
+    for ( let joint of frame_joints ) {
+      if ( joint == name ) {
+        count += 1;
+      }
+    }
+  }
+  
+  return count;
+}
+
+export function removeJoint( name ) {
+  // remove a joint
+  
+  var promise = new Promise( ( resolve, reject ) => {
+    if ( joints_name.has( name ) && (isJointInUse( name ) > 1) ) {
+      deleteJoint( name );
+      
+      resolve();
+    } else {
+      if ( joints_name.has( name ) ) {
+        reject( new Error("joint '" + name + "' is in use") );
+      } else {
+        reject( new Error("joint '" + name + "' does not exist") );
+      }
+    }
+  });
+  
+  return promise;
+}
+
 function deleteFrame( name ) {
   // delete a frame
 
@@ -827,41 +962,6 @@ function deleteFrame( name ) {
   // remove frame's joints
   let frame_joints = frame.joints;
   frames_joints = frames_joints.filter( jk => !jointsEqual( jk, frame_joints ) );
-}
-
-function isJointInUse( name ) {
-  // check if joint is in use
-  let count = 0;
-
-  for ( let frame_joints of frames_joints ) {
-    for ( let joint of frame_joints ) {
-      if ( joint == name ) {
-        count += 1;
-      }
-    }
-  }
-
-  return count;
-}
-
-export function removeJoint( name ) {
-  // remove a joint
-  
-  var promise = new Promise( ( resolve, reject ) => {
-    if ( joints_name.has( name ) && (isJointInUse( name ) > 1) ) {
-      deleteJoint( name );
-
-      resolve();
-    } else {
-      if ( joints_name.has( name ) ) {
-        reject( new Error("joint '" + name + "' is in use") );
-      } else {
-        reject( new Error("joint '" + name + "' does not exist") );
-      }
-    }
-  });
-   
-  return promise;
 }
 
 function deleteJoint( name ) {
@@ -896,6 +996,29 @@ function createFrame( size, length ) {
   return frame;
 }
 
+function createRectangleSection( widht, height ) {
+  // create a rectangle
+
+  var rectangleSection = new THREE.Shape()
+    .moveTo(  widht / 2, -height / 2 )
+    .lineTo(  widht / 2,  height / 2 )
+    .lineTo( -widht / 2,  height / 2 )
+    .lineTo( -widht / 2, -height / 2 );
+
+  return rectangleSection;
+}
+
+function createMaterial( e, g ) {
+   // create a material
+
+   var material = {};
+
+   material['e'] = e;
+   material['g'] = g;
+
+   return material;
+}
+
 function createJoint( size ) {
   // create a joint
 
@@ -903,8 +1026,6 @@ function createJoint( size ) {
   joint.scale.x = size;
   joint.scale.y = size;
   joint.scale.z = size;
-
-  scene.add( joint );
   
   return joint;
 }
