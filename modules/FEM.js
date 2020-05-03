@@ -746,8 +746,8 @@ export function addFrame( name, j, k ) {
   return promise;
 }
 
-export function addRectangleSection( name, widht, height ) {
-  // add a rectangle section
+export function addRectangularSection( name, widht, height ) {
+  // add a rectangular section
 
   var promise = new Promise( ( resolve, reject ) => {
     // only strings accepted as name
@@ -757,14 +757,14 @@ export function addRectangleSection( name, widht, height ) {
     if ( sections.hasOwnProperty( name ) ) {
       reject( new Error( "section's name '" + name + "' already exits" ) );
     } else {
-      // create rectangle section
-      var rectangleSection = createRectangleSection( widht, height );
+      // create rectangular section
+      var rectangularSection = createRectangularSection( widht, height );
 
       // set name
-      rectangleSection.name = name;
+      rectangularSection.name = name;
 
-      // track rectangle section
-      sections[name] = rectangleSection;
+      // track rectangular section
+      sections[name] = rectangularSection;
 
       resolve();
     }
@@ -996,16 +996,16 @@ function createFrame( size, length ) {
   return frame;
 }
 
-function createRectangleSection( widht, height ) {
-  // create a rectangle
+function createRectangularSection( widht, height ) {
+  // create a rectangular
 
-  var rectangleSection = new THREE.Shape()
+  var rectangularSection = new THREE.Shape()
     .moveTo(  widht / 2, -height / 2 )
     .lineTo(  widht / 2,  height / 2 )
     .lineTo( -widht / 2,  height / 2 )
     .lineTo( -widht / 2, -height / 2 );
 
-  return rectangleSection;
+  return rectangularSection;
 }
 
 function createMaterial( e, g ) {
