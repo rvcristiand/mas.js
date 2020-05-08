@@ -3,6 +3,7 @@
 //
 var scene;
 var camera;
+var controls;
 var renderer, labelRenderer;
 
 //
@@ -13,17 +14,18 @@ var canvasLabels = document.getElementById( "labels" );
 var stats, gui;
 
 //
-var controls;
-
-//
 var config;
+
+// movel
+var model;
 
 //
 var plane;
 
 //
 var joints, jointMaterial, jointGeometry;
-var frames, frameMaterial;
+
+var frames, frameMaterial, wireFrameShape;
 
 //
 var joints_name = new Set();
@@ -44,47 +46,33 @@ function init() {
       config = json.remembered[json.preset]["0"];
 
       // set the background
-      canvas.style.backgroundColor = config.topBackgroundColor;
-      canvas.style.backgroundImage = 
-        "linear-gradient(" +
-        config.topBackgroundColor +
-        ", " +
-        config.bottomBackgroundColor +
-        ")";
+      setBackgroundColor( config.topBackgroundColor, config.bottomBackgroundColor );
 
       // create the scene
       scene = new THREE.Scene();
 
       // create the camera
-      camera = new THREE.PerspectiveCamera(
-        config.perspectiveCameraFOV,
-        window.innerWidth / window.innerHeight,
-        config.perspectiveCameraNear,
-        config.perspectiveCameraFar
-      );
+      camera = new THREE.PerspectiveCamera( config.perspectiveCameraFOV, window.innerWidth / window.innerHeight, config.perspectiveCameraNear, config.perspectiveCameraFar );
       // set 'position'
-      camera.position.set(
-        config.cameraPosition_x,
-        config.cameraPosition_y,
-        config.cameraPosition_z
-      );
+      camera.position.set( config.cameraPosition_x, config.cameraPosition_y, config.cameraPosition_z );
       // set orientation
       setCameraOrientation( config.axisUpwards );
+
+      // show axes in the screen
+      var axes = new THREE.AxesHelper();
+      scene.add( axes );
       
       // create the plane
-      plane = createPlane();
+      plane = createPlane( config.planeSize, config.planeDivisions, config.planeColor, config.planeColorCenterLine, config.planeColorGrid, config.planeTransparent, config.planeOpacity );
       // set orientation
       setPlaneOrientation( config.axisUpwards );
  
       // add the plane to the scene
       scene.add( plane );
 
-      // show axes in the screen
-      var axes = new THREE.AxesHelper();
-      scene.add( axes );
-
       // set the joints
-      joints = new THREE.Object3D();
+      joints = new THREE.Group();
+      joints.visible = config.jointVisible;
       // set the geometry
       jointGeometry = new THREE.SphereGeometry( 1, 32, 32 );
       // set the material
@@ -93,11 +81,17 @@ function init() {
       scene.add( joints );
 
       // set the frames
-      frames = new THREE.Object3D();
+      frames = new THREE.Group();
+      frames.visible = config.frameVisible;
       // set the material
-      frameMaterial = new THREE.MeshBasicMaterial({ color: config.frameColor });
+      frameMaterial = new THREE.MeshBasicMaterial( { color: config.frameColor, transparent: config.frameTransparent, opacity: config.frameOpacity } );
+      // set the shape
+      wireFrameShape = new THREE.Shape().absarc();
       // add to the scene
       scene.add( frames );
+
+      // create the model
+      model = createModel();
 
       // create the stats
       stats = initStats();
@@ -117,349 +111,225 @@ function init() {
       canvasLabels.appendChild( labelRenderer.domElement );
 
       // create the controls
-      controls = createControls();
+      controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
 
       return json;
     })
     .then(function ( json ) {
       // create the dat gui
-      gui = new dat.GUI({ load: json, preset: json.preset });
-
-      // close gui
-      gui.close();
+      gui = new dat.GUI( { load: json, preset: json.preset } );
 
       // remember config
       gui.remember( config );
+      
+      // add a Model folder
+      let modelFolder = gui.addFolder( "Model" );
+      
+      // set cotrol view
+      let modelViewController = modelFolder.add( config, 'viewType', [ 'wireframe', 'extrude' ]);
+      modelViewController.name( "View" );
+      modelViewController.onChange(( viewType )  => setViewType( viewType ) );
 
       // add a Background folder
       let backgroundFolder = gui.addFolder( "Background" );
-      backgroundFolder.open();
 
       // set control topBackgroundColor
-      let topBackgroundColorController = backgroundFolder.addColor(
-        config,
-        "topBackgroundColor"
-      );
+      let topBackgroundColorController = backgroundFolder.addColor( config, "topBackgroundColor" );
       topBackgroundColorController.name( "Top color" );
-      topBackgroundColorController.onChange(function ( topBackgroundColor ) {
-        // set the background
-        canvas.style.backgroundColor = config.topBackgroundColor;
-        canvas.style.backgroundImage =
-          "linear-gradient(" +
-          config.topBackgroundColor +
-          ", " +
-          config.bottomBackgroundColor +
-          ")";
-      });
+      topBackgroundColorController.onChange(() => setBackgroundColor( config.topBackgroundColor, config.bottomBackgroundColor ));
 
       // set control bottomBackgroundColor
-      let bottomBackgroundColorController = backgroundFolder.addColor(
-        config,
-        "bottomBackgroundColor"
-      );
+      let bottomBackgroundColorController = backgroundFolder.addColor( config, "bottomBackgroundColor" );
       bottomBackgroundColorController.name( "Bottom color" );
-      bottomBackgroundColorController.onChange(function ( bottomBackgroundColor ) {
-        // set the background
-        canvas.style.backgroundColor = config.topBackgroundColor;
-        canvas.style.backgroundImage =
-          "linear-gradient(" +
-          config.topBackgroundColor +
-          ", " +
-          config.bottomBackgroundColor +
-          ")";
-      });
+      bottomBackgroundColorController.onChange(() => setBackgroundColor( config.topBackgroundColor, config.bottomBackgroundColor ));
 
       // add a Camera folder
       let cameraFolder = gui.addFolder( "Camera" );
-      cameraFolder.open();
 
       // set control FOV
-      let cameraFOVController = cameraFolder
-        .add( config, "cameraFOV" )
-        .min( 45 )
-        .max( 90 )
-        .step( 1 );
+      let cameraFOVController = cameraFolder.add( config, "cameraFOV" ).min( 45 ).max( 90 ).step( 1 );
       cameraFOVController.name( "FOV" );
-      cameraFOVController.onChange(function ( fov ) {
-        camera.fov = fov;
+      cameraFOVController.onChange(() => {
+        camera.fov = config.cameraFOV;
         camera.updateProjectionMatrix();
       });
       // set control near
-      let cameraNearController = cameraFolder
-        .add( config, "cameraNear" )
-        .min( 0.01 )
-        .max( 1 )
-        .step( 0.01 );
+      let cameraNearController = cameraFolder.add( config, "cameraNear" ).min( 0.01 ).max( 1 ).step( 0.01 );
       cameraNearController.name( "Near" );
-      cameraNearController.onChange(function ( near ) {
-        camera.near = near;
+      cameraNearController.onChange(() => {
+        camera.near = config.cameraNear;
         camera.updateProjectionMatrix();
       });
       // set control far
-      let cameraFarController = cameraFolder
-        .add( config, "cameraFar" )
-        .min( 100 )
-        .max( 10000 )
-        .step( 100 );
+      let cameraFarController = cameraFolder.add( config, "cameraFar" ).min( 100 ).max( 10000 ).step( 100 );
       cameraFarController.name( "Far" );
-      cameraFarController.onChange(function ( far ) {
-        camera.far = far;
+      cameraFarController.onChange(() => {
+        camera.far = config.cameraFar;
         camera.updateProjectionMatrix();
       });
 
       // add a cameraPosition folder
       let cameraPositionFolder = cameraFolder.addFolder( "Position" );
-
       // set control cameraPosition_x
-      let cameraPosition_xController = cameraPositionFolder
-        .add( config, "cameraPosition_x" )
-        .min( -100 )
-        .max( 100 )
-        .step( 1 );
+      let cameraPosition_xController = cameraPositionFolder.add( config, "cameraPosition_x" ).min( -100 ).max( 100 ).step( 1 );
       cameraPosition_xController.name( "x" );
-      cameraPosition_xController.onChange(function ( cameraPosition_x ) {
-        // save the lookAt
-        var lookAtVector = new THREE.Vector3();
-        camera.getWorldDirection( lookAtVector );
-        // set the position
-        camera.position.set(
-          config.cameraPosition_x,
-          config.cameraPosition_y,
-          config.cameraPosition_z
-        );
-        // set the look at
-        camera.lookAt( lookAtVector );
-      });
+      cameraPosition_xController.onChange(() => setCameraPosition( config.cameraPosition_x, config.cameraPosition_y, config.cameraPosition_z ));
 
       // set control cameraPosition_y
-      let cameraPosition_yController = cameraPositionFolder
-        .add( config, "cameraPosition_y" )
-        .min( -100 )
-        .max( 100 )
-        .step( 1 );
+      let cameraPosition_yController = cameraPositionFolder.add( config, "cameraPosition_y" ).min( -100 ).max( 100 ).step( 1 );
       cameraPosition_yController.name( "y" );
-      cameraPosition_yController.onChange(function ( cameraPosition_y ) {
-        // save the lookAt
-        var lookAtVector = new THREE.Vector3();
-        camera.getWorldDirection( lookAtVector );
-        // set the position
-        camera.position.set(
-          config.cameraPosition_x,
-          config.cameraPosition_y,
-          config.cameraPosition_z
-        );
-        // set the look at
-        camera.lookAt( lookAtVector );
-      });
+      cameraPosition_yController.onChange(() => setCameraPosition( config.cameraPosition_x, config.cameraPosition_y, config.cameraPosition_z ));
 
       // set control cameraPosition_z
-      let cameraPosition_zController = cameraPositionFolder
-        .add( config, "cameraPosition_z" )
-        .min( -100 )
-        .max( 100 )
-        .step( 1 );
+      let cameraPosition_zController = cameraPositionFolder.add( config, "cameraPosition_z" ).min( -100 ).max( 100 ).step( 1 );
       cameraPosition_zController.name( "z" );
-      cameraPosition_zController.onChange(function ( cameraPosition_z ) {
-        // save the lookAt
-        var lookAtVector = new THREE.Vector3();
-        camera.getWorldDirection( lookAtVector );
-        // set the position
-        camera.position.set(
-          config.cameraPosition_x,
-          config.cameraPosition_y,
-          config.cameraPosition_z
-        );
-        // set the look at
-        camera.lookAt( lookAtVector );
-      });
+      cameraPosition_zController.onChange(() => setCameraPosition( config.cameraPosition_x, config.cameraPosition_y, config.cameraPosition_z ));
 
       // set control axisUpwards
-      let axisUpwardsController = cameraFolder
-        .add( config, "axisUpwards" )
-        .options( ["x", "y", "z"] );
+      let axisUpwardsController = cameraFolder.add( config, "axisUpwards" ).options( ["x", "y", "z"] ).listen();
       axisUpwardsController.name( "Upwards axis" );
-      axisUpwardsController.onChange(function ( axisUpwards ) {
-        setUpwardsAxis( axisUpwards );
-      });
+      axisUpwardsController.onChange(() => setUpwardsAxis( config.axisUpwards ));
 
       // add a Trackball controls folder
       let controlsFolder = gui.addFolder( "Trackball controls" );
-      controlsFolder.open();
 
       // set control rotateSpeed
-      let rotateSpeedController = controlsFolder
-        .add( config, "rotateSpeed" )
-        .min( 0.1 )
-        .max( 10 )
-        .step( 0.1 );
+      let rotateSpeedController = controlsFolder.add( config, "rotateSpeed" ).min( 0.1 ).max( 10 ).step( 0.1 );
       rotateSpeedController.name( "Rotate speed" );
-      rotateSpeedController.onFinishChange(function ( rotateSpeed ) {
-        controls.rotateSpeed = rotateSpeed;
-      });
+      rotateSpeedController.onFinishChange(() => controls.rotateSpeed = config.rotateSpeed);
 
       // set control zoomSpeed
-      let zoomSpeedController = controlsFolder
-        .add( config, "zoomSpeed" )
-        .min( 0.12 )
-        .max( 12 )
-        .step( 0.12 );
+      let zoomSpeedController = controlsFolder.add( config, "zoomSpeed" ).min( 0.12 ).max( 12 ).step( 0.12 );
       zoomSpeedController.name( "Zoom speed" );
-      zoomSpeedController.onFinishChange(function ( zoomSpeed ) {
-        controls.zoomSpeed = zoomSpeed;
-      });
+      zoomSpeedController.onFinishChange(() => controls.zoomSpeed = config.zoomSpeed);
 
       // set control panSpeed
-      let panSpeedController = controlsFolder
-        .add( config, "panSpeed" )
-        .min( 0.03 )
-        .max( 3 )
-        .step( 0.03 );
+      let panSpeedController = controlsFolder.add( config, "panSpeed" ).min( 0.03 ).max( 3 ).step( 0.03 );
       panSpeedController.name( "Pan speed" );
-      panSpeedController.onFinishChange(function ( panSpeed ) {
-        controls.panSpeed = panSpeed;
-      });
+      panSpeedController.onFinishChange(() => controls.panSpeed = config.panSpeed);
+      
+      // set control screenSpacePanning
+      let screenSpacePanningController = controlsFolder.add( config, 'screenSpacePanning' );
+      screenSpacePanningController.onFinishChange(() => controls.screenSpacePanning = config.screenSpacePanning);
 
       // set control staticMoving
-      // let staticMovingController = trackbackControlsFolder.add(
-      //   config,
-      //   "staticMoving"
-      // );
-      // staticMovingController.name("Static moving");
-      // staticMovingController.onFinishChange(function (staticMoving) {
-      //   trackballControls.staticMoving = staticMoving;
-      // });
+      // let staticMovingController = trackbackControlsFolder.add( config, "staticMoving" );
+      // staticMovingController.name( "Static moving" );
+      // staticMovingController.onFinishChange( () => trackballControls.staticMoving = staticMoving );
 
       // add a Plane folder
       let planeFolder = gui.addFolder( "Plane" );
-      planeFolder.open();
+      planeFolder.close();
 
       // set control planeSize
-      let planeSizeController = planeFolder
-        .add( config, "planeSize" )
-        .min( 1 )
-        .max( 100 )
-        .step( 1 );
+      let planeSizeController = planeFolder.add( config, "planeSize" ).min( 1 ).max( 100 ).step( 1 );
       planeSizeController.name( "Size" );
-      planeSizeController.onChange(function () {
-        // update the plane
-        updatePlane();
-      });
+      planeSizeController.onChange(() => updatePlane());
 
       // set control planeDivisions
-      let planeDivisions = planeFolder
-        .add( config, "planeDivisions" )
-        .min( 0 )
-        .max( 100 )
-        .step( 5 );
+      let planeDivisions = planeFolder.add( config, "planeDivisions" ).min( 0 ).max( 100 ).step( 5 );
       planeDivisions.name( "Divisions" );
-      planeDivisions.onChange(function () {
-        // update the plane
-        updatePlane();
-      });
+      planeDivisions.onChange(() => updatePlane());
 
       // add a Color folder
       let planeColorsFolder = planeFolder.addFolder( "Colors" );
 
       // set control planeColor
-      let planeColorController = planeColorsFolder.addColor(
-        config,
-        "planeColor"
-      );
+      let planeColorController = planeColorsFolder.addColor( config, "planeColor" );
       planeColorController.name( "Plane" );
-      planeColorController.onChange(function () {
-        // update the plane
-        updatePlane();
-      });
+      planeColorController.onChange(() => updatePlane());
 
       // set control planeColorCenterLine
-      let planeColorCenterLineController = planeColorsFolder.addColor(
-        config,
-        "planeColorCenterLine"
-      );
+      let planeColorCenterLineController = planeColorsFolder.addColor( config, "planeColorCenterLine" );
       planeColorCenterLineController.name( "Center line" );
-      planeColorCenterLineController.onChange(function () {
-        // update the plane
-        updatePlane();
-      });
+      planeColorCenterLineController.onChange(() => updatePlane());
+
+      // set control planeColorCenterLine
+      let planeColorGridController = planeColorsFolder.addColor( config, "planeColorGrid" );
+      planeColorGridController.name( "Grid line" );
+      planeColorGridController.onChange(() => updatePlane());
 
       // set control planeTransparent
-      let planeTransparentController = planeFolder.add(
-        config,
-        "planeTransparent"
-      );
+      let planeTransparentController = planeColorsFolder.add( config, "planeTransparent" );
       planeTransparentController.name( "Transparent" );
-      planeTransparentController.onChange(function ( transparent ) {
-        plane.children[1].material.transparent = transparent;
-      });
+      planeTransparentController.onChange(() => updatePlane());
 
       // set control planeOpacity
-      let planeOpacityController = planeFolder
-        .add( config, "planeOpacity" )
-        .min( 0 )
-        .max( 1 )
-        .step( 0.01 );
+      let planeOpacityController = planeColorsFolder.add( config, "planeOpacity" ).min( 0 ).max( 1 ).step( 0.01 );
       planeOpacityController.name( "Opacity" );
-      planeOpacityController.onChange(function ( opacity ) {
-        // update the plane
-        updatePlane();
-      });
+      planeOpacityController.onChange(() => updatePlane());
 
       // add a Joint folder
       let jointFolder = gui.addFolder( "Joints" );
-      jointFolder.open();
+
+      // set joints visible
+      let jointsVisibleController = jointFolder.add( config, 'jointsVisible' );
+      jointsVisibleController.name( "Visible" );
+      jointsVisibleController.onChange( () => setJointsVisible( config.jointsVisible ));
 
       // set control joint size
-      let jointSizeController = jointFolder
-        .add( config, "jointSize" )
-        .min( 0.01 )
-        .max( 1 )
-        .step( 0.01 );
+      let jointSizeController = jointFolder.add( config, "jointSize" ).min( 0.01 ).max( 1 ).step( 0.01 );
       jointSizeController.name( "Size" );
-      jointSizeController.onChange(function ( jointSize ) {
-        var joint;
+      jointSizeController.onChange( () => setJointSize() );
+      
+      // set view joint's label
+      let viewJointLabelController = jointFolder.add( config, 'viewJointLabel' );
+      viewJointLabelController.name( "Labels" );
+      viewJointLabelController.onChange( () => setViewJointLabel( config.viewJointLabel ) );
 
-        for ( var i = 0; i < joints.children.length; i++ ) {
-          joint = joints.children[i];
+      // add a Color folder
+      let jointColorFolder = jointFolder.addFolder( "Colors" );
 
-          joint.scale.x = jointSize;
-          joint.scale.y = jointSize;
-          joint.scale.z = jointSize;
-        }
-      });
-
-      let jointColorController = jointFolder.addColor( config, "jointColor" );
+      // set control joint color
+      let jointColorController = jointColorFolder.addColor( config, "jointColor" );
       jointColorController.name( "Color" );
-      jointColorController.onChange(function ( color ) {
-        jointMaterial.color = new THREE.Color( color );
-      });
+      jointColorController.onChange( () => setJointColor( config.jointColor ) );
+
+      // set transparent joint
+      let jointTransparentController = jointColorFolder.add( config, 'jointTransparent' );
+      jointTransparentController.name( "Transparent" );
+      jointTransparentController.onChange( () => setJointTransparent( config.jointTransparent ) );
+
+      // set opacity joint
+      let jointOpacityController = jointColorFolder.add( config, 'jointOpacity' ).min( 0 ).max( 1 ).step( 0.01 );
+      jointOpacityController.name( "jointOpacity" );
+      jointOpacityController.onChange( () => setJointOpacity( config.jointOpacity ));
 
       // add a Frame folder
       let frameFolder = gui.addFolder( "Frames" );
-      frameFolder.open();
+
+      // set joints visible
+      let framesVisibleController = frameFolder.add( config, 'framesVisible' );
+      framesVisibleController.name( "Visible" );
+      framesVisibleController.onChange( () => setFramesVisible( config.framesVisible ));
 
       // set the control frame size
-      let frameSizeController = frameFolder
-        .add( config, "frameSize" )
-        .min( 0.01 )
-        .max( 1 )
-        .step( 0.01 );
+      let frameSizeController = frameFolder.add( config, "frameSize" ).min( 0.01 ).max( 1 ).step( 0.01 );
       frameSizeController.name( "Size" );
-      frameSizeController.onChange(function ( frameSize ) {
-        var frame;
+      frameSizeController.onChange( () => setFrameSize() );
 
-        for ( var i = 0; i < frames.children.length; i++ ) {
-          frame = frames.children[i];
+      // set view frame's label
+      let viewFrameLabelController = frameFolder.add( config, 'viewFrameLabel' );
+      viewFrameLabelController.name( "Labels" );
+      viewFrameLabelController.onChange( () => setViewFrameLabel( config.viewFrameLabel ));
 
-          frame.scale.x = frameSize;
-          frame.scale.z = frameSize;
-        }
-      });
+      // add a Color folder
+      let frameColorFolder = frameFolder.addFolder( "Colors" );
 
-      let frameColorController = frameFolder.addColor( config, "frameColor" );
-      frameColorController.name( "Color" );
-      frameColorController.onChange(function ( color ) {
-        frameMaterial.color = new THREE.Color( color );
-      });
+      // set control frame color
+      let frameColorController = frameColorFolder.addColor( config, "frameColor" );
+      frameColorController.name( "Colors" );
+      frameColorController.onChange( () => setFrameColor( config.frameColor ) );
+
+      // set control frame transparent
+      let frameTransparentController = frameColorFolder.add( config, "frameTransparent" );
+      frameTransparentController.name( "Transparent" );
+      frameTransparentController.onChange( () => setFrameTransparent( config.frameTransparent ) );
+
+      // set control frame opcity
+      let frameOpacityController = frameColorFolder.add( config, "frameOpacity" ).min( 0 ).max( 1 ).step( 0.01 );
+      frameOpacityController.name( "Opacity" );
+      frameOpacityController.onChange( () => setFrameOpacity( config.frameOpacity ) );
     })
     .then(function() {
       render();
@@ -537,16 +407,17 @@ function init() {
 
 window.onload = init;
 
-function createControls() {
+function createControls( rotateSpeed, zoomSpeed, panSpeed, screenSpacePanning ) {
   // create the controls
 
   // create the controls
   var controls = new THREE.OrbitControls( camera, labelRenderer.domElement );
 
   // set the properties
-  controls.rotateSpeed = config.rotateSpeed;
-  controls.zoomSpeed = config.zoomSpeed;
-  controls.panSpeed = config.panSpeed;
+  controls.rotateSpeed = rotateSpeed;
+  controls.zoomSpeed = zoomSpeed;
+  controls.panSpeed = panSpeed;
+  controls.screenSpacePanning = screenSpacePanning;
   // controls.staticMoving = config.staticMoving;
 
   return controls;
@@ -573,8 +444,8 @@ function setCameraOrientation( axis ) {
     }
 
     // update the camera
-    camera.updateProjectionMatrix();
     camera.lookAt( lookAt );
+    camera.updateProjectionMatrix();
   }
 }
 
@@ -588,8 +459,8 @@ function setPlaneOrientation( axis ) {
         plane.rotation.y = 0.5 * Math.PI;
         break;
       case 'y':
-        plane.rotation.y = 0;
         plane.rotation.x = -0.5 * Math.PI;
+        plane.rotation.y = 0;
         break;
       case 'z':
         plane.rotation.x = 0;
@@ -614,11 +485,15 @@ export function setUpwardsAxis( axis ) {
       controls.dispose();
 
       // create the controls
-      controls = createControls();
+      controls = createControls(
+        config.rotateSpeed, 
+        config.zoomSpeed,
+        config.panSpeed,
+        config.screenSpacePanning
+      );
 
       // save the changes
       config.axisUpwards = axis;
-
       resolve();
     } else {
       reject(new Error("'" + axis + "' axis does not exist"));
@@ -628,35 +503,74 @@ export function setUpwardsAxis( axis ) {
   return promise;
 }
 
+export function setViewType( viewType ) {
+  // set view type
+  
+  var promise = new Promise( ( resolve, reject ) => {
+    let wireframeView = viewType == 'wireframe';
+    let extrudeView = viewType == 'extrude';
+
+    if ( wireframeView || extrudeView ) {
+      let wireFrame, extrudeFrame;
+
+      for (const frame of frames.children ) {
+        wireFrame = frame.getObjectByName( 'wireFrame' );
+        extrudeFrame = frame.getObjectByName( 'extrudeFrame' );
+
+        wireFrame.visible = wireframeView;
+        extrudeFrame.visible = extrudeView;
+      }
+      
+      resolve();
+    } else {
+      reject( new Error(viewType + " does not exits") );
+    }
+  });
+
+  return promise;
+}
+
 export function loadModel( filename ) {
   // load a model
 
   var promise = loadJSON( filename )
     .then(function ( json ) {
-      // delete joints
-      for ( let name of joints_name ) {
-        deleteJoint( name );
-      }
+
+      // delete joints label
+      for ( const joint of joints.children ) joint.remove( joint.getObjectByName( 'label' ) );
+
+      // delete frames label
+      for ( const frame of frames.children ) frame.remove( frame.getObjectByName( 'label' ) );
+
+      joints.children = [];
 
       // delete frames
-      for ( let name of frames_name ) {
-        deleteFrame( name );
-      }
+      frames.children = [];
+
+      // create model
+      model = createModel();
       
       // add joints
-      for ( var key in json.joints ) {
-        addJoint(
-          key,
-          json.joints[key].x,
-          json.joints[key].y,
-          json.joints[key].z
-        );
+      for ( const key in json.joints ) addJoint( key, json.joints[key].x, json.joints[key].y, json.joints[key].z );
+
+      for ( const key in json.materials ) addMaterial( key, json.materials[key].E, json.materials[key].G );
+      
+      // add section
+      for ( const key in json.sections ) {
+        let section = json.sections[key];
+
+        switch ( section.type ){
+          case "Section":
+            addSection( key );
+            break;
+          case "RectangularSection":
+            addRectangularSection( key, section.width, section.height );
+            break;
+        }
       }
       
       // add frames
-      for ( var key in json.frames ) {
-        addFrame( key, json.frames[key].j, json.frames[key].k );
-      }
+      for ( const key in json.frames ) addFrame( key, json.frames[key].j, json.frames[key].k, json.frames[key].material, json.frames[key].section );
 
       return;
     })
@@ -667,86 +581,110 @@ export function loadModel( filename ) {
   return promise;
 }
 
-export function addFrame( name, j, k ) {
+export function addFrame( name, j, k, material, section ) {
   // add a frame
-
+  
   var promise = new Promise( ( resolve, reject ) => {  
     // only strings accepted as name
     name = name.toString();
+
     j = j.toString();
     k = k.toString();
     
+    material = material.toString();
+    section = section.toString();
+
     // check if frame's name of frame's joints already exits
-    if ( frames_name.has( name ) || frames_joints.some(jk => jointsEqual(jk, [j, k])) ) {
-      if ( frames_name.has( name ) ) {
-        reject( new Error("frame's name '" + name + "' already exits") );
-      } else {
-        reject( new Error("frame's joints [" + j + ", " + k + "] already taked") );
-      }
-    } else {
-      // get frame's joints
-      var joint_j = joints.getObjectByName( j );
-      var joint_k = joints.getObjectByName( k );
+    if ( model.frames.hasOwnProperty( name ) ) reject( new Error("frame's name '" + name + "' already exits") );
+    if ( Object.values( model.frames ).some( frame => frame.j == j && frame.k == k ) ) reject( new Error("frame's joints [" + j + ", " + k + "] already taked") );
+
+    // check if joints exits
+    if ( !model.joints.hasOwnProperty( j ) ) reject( new Error("joint's '" + j + "' does not exits") );
+    if ( !model.joints.hasOwnProperty( k ) ) reject( new Error("joint's '" + k + "' does not exits") );
     
-      if ( joint_j && joint_k ) {
-        // get vector director
-        var vector = new THREE.Vector3(
-          joint_k.position.x - joint_j.position.x,
-          joint_k.position.y - joint_j.position.y,
-          joint_k.position.z - joint_j.position.z
-        );
-          
-        // 'x' axis (?)
-        var axis = new THREE.Vector3( 0, 1, 0 );
+    // add frame to model
+    model.frames[name] = { j: j, k: k, material: material, section: section };
+
+    // get frame's joints
+    j = joints.getObjectByName( j );
+    k = joints.getObjectByName( k );
+
+    // get local axis
+    var x_local =  k.position.clone().sub( j.position );
+
+    // create frame
+    var frame = createFrame( x_local.length(), model.frames[name].section );
+
+    // set name
+    frame.name = name;
+
+    // set material
+    // frame.structural_material = structural_material;
+
+    // set section
+    // frame.section = section;
+
+    // add axes
+    // var axes = new THREE.AxesHelper();
+    // frame.add( axes );
+    // axes.position.set(0, 0, length / 2);
+
+    // set position
+    frame.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0 ), x_local.clone().normalize() );
+    frame.position.copy( x_local.clone().multiplyScalar(0.5) );
+    frame.position.add( j.position );
+
+    // add label
+    const label = document.createElement( 'div' );
+    label.classList.add( 'frame' );
+    label.textContent = name;
+    var frameLabel = new THREE.CSS2DObject( label );
+    frameLabel.name = 'label';
+    frameLabel.visible = config.viewFrameLabel;
+    frame.add( frameLabel );
+
+    // add frame's joints info
+    // frame.j = j;
+    // frame.k = k;
+    // frame.joints = [j, k];
     
-        // create frame
-        var frame = createFrame( config.frameSize, vector.length() );
+    // add frame to scene
+    frames.add( frame );
 
-        // set name
-        frame.name = name;
+    // track frame's name
+    // frames_name.add(name);
     
-        // set position
-        frame.quaternion.setFromUnitVectors( axis, vector.clone().normalize() );
-        frame.position.copy( vector.clone().multiplyScalar(0.5) );
-        frame.position.x += joint_j.position.x;
-        frame.position.y += joint_j.position.y;
-        frame.position.z += joint_j.position.z;
-
-        // add label
-        const label = document.createElement( 'div' );
-        label.classList.add( 'frame' );
-        label.textContent = name;
-        var frameLabel = new THREE.CSS2DObject( label );
-        frameLabel.position.set(0, 0, 10);
-        frame.add( frameLabel );
-
-        // add frame's joints info
-        frame.joints = [j, k];
-        
-        // add frame to scene
-        frames.add( frame );
-
-        // track frame's name
-        frames_name.add(name);
-        
-        // track frame's joints
-        frames_joints.push( [j, k] );
-        
-        resolve();
-      } else {  
-        if ( joint_j ) {
-          reject( new Error("joint's '" + k + "' does not exits") );
-        } else {
-          reject( new Error("joint's '" + j + "' does not exits") );
-        }
-      }
-    }
+    // track frame's joints
+    // frames_joints.push( [j, k] );
+  
+    resolve();
   });
 
   return promise;
 }
 
-export function addRectangularSection( name, widht, height ) {
+export function addSection( name ) {
+  // add a section
+
+  var promise = new Promise( ( resolve, reject ) => {
+    // only strings accepted as name
+    name = name.toString();
+
+    // check if section's name already exits
+    if ( model.sections.hasOwnProperty( name ) ) reject( new Error( "Section's name '" + name + "' already exits" ) );
+
+    // add section to model
+    model.sections[name] = { type: "Section" };
+    // create section
+    sections[name] = createSection();
+
+    resolve();
+  });
+
+  return promise;
+}
+
+export function addRectangularSection( name, width, height ) {
   // add a rectangular section
 
   var promise = new Promise( ( resolve, reject ) => {
@@ -754,20 +692,14 @@ export function addRectangularSection( name, widht, height ) {
     name = name.toString();
 
     // check if section's name already exits
-    if ( sections.hasOwnProperty( name ) ) {
-      reject( new Error( "section's name '" + name + "' already exits" ) );
-    } else {
-      // create rectangular section
-      var rectangularSection = createRectangularSection( widht, height );
+    if ( model.sections.hasOwnProperty( name ) ) reject( new Error( "section's name '" + name + "' already exits" ) );
+    
+    // add section to model
+    model.sections[name] = { type: "RectangularSection", width: width, height: height };
+    // create rectangular section
+    sections[name] = createRectangularSection( width, height );
 
-      // set name
-      rectangularSection.name = name;
-
-      // track rectangular section
-      sections[name] = rectangularSection;
-
-      resolve();
-    }
+    resolve();
   });
 
   return promise;
@@ -781,20 +713,12 @@ export function addMaterial( name, e, g ) {
     name = name.toString();
 
     // check if material's name already exits
-    if ( materials.hasOwnProperty( name ) ) {
-      reject( new Error( "material's name '" + name + "' already exist" ) );
-    } else {
-      // create material
-      var material = createMaterial( e, g );
+    if ( materials.hasOwnProperty( name ) ) reject( new Error( "material's name '" + name + "' already exist" ) );
 
-      // set name
-      material.name = name;
+    // add material to model
+    model.materials[name] = { "E": e, "G": g };
 
-      // track material
-      materials[name] = material;
-
-      resolve();
-    }
+    resolve();
   });
 
   return promise;
@@ -808,45 +732,37 @@ export function addJoint( name, x, y, z ) {
     name = name.toString();
     
     // check if joint's name or joint's coordinate already exits
-    if ( joints_name.has(name) || joints_coordinate.some( xyz => coordinatesEqual( xyz, [x, y, z] ) ) ) {
-      if ( joints_name.has(name) ) {
-        reject( new Error("joint's name '" + name + "' already exist" ));
-      } else {
-        reject( new Error("joint's coordinate [" + x + ", " + y + ", " + z + "] already exist" ));
-      }
-    } else {
-      // create joint
-      var joint = createJoint( config.jointSize );
+    if ( model.joints.hasOwnProperty( name ) ) reject( new Error("joint's name '" + name + "' already exist" ));
+    if ( Object.values( model.joints ).some( joint => joint.x == x && joint.y == y && joint.z == z ) ) reject( new Error("joint's coordinate [" + x + ", " + y + ", " + z + "] already exist" )); ; 
+    
+    // add joint to model
+    model.joints[name] = { x: x, y: y, z: z };
+  
+    // create joint
+    var joint = createJoint( config.jointSize );
 
-      // set name
-      joint.name = name;
+    // set name
+    joint.name = name;
 
-      // set position
-      joint.position.x = x;
-      joint.position.y = y;
-      joint.position.z = z;
-      
-      // add label
-      const label = document.createElement( 'div' );
-      label.className = 'joint';
-      label.textContent = name;
-      var jointLabel = new THREE.CSS2DObject( label );
-      jointLabel.position.set(0, 1, 1);
-      joint.add( jointLabel );
-      joint.label = label;
+    // set position
+    joint.position.set( x, y, z );
 
-      // add joint to scene
-      joints.add( joint );
+    // add label
+    const label = document.createElement( 'div' );
+    label.className = 'joint';
+    label.textContent = name;
+    var jointLabel = new THREE.CSS2DObject( label );
+    jointLabel.name = 'label';
+    jointLabel.visible = config.viewJointLabel;
+    jointLabel.position.set( 1, 1, 1 );
+    joint.add( jointLabel );
+    // joint.label = label;
+    
+    // add joint to scene
+    joints.add( joint );
 
-      // track joint's name
-      joints_name.add( name );
-
-      // track joint's coordinate
-      joints_coordinate.push( [x, y, z] );
-
-      resolve();
-    }
-  })
+    resolve();
+  });
 
   return promise;
 }
@@ -951,13 +867,12 @@ function deleteFrame( name ) {
   let frame = frames.getObjectByName( name );
 
   // remove the label
-  frame.remove(frame.children[0]);
+  for ( let child of frame.children ) {
+    frame.remove( child );
+  }
   
   // remove frame of the scene
   frames.remove( frame );
-  
-  // remove frame's name
-  frames_name.delete( name );
   
   // remove frame's joints
   let frame_joints = frame.joints;
@@ -984,48 +899,80 @@ function deleteJoint( name ) {
   joints_coordinate = joints_coordinate.filter( xyz => !coordinatesEqual( xyz, joint_coordinate ) );
 }
 
-function createFrame( size, length ) {
+function createFrame( length, section ) {
   // create a frame
 
-  var frameGeometry = new THREE.CylinderGeometry( 1, 1, length );
+  var parent = new THREE.Group();
+  var extrudeSettings = { depth: length, bevelEnabled: false };
 
-  var frame = new THREE.Mesh( frameGeometry, frameMaterial ); 
-  frame.scale.x = size;
-  frame.scale.z = size;
+  // create wire frame
+  var wireFrameGoemetry = new THREE.ExtrudeBufferGeometry( wireFrameShape, extrudeSettings );
+  var wireFrame = new THREE.Mesh( wireFrameGoemetry, frameMaterial );
+  wireFrame.scale.set( config.frameSize, config.frameSize, 1 );
+  wireFrame.name = 'wireFrame';
 
-  return frame;
+  // create extrude frame
+  var extrudeFrameGeometry = new THREE.ExtrudeBufferGeometry( sections[section], extrudeSettings );
+  var extrudeFrame = new THREE.Mesh( extrudeFrameGeometry, frameMaterial );
+  extrudeFrame.name = 'extrudeFrame';
+
+  if ( model.sections[section].type == 'Section' ) {
+    // set frame size
+    extrudeFrame.scale.set( config.frameSize, config.frameSize, 1 );
+  } else {
+    // create edges
+    var frameEdgesGeomtry = new THREE.EdgesGeometry( extrudeFrameGeometry );
+    var frameEdges = new THREE.LineSegments( frameEdgesGeomtry, new THREE.LineBasicMaterial( { color: 0x000000 } ) );
+    frameEdges.name = 'edges';
+
+    // add edges to frame
+    extrudeFrame.add( frameEdges );
+  }
+
+  // set visibility
+  if ( config.viewType == 'wireframe' ) extrudeFrame.visible = false;
+  if ( config.viewType == 'extrude' ) wireFrame.visible = false;
+
+  // x local along frame
+  var quaternion = new THREE.Quaternion().setFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), 2 * Math.PI / 3 );
+  extrudeFrame.quaternion.copy( quaternion );
+  wireFrame.quaternion.copy( quaternion );
+
+  // middle's frame at origin
+  var position = new THREE.Vector3( -length / 2, 0, 0 )
+  extrudeFrame.position.copy( position );
+  wireFrame.position.copy( position );
+
+  // add wire frame and extrudeFrameto parent
+  parent.add( wireFrame );
+  parent.add( extrudeFrame );
+
+  return parent;
+}
+
+function createSection() {
+  // create a section
+
+  return wireFrameShape;
 }
 
 function createRectangularSection( widht, height ) {
-  // create a rectangular
+  // create a rectangular section
 
   var rectangularSection = new THREE.Shape()
     .moveTo(  widht / 2, -height / 2 )
     .lineTo(  widht / 2,  height / 2 )
     .lineTo( -widht / 2,  height / 2 )
     .lineTo( -widht / 2, -height / 2 );
-
+  
   return rectangularSection;
-}
-
-function createMaterial( e, g ) {
-   // create a material
-
-   var material = {};
-
-   material['e'] = e;
-   material['g'] = g;
-
-   return material;
 }
 
 function createJoint( size ) {
   // create a joint
 
   var joint = new THREE.Mesh( jointGeometry, jointMaterial );
-  joint.scale.x = size;
-  joint.scale.y = size;
-  joint.scale.z = size;
+  joint.scale.setScalar( size );
   
   return joint;
 }
@@ -1037,7 +984,15 @@ function updatePlane() {
   scene.remove( plane );
 
   // create the plane
-  plane = createPlane();
+  plane = createPlane( 
+    config.planeSize,
+    config.planeDivisions, 
+    config.planeColor,
+    config.planeColorCenterLine,
+    config.planeColorGrid,
+    config.planeTransparent,
+    config.planeOpacity
+  );
   // set the orientation
   setPlaneOrientation( config.axisUpwards );
 
@@ -1045,35 +1000,32 @@ function updatePlane() {
   scene.add( plane );
 }
 
-function createPlane() {
+function createPlane( size, divisions, colorPlane, colorCenterLine, colorGrid, transparent, opacity ) {
   // create the plane
 
   // create the plane obj
-  plane = new THREE.Object3D();
+  plane = new THREE.Group();
+
+  // colors
+  colorCenterLine = new THREE.Color( colorCenterLine );
+  colorGrid = new THREE.Color( colorGrid );
 
   // create the grid
-  var grid = new THREE.GridHelper(
-    config.planeSize,
-    config.planeDivisions,
-    new THREE.Color(config.planeColorCenterLine),
-    new THREE.Color(config.planeColorGrid)
-  );
-
+  var grid = new THREE.GridHelper( size, divisions, colorCenterLine, colorGrid );
   // set the rotation
   grid.rotation.x = 0.5 * Math.PI;
+
   // add the grid to the plane
   plane.add( grid );
+
   // add the rectangle to the plane
   plane.add(
     new THREE.Mesh(
-      new THREE.PlaneBufferGeometry(
-        config.planeSize,
-        config.planeSize
-      ),
+      new THREE.PlaneBufferGeometry( size, size ),
       new THREE.MeshBasicMaterial({
-        color: config.planeColor,
-        transparent: config.planeTransparent,
-        opacity: config.planeOpacity,
+        color: colorPlane,
+        transparent: transparent,
+        opacity: opacity,
         side: THREE.DoubleSide,
       })
     )
@@ -1168,7 +1120,128 @@ function setJointsLabelDisplay( display ) {
   }
 }
 
+function setViewFrameLabel( visible ) {
+  // set view joint's label
+
+  var label;
+  
+  for ( let frame of frames.children ) {
+    label = frame.getObjectByName( "label" );
+
+    label.visible = visible;
+  }
+}
+
+function setViewJointLabel( visible ) {
+  // set view joint's label
+  
+  for ( let joint of joints.children ) {
+    var label = joint.getObjectByName( "label" );
+
+    label.visible = visible;
+  }
+}
+
+function setFrameColor( color ) {
+  // set frame's color
+
+  frameMaterial.color = new THREE.Color( color );
+}
+
+function setFrameTransparent( transparent ) {
+  // set frame's transparent
+
+  frameMaterial.transparent = transparent;
+}
+
+function setFrameOpacity( opacity ) {
+  // set frame's opacity
+
+  frameMaterial.opacity = opacity;
+}
+
+function setJointColor( color ) {
+  // set joint's color
+
+  jointMaterial.color = new THREE.Color( color );
+}
+
+function setJointTransparent( transparent ) {
+  // set joint's transparent
+
+  jointMaterial.transparent = transparent;
+}
+
+function setJointOpacity( opacity ) {
+  // set joint's opacity
+
+  jointMaterial.opacity = opacity;
+}
+
+function setFrameSize() {
+  // set frame's size
+
+  let scale = new THREE.Vector3( config.frameSize, config.frameSize, 1 );
+  let frame, wireFrame, extrudeFrame;
+
+  for ( const name in model.frames ) {
+    frame = frames.getObjectByName( name );
+    wireFrame = frame.getObjectByName( 'wireFrame' );
+    extrudeFrame = frame.getObjectByName( 'extrudeFrame');
+    
+    wireFrame.scale.copy( scale );
+    if ( model.sections[model.frames[name].section].type == 'Section') extrudeFrame.scale.copy( scale );
+  }
+
+}
+
+function setJointSize() {
+  // set joint's size
+
+  for ( const joint of joints.children ) joint.scale.setScalar( config.jointSize );
+}
+
+function setCameraPosition( x, y, z ) {
+  // set camera's position
+
+  // save the lookAt vector
+  var lookAt = new THREE.Vector3();
+  camera.getWorldDirection( lookAt );
+
+  // set the camera's position
+  camera.position.set( x, y, z );
+
+  // set the lookAt
+  camera.lookAt( lookAt );
+}
+
+function setBackgroundColor( topColor, bottomColor ) {
+  // set background color
+
+  canvas.style.backgroundColor = topColor;
+  canvas.style.backgroundImage = "linear-gradient(" + topColor + ", " + bottomColor + ")";
+}
+
+function setFramesVisible ( visible ) {
+  // set frames's visible
+
+  frames.visible = visible;
+}
+
+function setJointsVisible ( visible ) {
+  // set joint's visible
+
+  joints.visible = visible;
+}
+
+function createModel() {
+  // create model
+
+  return { joints: {}, materials: {}, sections: {}, frames: {} };
+}
+
 function render() {
+  // render the scene
   
   // call the render function
   requestAnimationFrame( render );
@@ -1182,6 +1255,8 @@ function render() {
 }
 
 function initStats() {
+  // init stats
+  
   var stats = new Stats();
 
   document.getElementById( "Stats-output" ).appendChild( stats.domElement );
@@ -1190,6 +1265,8 @@ function initStats() {
 }
 
 function loadJSON(json) {
+  // load json
+
   var promise = fetch( json + "?nocache=" + new Date().getTime() )
     .then(function ( response ) {
       if ( response.status == 404 ) {

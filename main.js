@@ -46,6 +46,14 @@ terminal.add_function('addJoint', {
   }
 });
 
+// setViewType
+terminal.add_function('setViewType', {
+  func: FEM.setViewType,
+  successful: function ( viewType ) {
+    return viewType + " setted";
+  }
+});
+
 // showJointsLabel
 terminal.add_function('showJointsLabel', {
   func: FEM.showJointsLabel,
@@ -98,7 +106,7 @@ terminal.add_function("loadModel", {
 // set events
 canvas.addEventListener("mousedown", terminal.remove_focus);
 
-document.addEventListener("keypress", terminal.give_focus);
+// document.addEventListener("keypress", terminal.give_focus);
 output.addEventListener("mouseover", terminal.show_message);
 output.addEventListener("mouseout", terminal.hide_message);
 
