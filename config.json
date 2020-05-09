@@ -17,13 +17,19 @@
         "zoomSpeed": 1.2,
         "panSpeed": 0.3,
         "screenSpacePanning": true,
-        "planeSize": 10,
-        "planeDivisions": 10,
-        "planeColor": "#000000",
-        "planeColorCenterLine": "#ff0000",
-        "planeColorGrid": "#000000",
-        "planeTransparent": true,
-        "planeOpacity": 0.5,
+        "plane": {
+          "size": 10,
+          "divisions": 10,
+          "color": "#000000",
+          "transparent": true,
+          "opacity": 0.5,
+          "centerLine": {
+            "color": "#ff0000"
+          },
+          "grid": {
+            "color": "#000000"
+          }
+        },
         "jointSize": 0.1,
         "jointColor": "#00FF00",
         "jointTransparent": true,

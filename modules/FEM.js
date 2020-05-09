@@ -1,14 +1,14 @@
-// global variables
+ // global variables
 
 //
 var scene;
 var camera;
 var controls;
-var renderer, labelRenderer;
+var webGLRenderer, CSS2DRenderer;
 
 //
-var canvas = document.getElementById( "canvas" );
-var canvasLabels = document.getElementById( "labels" );
+var canvasWebGLRenderer = document.getElementById( "canvas" );
+var canvasCSS2DRenderer = document.getElementById( "labels" );
 
 //
 var stats, gui;
@@ -16,7 +16,7 @@ var stats, gui;
 //
 var config;
 
-// movel
+//
 var model;
 
 //
@@ -24,19 +24,11 @@ var plane;
 
 //
 var joints, jointMaterial, jointGeometry;
-
 var frames, frameMaterial, wireFrameShape;
-
-//
-var joints_name = new Set();
-var joints_coordinate = [];
 
 //
 var materials = {};
 var sections = {};
-
-var frames_name = new Set();
-var frames_joints = [];
 
 function init() {
   // load the json config
@@ -60,10 +52,11 @@ function init() {
 
       // show axes in the screen
       var axes = new THREE.AxesHelper();
+      axes.name = 'axes';
       scene.add( axes );
       
       // create the plane
-      plane = createPlane( config.planeSize, config.planeDivisions, config.planeColor, config.planeColorCenterLine, config.planeColorGrid, config.planeTransparent, config.planeOpacity );
+      plane = createPlane( config.plane.size, config.plane.divisions, config.plane.color, config.plane.transparent, config.plane.opacity, config.plane.centerLine.color, config.plane.grid.color );
       // set orientation
       setPlaneOrientation( config.axisUpwards );
  
@@ -97,18 +90,18 @@ function init() {
       stats = initStats();
 
       // create the WebGL renderer
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+      webGLRenderer = new THREE.WebGLRenderer({ canvas: canvasWebGLRenderer, alpha: true });
       // set pixel ratio
-      renderer.setPixelRatio( window.devicePixelRatio );
+      webGLRenderer.setPixelRatio( window.devicePixelRatio );
       // set the size
-      renderer.setSize( canvas.clientWidth, canvas.clientHeight );
+      webGLRenderer.setSize( canvasWebGLRenderer.clientWidth, canvasWebGLRenderer.clientHeight );
 
       // create the CSS2D renderer
-      labelRenderer = new THREE.CSS2DRenderer();
-      labelRenderer.setSize( canvasLabels.clientWidth, canvasLabels.clientHeight );
-      labelRenderer.domElement.style.position = 'absolute';
-      labelRenderer.domElement.style.top = 0;
-      canvasLabels.appendChild( labelRenderer.domElement );
+      CSS2DRenderer = new THREE.CSS2DRenderer();
+      CSS2DRenderer.setSize( canvasCSS2DRenderer.clientWidth, canvasCSS2DRenderer.clientHeight );
+      CSS2DRenderer.domElement.style.position = 'absolute';
+      CSS2DRenderer.domElement.style.top = 0;
+      canvasCSS2DRenderer.appendChild( CSS2DRenderer.domElement );
 
       // create the controls
       controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
@@ -186,7 +179,7 @@ function init() {
       cameraPosition_zController.onChange(() => setCameraPosition( config.cameraPosition_x, config.cameraPosition_y, config.cameraPosition_z ));
 
       // set control axisUpwards
-      let axisUpwardsController = cameraFolder.add( config, "axisUpwards" ).options( ["x", "y", "z"] ).listen();
+      let axisUpwardsController = cameraFolder.add( config, "axisUpwards" ).options( ["x", "y", "z"] );
       axisUpwardsController.name( "Upwards axis" );
       axisUpwardsController.onChange(() => setUpwardsAxis( config.axisUpwards ));
 
@@ -219,45 +212,41 @@ function init() {
 
       // add a Plane folder
       let planeFolder = gui.addFolder( "Plane" );
-      planeFolder.close();
+      planeFolder.close()
 
       // set control planeSize
-      let planeSizeController = planeFolder.add( config, "planeSize" ).min( 1 ).max( 100 ).step( 1 );
-      planeSizeController.name( "Size" );
-      planeSizeController.onChange(() => updatePlane());
+      let planeSizeController = planeFolder.add( config.plane, 'size' ).min( 1 ).max( 100 ).step( 1 );
+      planeSizeController.onChange( ( size ) => setPlaneSize( size ) );
 
       // set control planeDivisions
-      let planeDivisions = planeFolder.add( config, "planeDivisions" ).min( 0 ).max( 100 ).step( 5 );
-      planeDivisions.name( "Divisions" );
-      planeDivisions.onChange(() => updatePlane());
-
-      // add a Color folder
-      let planeColorsFolder = planeFolder.addFolder( "Colors" );
+      let planeDivisions = planeFolder.add( config.plane, 'divisions' ).min( 0 ).max( 100 ).step( 5 );
+      planeDivisions.onChange( ( divisions ) => setPlaneDivisions( divisions ) );
 
       // set control planeColor
-      let planeColorController = planeColorsFolder.addColor( config, "planeColor" );
-      planeColorController.name( "Plane" );
-      planeColorController.onChange(() => updatePlane());
-
-      // set control planeColorCenterLine
-      let planeColorCenterLineController = planeColorsFolder.addColor( config, "planeColorCenterLine" );
-      planeColorCenterLineController.name( "Center line" );
-      planeColorCenterLineController.onChange(() => updatePlane());
-
-      // set control planeColorCenterLine
-      let planeColorGridController = planeColorsFolder.addColor( config, "planeColorGrid" );
-      planeColorGridController.name( "Grid line" );
-      planeColorGridController.onChange(() => updatePlane());
-
+      let planeColorController = planeFolder.addColor( config.plane, 'color' );
+      planeColorController.onChange( ( color ) => setPlaneColor( color ) );
+      
       // set control planeTransparent
-      let planeTransparentController = planeColorsFolder.add( config, "planeTransparent" );
-      planeTransparentController.name( "Transparent" );
-      planeTransparentController.onChange(() => updatePlane());
+      let planeTransparentController = planeFolder.add( config.plane, 'transparent' );
+      planeTransparentController.onChange( ( transparent ) => setPlaneTransparent( transparent ));
 
       // set control planeOpacity
-      let planeOpacityController = planeColorsFolder.add( config, "planeOpacity" ).min( 0 ).max( 1 ).step( 0.01 );
-      planeOpacityController.name( "Opacity" );
-      planeOpacityController.onChange(() => updatePlane());
+      let planeOpacityController = planeFolder.add( config.plane, "opacity" ).min( 0 ).max( 1 ).step( 0.01 );
+      planeOpacityController.onChange( ( opacity ) => setPlaneOpacity( opacity ));
+
+      // add a centerLine folder
+      let centerLineFolder = planeFolder.addFolder( 'center line');
+
+      // set control planeColorCenterLine
+      let planeColorCenterLineController = centerLineFolder.addColor( config.plane.centerLine, 'color' );
+      planeColorCenterLineController.onChange( ( color ) => setCenterLineColor( color ));
+
+      // add a grid folder
+      let gridFolder = planeFolder.addFolder( 'grid' );
+
+      // set control planeColorCenterLine
+      let planeColorGridController = gridFolder.addColor( config.plane.grid, "color" );
+      planeColorGridController.onChange( ( color ) => setGridColor( color ));
 
       // add a Joint folder
       let jointFolder = gui.addFolder( "Joints" );
@@ -411,7 +400,7 @@ function createControls( rotateSpeed, zoomSpeed, panSpeed, screenSpacePanning ) 
   // create the controls
 
   // create the controls
-  var controls = new THREE.OrbitControls( camera, labelRenderer.domElement );
+  var controls = new THREE.OrbitControls( camera, CSS2DRenderer.domElement );
 
   // set the properties
   controls.rotateSpeed = rotateSpeed;
@@ -829,12 +818,9 @@ function isJointInUse( name ) {
   // check if joint is in use
   let count = 0;
   
-  for ( let frame_joints of frames_joints ) {
-    for ( let joint of frame_joints ) {
-      if ( joint == name ) {
-        count += 1;
-      }
-    }
+  for ( let frame of model.frames ) {
+    if ( frame.J == name ) count += 1;
+    if ( frame.k == name ) count += 1;
   }
   
   return count;
@@ -844,7 +830,7 @@ export function removeJoint( name ) {
   // remove a joint
   
   var promise = new Promise( ( resolve, reject ) => {
-    if ( joints_name.has( name ) && (isJointInUse( name ) > 1) ) {
+    if ( model.joints.hasOwnProperty( name ) && (isJointInUse( name ) > 1) ) {
       deleteJoint( name );
       
       resolve();
@@ -883,20 +869,16 @@ function deleteJoint( name ) {
   // delete a joint
 
   // get the joint
-  let joint = joints.getObjectByName(name);
+  let joint = joints.getObjectByName( name );
 
   // remove the label
-  joint.remove(joint.children[0]);
+  joint.remove( joint.getObjectByName( 'label' ) );
 
   // remove joint of the scene
-  joints.remove(joint);
-
-  // remove joint's name
-  joints_name.delete(name);
-
-  // remove joint's coordinate
-  let joint_coordinate = [joint.position.x, joint.position.y, joint.position.z];
-  joints_coordinate = joints_coordinate.filter( xyz => !coordinatesEqual( xyz, joint_coordinate ) );
+  joints.remove( joint );
+  
+  // remove joint from model
+  delete model.joints[name];
 }
 
 function createFrame( length, section ) {
@@ -1000,38 +982,95 @@ function updatePlane() {
   scene.add( plane );
 }
 
-function createPlane( size, divisions, colorPlane, colorCenterLine, colorGrid, transparent, opacity ) {
+function createPlane( size, divisions, color, transparent, opacity, colorCenterLine, colorGrid ) {
   // create the plane
 
-  // create the plane obj
-  plane = new THREE.Group();
+  // create the parent
+  var parent = new THREE.Group();
 
-  // colors
-  colorCenterLine = new THREE.Color( colorCenterLine );
-  colorGrid = new THREE.Color( colorGrid );
+  // add the grid to the parent
+  parent.add( createGrid( divisions, colorCenterLine, colorGrid ) );
+  
+  // create colorCenterLine
+  var planeGometry = new THREE.PlaneBufferGeometry();
+  var planeMaterial = new THREE.MeshBasicMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } );
+  var plane = new THREE.Mesh( planeGometry, planeMaterial );
+  plane.name = 'plane';
+  
+  // add the plane to the parent
+  parent.add( plane );
+  
+  // set size
+  parent.scale.setScalar( size );
+  
+  return parent;
+}
+
+function createGrid( divisions, colorCenterLine, colorGrid ) {
+  // create a grid
 
   // create the grid
-  var grid = new THREE.GridHelper( size, divisions, colorCenterLine, colorGrid );
+  var grid = new THREE.GridHelper( 1, divisions, colorCenterLine, colorGrid );
+  // set the name
+  grid.name = 'grid';
   // set the rotation
   grid.rotation.x = 0.5 * Math.PI;
 
-  // add the grid to the plane
-  plane.add( grid );
+  return grid;
+}
 
-  // add the rectangle to the plane
-  plane.add(
-    new THREE.Mesh(
-      new THREE.PlaneBufferGeometry( size, size ),
-      new THREE.MeshBasicMaterial({
-        color: colorPlane,
-        transparent: transparent,
-        opacity: opacity,
-        side: THREE.DoubleSide,
-      })
-    )
-  );
+function setPlaneSize( size ) {
+  // set plane's size
 
-  return plane;
+  plane.scale.setScalar( size );
+}
+
+function setPlaneDivisions( divisions ) {
+  // set plane's divisions
+
+  // remove actual grid
+  plane.remove( plane.getObjectByName( 'grid' ) );
+  
+  // add new grid
+  plane.add( createGrid( divisions, config.plane.centerLine.color, config.plane.grid.color ) );
+}
+
+function setPlaneColor( color ) {
+  // set plane color
+
+  plane.getObjectByName( 'plane' ).material.color = new THREE.Color( color );
+}
+
+function setPlaneTransparent( transparent ) {
+  // set plane transparent
+
+  plane.getObjectByName( 'plane' ).material.transparent = transparent;
+}
+
+function setPlaneOpacity( opacity ) {
+  // set plane opacity
+
+  plane.getObjectByName( 'plane' ).material.opacity = opacity;
+}
+
+function setCenterLineColor( color ) {
+  // set center line color
+
+  // remove actual grid
+  plane.remove( plane.getObjectByName( 'grid' ) );
+
+  // add new grid
+  plane.add( createGrid( config.plane.divisions, color, config.plane.grid.color ) ); 
+}
+
+function setGridColor( color ) {
+  // set grid color
+
+  // remove actual grid
+  plane.remove( plane.getObjectByName( 'grid' ) );
+
+  // add new grid
+  plane.add( createGrid( config.plane.divisions, config.plane.centerLine.color, color ) ); 
 }
 
 function listsEqual( a, b ) {
@@ -1218,8 +1257,8 @@ function setCameraPosition( x, y, z ) {
 function setBackgroundColor( topColor, bottomColor ) {
   // set background color
 
-  canvas.style.backgroundColor = topColor;
-  canvas.style.backgroundImage = "linear-gradient(" + topColor + ", " + bottomColor + ")";
+  canvasWebGLRenderer.style.backgroundColor = topColor;
+  canvasWebGLRenderer.style.backgroundImage = "linear-gradient(" + topColor + ", " + bottomColor + ")";
 }
 
 function setFramesVisible ( visible ) {
@@ -1250,8 +1289,8 @@ function render() {
   stats.update();
 
   // update the scene
-  renderer.render( scene, camera );
-  labelRenderer.render( scene, camera );
+  webGLRenderer.render( scene, camera );
+  CSS2DRenderer.render( scene, camera );
 }
 
 function initStats() {
@@ -1286,10 +1325,10 @@ function loadJSON(json) {
 }
 
 function onResize() {
-  camera.aspect = canvas.clientWidth / canvas.clientHeight;
+  camera.aspect = canvasWebGLRenderer.clientWidth / canvasWebGLRenderer.clientHeight;
 
   camera.updateProjectionMatrix();
-  renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+  webGLRenderer.setSize(canvasWebGLRenderer.clientWidth, canvasWebGLRenderer.clientHeight);
 }
 
 window.addEventListener("resize", onResize, false);
