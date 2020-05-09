@@ -2,7 +2,7 @@
 
 //
 var scene;
-var camera;
+var camera, orthographicCamera, perspectiveCamera;
 var controls;
 var webGLRenderer, CSS2DRenderer;
 
@@ -44,9 +44,16 @@ function init() {
       scene = new THREE.Scene();
 
       // create the camera
-      camera = new THREE.PerspectiveCamera( config.perspectiveCameraFOV, window.innerWidth / window.innerHeight, config.perspectiveCameraNear, config.perspectiveCameraFar );
-      // set 'position'
+      perspectiveCamera = createPerpectiveCamera( config.perspectiveCameraFOV, config.perspectiveCameraNear, config.perspectiveCameraFar );
+      orthographicCamera = createOrthographicCamera( config.orthographicCameraNear, config.orthographicCameraFar )
+
+      camera = config.cameraType == 'perspective' ?  perspectiveCamera: orthographicCamera;
+
+      // set the position
       camera.position.set( config.cameraPosition_x, config.cameraPosition_y, config.cameraPosition_z );
+      // set the look at
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+
       // set orientation
       setCameraOrientation( config.axisUpwards );
 
@@ -137,29 +144,191 @@ function init() {
       bottomBackgroundColorController.onChange(() => setBackgroundColor( config.topBackgroundColor, config.bottomBackgroundColor ));
 
       // add a Camera folder
-      let cameraFolder = gui.addFolder( "Camera" );
+      let cameraFolder = gui.addFolder("Camera");
+      cameraFolder.open();
 
-      // set control FOV
-      let cameraFOVController = cameraFolder.add( config, "cameraFOV" ).min( 45 ).max( 90 ).step( 1 );
-      cameraFOVController.name( "FOV" );
-      cameraFOVController.onChange(() => {
-        camera.fov = config.cameraFOV;
-        camera.updateProjectionMatrix();
+      // perspective camera
+      let perspectiveCameraFOVController;
+      let perspectiveCameraNearController;
+      let perspectiveCameraFarController;
+      // orthographic camera
+      let orthographicCameraNearController;
+      let orthographicCameraFarController;
+
+      // set control cameraType
+      let cameraTypeController = cameraFolder
+        .add(config, "cameraType")
+        .options(["perspective", "orthographic"]);
+      cameraTypeController.name("Type");
+      cameraTypeController.onChange(function (cameraType) {
+        // save the controls target
+        var target = controls.target;
+
+        // save the camera position
+        var position = camera.position;
+        // save the lookAt
+        var lookAtVector = new THREE.Vector3();
+        camera.getWorldDirection(lookAtVector);
+        // set the camera, add and remove controllers
+        if (config.cameraType == "perspective") {
+          // set the camera
+          camera = perspectiveCamera;
+
+          // remove controls
+          orthographicCameraNearController.remove();
+          orthographicCameraFarController.remove();
+
+          // add controls
+          // set control FOV
+          perspectiveCameraFOVController = cameraTypeOptionsFolder
+            .add(config, "perspectiveCameraFOV")
+            .min(45)
+            .max(90)
+            .step(1);
+          perspectiveCameraFOVController.name("FOV");
+          perspectiveCameraFOVController.onChange(function (fov) {
+            camera.fov = fov;
+            camera.updateProjectionMatrix();
+          });
+          // set control near
+          perspectiveCameraNearController = cameraTypeOptionsFolder
+            .add(config, "perspectiveCameraNear")
+            .min(0.01)
+            .max(1)
+            .step(0.01);
+          perspectiveCameraNearController.name("Near");
+          perspectiveCameraNearController.onChange(function (near) {
+            camera.near = near;
+            camera.updateProjectionMatrix();
+          });
+          // set control far
+          perspectiveCameraFarController = cameraTypeOptionsFolder
+            .add(config, "perspectiveCameraFar")
+            .min(100)
+            .max(10000)
+            .step(100);
+          perspectiveCameraFarController.name("Far");
+          perspectiveCameraFarController.onChange(function (far) {
+            camera.far = far;
+            camera.updateProjectionMatrix();
+          });
+        } else if (config.cameraType == "orthographic") {
+          // set the camera
+          camera = orthographicCamera;
+
+          // remove controls
+          perspectiveCameraFOVController.remove();
+          perspectiveCameraNearController.remove();
+          perspectiveCameraFarController.remove();
+
+          // add controls
+          // set control near
+          orthographicCameraNearController = cameraTypeOptionsFolder
+            .add(config, "orthographicCameraNear")
+            .min(-2000)
+            .max(-20)
+            .step(20);
+          orthographicCameraNearController.name("Near");
+          orthographicCameraNearController.onChange(function (near) {
+            camera.near = near;
+            camera.updateProjectionMatrix();
+          });
+          // set control far
+          orthographicCameraFarController = cameraTypeOptionsFolder
+            .add(config, "orthographicCameraFar")
+            .min(50)
+            .max(5000)
+            .step(50);
+          orthographicCameraFarController.name("Far");
+          orthographicCameraFarController.onChange(function (far) {
+            camera.far = far;
+            camera.updateProjectionMatrix();
+          });
+        }
+        // set the upwards axis
+        setUpwardsAxis(config.axisUpwards);
+        // set the position
+        camera.position.x = position.x;
+        camera.position.y = position.y;
+        camera.position.z = position.z;
+        // set the look at
+        camera.lookAt(lookAtVector);
+
+        // create the controls
+        // controls.dispose();
+        // if (config.cameraType == "perspective") {
+        //   controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
+        // } else if (config.cameraType == "orthographic") {
+        //   controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
+        // }
+        // set the target
+        // controls.target = target;
+        // set the properties
+        // controls.rotateSpeed = config.rotateSpeed;
+        // controls.zoomSpeed = config.zoomSpeed;
+        // controls.panSpeed = config.panSpeed;
       });
-      // set control near
-      let cameraNearController = cameraFolder.add( config, "cameraNear" ).min( 0.01 ).max( 1 ).step( 0.01 );
-      cameraNearController.name( "Near" );
-      cameraNearController.onChange(() => {
-        camera.near = config.cameraNear;
-        camera.updateProjectionMatrix();
-      });
-      // set control far
-      let cameraFarController = cameraFolder.add( config, "cameraFar" ).min( 100 ).max( 10000 ).step( 100 );
-      cameraFarController.name( "Far" );
-      cameraFarController.onChange(() => {
-        camera.far = config.cameraFar;
-        camera.updateProjectionMatrix();
-      });
+
+      // add a perspective/orthographic camera options folder
+      let cameraTypeOptionsFolder = cameraFolder.addFolder("Options");
+
+      // set control camera's properties
+      if (config.cameraType == "perspective") {
+        // set control FOV
+        perspectiveCameraFOVController = cameraTypeOptionsFolder
+          .add(config, "perspectiveCameraFOV")
+          .min(45)
+          .max(90)
+          .step(1);
+        perspectiveCameraFOVController.name("FOV");
+        perspectiveCameraFOVController.onChange(function (fov) {
+          camera.fov = fov;
+          camera.updateProjectionMatrix();
+        });
+        // set control near
+        perspectiveCameraNearController = cameraTypeOptionsFolder
+          .add(config, "perspectiveCameraNear")
+          .min(0.01)
+          .max(1)
+          .step(0.01);
+        perspectiveCameraNearController.name("Near");
+        perspectiveCameraNearController.onChange(function (near) {
+          camera.near = near;
+          camera.updateProjectionMatrix();
+        });
+        // set control far
+        perspectiveCameraFarController = cameraTypeOptionsFolder
+          .add(config, "perspectiveCameraFar")
+          .min(100)
+          .max(10000)
+          .step(100);
+        perspectiveCameraFarController.name("Far");
+        perspectiveCameraFarController.onChange(function (far) {
+          camera.far = far;
+          camera.updateProjectionMatrix();
+        });
+      } else if (config.cameraType == "orthographic") {
+        // set control near
+        orthographicCameraNearController = cameraTypeOptionsFolder
+          .add(config, "orthographicCameraNear")
+          .min(-2000)
+          .max(-20)
+          .step(20);
+        orthographicCameraNearController.name("Near");
+        orthographicCameraNearController.onChange(function (near) {
+          camera.near = near;
+          camera.updateProjectionMatrix();
+        });
+        // set control far
+        orthographicCameraFarController = cameraTypeOptionsFolder
+          .add(config, "orthographicCameraFar", 50, 5000)
+          .step(50);
+        orthographicCameraFarController.name("Far");
+        orthographicCameraFarController.onChange(function (far) {
+          camera.far = far;
+          camera.updateProjectionMatrix();
+        });
+      }
 
       // add a cameraPosition folder
       let cameraPositionFolder = cameraFolder.addFolder( "Position" );
@@ -235,14 +404,14 @@ function init() {
       planeOpacityController.onChange( ( opacity ) => setPlaneOpacity( opacity ));
 
       // add a centerLine folder
-      let centerLineFolder = planeFolder.addFolder( 'center line');
+      let centerLineFolder = planeFolder.addFolder( 'Center line');
 
       // set control planeColorCenterLine
       let planeColorCenterLineController = centerLineFolder.addColor( config.plane.centerLine, 'color' );
       planeColorCenterLineController.onChange( ( color ) => setCenterLineColor( color ));
 
       // add a grid folder
-      let gridFolder = planeFolder.addFolder( 'grid' );
+      let gridFolder = planeFolder.addFolder( 'Grid' );
 
       // set control planeColorCenterLine
       let planeColorGridController = gridFolder.addColor( config.plane.grid, "color" );
@@ -1277,6 +1446,18 @@ function createModel() {
   // create model
 
   return { joints: {}, materials: {}, sections: {}, frames: {} };
+}
+
+function createPerpectiveCamera( fov, near, far ) {
+  // create a perspective camera
+
+  return new THREE.PerspectiveCamera( fov, canvasWebGLRenderer.width / canvasWebGLRenderer.height, near, far );
+}
+
+function createOrthographicCamera( near, far ) {
+  // create a orthographic camera
+
+  return new THREE.OrthographicCamera( canvasWebGLRenderer.clientWidth / -2, canvasWebGLRenderer.clientWidth / 2, canvasWebGLRenderer.clientHeight / 2, canvasWebGLRenderer.clientHeight / -2, near, far );
 }
 
 function render() {
