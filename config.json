@@ -4,17 +4,30 @@
   "remembered": {
     "Default": {
       "0": {
-        "topBackgroundColor": "#000000",
-        "bottomBackgroundColor": "#818181",
-        "cameraType": "orthographic",
+        "background": {
+          "topColor": "#000000",
+          "bottomColor": "#818181"
+        },
+        "model": {
+          "view": "extrude"
+        },
+        "camera": {
+          "type": "perspective",
+          "position": {
+            "x": 10,
+            "y": 10,
+            "z": 10
+          }
+        },
+        "cameraType": "perspective",
         "perspectiveCameraFOV": 50,
-        "perspectiveCameraNear": 0.1,
+        "perspectiveCameraNear": 1,
         "perspectiveCameraFar": 1000,
-        "orthographicCameraNear": -200,
-        "orthographicCameraFar": 500,
-        "cameraPosition_x": 20,
-        "cameraPosition_y": 20,
-        "cameraPosition_z": 20,
+        "orthographicCameraNear": 1,
+        "orthographicCameraFar": 1000,
+        "cameraPosition_x": 10,
+        "cameraPosition_y": 10,
+        "cameraPosition_z": 10,
         "axisUpwards": "z",
         "rotateSpeed": 1,
         "zoomSpeed": 1.2,

@@ -2,7 +2,7 @@
 
 //
 var scene;
-var camera, orthographicCamera, perspectiveCamera;
+var camera;
 var controls;
 var webGLRenderer, CSS2DRenderer;
 
@@ -15,6 +15,9 @@ var stats, gui;
 
 //
 var config;
+
+//
+var structure;
 
 //
 var model;
@@ -36,62 +39,60 @@ function init() {
     .then(function ( json ) {
       // set the config
       config = json.remembered[json.preset]["0"];
-
+      
       // set the background
-      setBackgroundColor( config.topBackgroundColor, config.bottomBackgroundColor );
-
+      setBackgroundColor( config.background.topColor, config.background.bottomColor );
+      
       // create the scene
       scene = new THREE.Scene();
 
+      // create the model
+      model = new THREE.Group();
+      // set the upwards axis
+      setUpwardsAxis( config.axisUpwards );
+
       // create the camera
-      perspectiveCamera = createPerpectiveCamera( config.perspectiveCameraFOV, config.perspectiveCameraNear, config.perspectiveCameraFar );
-      orthographicCamera = createOrthographicCamera( config.orthographicCameraNear, config.orthographicCameraFar )
+      camera = createCamera( config.camera.type, new THREE.Vector3( config.camera.position.x, config.camera.position.y, config.camera.position.z ) );
 
-      camera = config.cameraType == 'perspective' ?  perspectiveCamera: orthographicCamera;
-
-      // set the position
-      camera.position.set( config.cameraPosition_x, config.cameraPosition_y, config.cameraPosition_z );
-      // set the look at
-      camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-      // set orientation
-      setCameraOrientation( config.axisUpwards );
-
-      // show axes in the screen
+      // create axes
       var axes = new THREE.AxesHelper();
       axes.name = 'axes';
-      scene.add( axes );
+      // add to model
+      model.add( axes );
       
       // create the plane
       plane = createPlane( config.plane.size, config.plane.divisions, config.plane.color, config.plane.transparent, config.plane.opacity, config.plane.centerLine.color, config.plane.grid.color );
-      // set orientation
-      setPlaneOrientation( config.axisUpwards );
  
       // add the plane to the scene
       scene.add( plane );
 
       // set the joints
       joints = new THREE.Group();
+      joints.name = 'joints';
       joints.visible = config.jointVisible;
       // set the geometry
       jointGeometry = new THREE.SphereGeometry( 1, 32, 32 );
       // set the material
       jointMaterial = new THREE.MeshBasicMaterial({ color: config.jointColor });
-      // add to the scene
-      scene.add( joints );
+      // add to the model
+      model.add( joints );
 
       // set the frames
       frames = new THREE.Group();
+      frames.name = 'frames';
       frames.visible = config.frameVisible;
       // set the material
       frameMaterial = new THREE.MeshBasicMaterial( { color: config.frameColor, transparent: config.frameTransparent, opacity: config.frameOpacity } );
       // set the shape
       wireFrameShape = new THREE.Shape().absarc();
       // add to the scene
-      scene.add( frames );
+      model.add( frames );
 
-      // create the model
-      model = createModel();
+      // add model to scene
+      scene.add( model );
+
+      // create the structure
+      structure = createstructure();
 
       // create the stats
       stats = initStats();
@@ -122,213 +123,26 @@ function init() {
       // remember config
       gui.remember( config );
       
-      // add a Model folder
-      let modelFolder = gui.addFolder( "Model" );
+      // add a model folder
+      let modelFolder = gui.addFolder( "model" );
       
-      // set cotrol view
-      let modelViewController = modelFolder.add( config, 'viewType', [ 'wireframe', 'extrude' ]);
-      modelViewController.name( "View" );
-      modelViewController.onChange(( viewType )  => setViewType( viewType ) );
+      // add a control view
+      modelFolder.add( config.model, 'view', [ 'wireframe', 'extrude' ] ).onChange( ( view )  => setViewType( view ) );
 
-      // add a Background folder
-      let backgroundFolder = gui.addFolder( "Background" );
+      // add a background folder
+      let backgroundFolder = gui.addFolder( "background" );
 
-      // set control topBackgroundColor
-      let topBackgroundColorController = backgroundFolder.addColor( config, "topBackgroundColor" );
-      topBackgroundColorController.name( "Top color" );
-      topBackgroundColorController.onChange(() => setBackgroundColor( config.topBackgroundColor, config.bottomBackgroundColor ));
+      // add a control topBackgroundColor
+      backgroundFolder.addColor( config.background, "topColor" ).onChange( ( color ) => setBackgroundColor( color, config.background.bottomColor ) );
 
-      // set control bottomBackgroundColor
-      let bottomBackgroundColorController = backgroundFolder.addColor( config, "bottomBackgroundColor" );
-      bottomBackgroundColorController.name( "Bottom color" );
-      bottomBackgroundColorController.onChange(() => setBackgroundColor( config.topBackgroundColor, config.bottomBackgroundColor ));
+      // add a control bottomBackgroundColor
+      backgroundFolder.addColor( config.background, "bottomColor" ).onChange( ( color ) => setBackgroundColor( config.background.topColor, color ) );
 
       // add a Camera folder
-      let cameraFolder = gui.addFolder("Camera");
-      cameraFolder.open();
-
-      // perspective camera
-      let perspectiveCameraFOVController;
-      let perspectiveCameraNearController;
-      let perspectiveCameraFarController;
-      // orthographic camera
-      let orthographicCameraNearController;
-      let orthographicCameraFarController;
+      let cameraFolder = gui.addFolder( "camera" );
 
       // set control cameraType
-      let cameraTypeController = cameraFolder
-        .add(config, "cameraType")
-        .options(["perspective", "orthographic"]);
-      cameraTypeController.name("Type");
-      cameraTypeController.onChange(function (cameraType) {
-        // save the controls target
-        var target = controls.target;
-
-        // save the camera position
-        var position = camera.position;
-        // save the lookAt
-        var lookAtVector = new THREE.Vector3();
-        camera.getWorldDirection(lookAtVector);
-        // set the camera, add and remove controllers
-        if (config.cameraType == "perspective") {
-          // set the camera
-          camera = perspectiveCamera;
-
-          // remove controls
-          orthographicCameraNearController.remove();
-          orthographicCameraFarController.remove();
-
-          // add controls
-          // set control FOV
-          perspectiveCameraFOVController = cameraTypeOptionsFolder
-            .add(config, "perspectiveCameraFOV")
-            .min(45)
-            .max(90)
-            .step(1);
-          perspectiveCameraFOVController.name("FOV");
-          perspectiveCameraFOVController.onChange(function (fov) {
-            camera.fov = fov;
-            camera.updateProjectionMatrix();
-          });
-          // set control near
-          perspectiveCameraNearController = cameraTypeOptionsFolder
-            .add(config, "perspectiveCameraNear")
-            .min(0.01)
-            .max(1)
-            .step(0.01);
-          perspectiveCameraNearController.name("Near");
-          perspectiveCameraNearController.onChange(function (near) {
-            camera.near = near;
-            camera.updateProjectionMatrix();
-          });
-          // set control far
-          perspectiveCameraFarController = cameraTypeOptionsFolder
-            .add(config, "perspectiveCameraFar")
-            .min(100)
-            .max(10000)
-            .step(100);
-          perspectiveCameraFarController.name("Far");
-          perspectiveCameraFarController.onChange(function (far) {
-            camera.far = far;
-            camera.updateProjectionMatrix();
-          });
-        } else if (config.cameraType == "orthographic") {
-          // set the camera
-          camera = orthographicCamera;
-
-          // remove controls
-          perspectiveCameraFOVController.remove();
-          perspectiveCameraNearController.remove();
-          perspectiveCameraFarController.remove();
-
-          // add controls
-          // set control near
-          orthographicCameraNearController = cameraTypeOptionsFolder
-            .add(config, "orthographicCameraNear")
-            .min(-2000)
-            .max(-20)
-            .step(20);
-          orthographicCameraNearController.name("Near");
-          orthographicCameraNearController.onChange(function (near) {
-            camera.near = near;
-            camera.updateProjectionMatrix();
-          });
-          // set control far
-          orthographicCameraFarController = cameraTypeOptionsFolder
-            .add(config, "orthographicCameraFar")
-            .min(50)
-            .max(5000)
-            .step(50);
-          orthographicCameraFarController.name("Far");
-          orthographicCameraFarController.onChange(function (far) {
-            camera.far = far;
-            camera.updateProjectionMatrix();
-          });
-        }
-        // set the upwards axis
-        setUpwardsAxis(config.axisUpwards);
-        // set the position
-        camera.position.x = position.x;
-        camera.position.y = position.y;
-        camera.position.z = position.z;
-        // set the look at
-        camera.lookAt(lookAtVector);
-
-        // create the controls
-        // controls.dispose();
-        // if (config.cameraType == "perspective") {
-        //   controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
-        // } else if (config.cameraType == "orthographic") {
-        //   controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
-        // }
-        // set the target
-        // controls.target = target;
-        // set the properties
-        // controls.rotateSpeed = config.rotateSpeed;
-        // controls.zoomSpeed = config.zoomSpeed;
-        // controls.panSpeed = config.panSpeed;
-      });
-
-      // add a perspective/orthographic camera options folder
-      let cameraTypeOptionsFolder = cameraFolder.addFolder("Options");
-
-      // set control camera's properties
-      if (config.cameraType == "perspective") {
-        // set control FOV
-        perspectiveCameraFOVController = cameraTypeOptionsFolder
-          .add(config, "perspectiveCameraFOV")
-          .min(45)
-          .max(90)
-          .step(1);
-        perspectiveCameraFOVController.name("FOV");
-        perspectiveCameraFOVController.onChange(function (fov) {
-          camera.fov = fov;
-          camera.updateProjectionMatrix();
-        });
-        // set control near
-        perspectiveCameraNearController = cameraTypeOptionsFolder
-          .add(config, "perspectiveCameraNear")
-          .min(0.01)
-          .max(1)
-          .step(0.01);
-        perspectiveCameraNearController.name("Near");
-        perspectiveCameraNearController.onChange(function (near) {
-          camera.near = near;
-          camera.updateProjectionMatrix();
-        });
-        // set control far
-        perspectiveCameraFarController = cameraTypeOptionsFolder
-          .add(config, "perspectiveCameraFar")
-          .min(100)
-          .max(10000)
-          .step(100);
-        perspectiveCameraFarController.name("Far");
-        perspectiveCameraFarController.onChange(function (far) {
-          camera.far = far;
-          camera.updateProjectionMatrix();
-        });
-      } else if (config.cameraType == "orthographic") {
-        // set control near
-        orthographicCameraNearController = cameraTypeOptionsFolder
-          .add(config, "orthographicCameraNear")
-          .min(-2000)
-          .max(-20)
-          .step(20);
-        orthographicCameraNearController.name("Near");
-        orthographicCameraNearController.onChange(function (near) {
-          camera.near = near;
-          camera.updateProjectionMatrix();
-        });
-        // set control far
-        orthographicCameraFarController = cameraTypeOptionsFolder
-          .add(config, "orthographicCameraFar", 50, 5000)
-          .step(50);
-        orthographicCameraFarController.name("Far");
-        orthographicCameraFarController.onChange(function (far) {
-          camera.far = far;
-          camera.updateProjectionMatrix();
-        });
-      }
+      cameraFolder.add( config.camera, "type" ).options( [ "perspective", "orthographic" ] ).onChange( ( type ) => setCameraType( type ) );
 
       // add a cameraPosition folder
       let cameraPositionFolder = cameraFolder.addFolder( "Position" );
@@ -581,51 +395,10 @@ function createControls( rotateSpeed, zoomSpeed, panSpeed, screenSpacePanning ) 
   return controls;
 }
 
-function setCameraOrientation( axis ) {
-  // set the camera's orientation
+function setModelRotation( angle ) {
+  // set the model rotation
 
-  // save the lookAt vector
-  var lookAt = new THREE.Vector3();
-  camera.getWorldDirection( lookAt );
-  
-  if ( axis =='x' || axis == 'y' || axis == 'z' ) {
-    switch( axis ) {
-      case 'x':
-        camera.up.set( 1, 0, 0 );
-        break;
-      case 'y':
-        camera.up.set( 0, 1, 0 );
-        break;
-      case 'z':
-        camera.up.set( 0, 0, 1 );
-        break;
-    }
-
-    // update the camera
-    camera.lookAt( lookAt );
-    camera.updateProjectionMatrix();
-  }
-}
-
-function setPlaneOrientation( axis ) {
-  // set the plane's orientation
-  
-  if ( axis =='x' || axis == 'y' || axis == 'z' ) {
-    switch( axis ) {
-      case 'x':
-        plane.rotation.x = 0;
-        plane.rotation.y = 0.5 * Math.PI;
-        break;
-      case 'y':
-        plane.rotation.x = -0.5 * Math.PI;
-        plane.rotation.y = 0;
-        break;
-      case 'z':
-        plane.rotation.x = 0;
-        plane.rotation.y = 0;
-        break;
-    }
-  }
+  model.setRotationFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), angle );
 }
 
 export function setUpwardsAxis( axis ) {
@@ -633,30 +406,23 @@ export function setUpwardsAxis( axis ) {
   
   var promise = new Promise( (resolve, reject) => {
     if ( axis =='x' || axis == 'y' || axis == 'z' ) {
-      // set the camera orientation
-      setCameraOrientation( axis );
+      switch( axis ) {
+        case 'x':
+          setModelRotation( 4 * Math.PI / 3 );
+          break;
+        case 'y':
+          setModelRotation( 2 * Math.PI / 3 );
+          break;
+        case 'z':
+          setModelRotation( 0 );
+          break;
+      }
 
-      // set plane orientation
-      setPlaneOrientation( axis );
-
-      // remove the event listeners
-      controls.dispose();
-
-      // create the controls
-      controls = createControls(
-        config.rotateSpeed, 
-        config.zoomSpeed,
-        config.panSpeed,
-        config.screenSpacePanning
-      );
-
-      // save the changes
-      config.axisUpwards = axis;
       resolve();
     } else {
       reject(new Error("'" + axis + "' axis does not exist"));
     }
-  })
+  });
 
   return promise;
 }
@@ -671,7 +437,7 @@ export function setViewType( viewType ) {
     if ( wireframeView || extrudeView ) {
       let wireFrame, extrudeFrame;
 
-      for (const frame of frames.children ) {
+      for (const frame of model.getObjectByName( 'frames' ).children ) {
         wireFrame = frame.getObjectByName( 'wireFrame' );
         extrudeFrame = frame.getObjectByName( 'extrudeFrame' );
 
@@ -688,8 +454,8 @@ export function setViewType( viewType ) {
   return promise;
 }
 
-export function loadModel( filename ) {
-  // load a model
+export function open( filename ) {
+  // open a file
 
   var promise = loadJSON( filename )
     .then(function ( json ) {
@@ -705,8 +471,8 @@ export function loadModel( filename ) {
       // delete frames
       frames.children = [];
 
-      // create model
-      model = createModel();
+      // create structure
+      structure = createstructure();
       
       // add joints
       for ( const key in json.joints ) addJoint( key, json.joints[key].x, json.joints[key].y, json.joints[key].z );
@@ -753,15 +519,15 @@ export function addFrame( name, j, k, material, section ) {
     section = section.toString();
 
     // check if frame's name of frame's joints already exits
-    if ( model.frames.hasOwnProperty( name ) ) reject( new Error("frame's name '" + name + "' already exits") );
-    if ( Object.values( model.frames ).some( frame => frame.j == j && frame.k == k ) ) reject( new Error("frame's joints [" + j + ", " + k + "] already taked") );
+    if ( structure.frames.hasOwnProperty( name ) ) reject( new Error("frame's name '" + name + "' already exits") );
+    if ( Object.values( structure.frames ).some( frame => frame.j == j && frame.k == k ) ) reject( new Error("frame's joints [" + j + ", " + k + "] already taked") );
 
     // check if joints exits
-    if ( !model.joints.hasOwnProperty( j ) ) reject( new Error("joint's '" + j + "' does not exits") );
-    if ( !model.joints.hasOwnProperty( k ) ) reject( new Error("joint's '" + k + "' does not exits") );
+    if ( !structure.joints.hasOwnProperty( j ) ) reject( new Error("joint's '" + j + "' does not exits") );
+    if ( !structure.joints.hasOwnProperty( k ) ) reject( new Error("joint's '" + k + "' does not exits") );
     
-    // add frame to model
-    model.frames[name] = { j: j, k: k, material: material, section: section };
+    // add frame to structure
+    structure.frames[name] = { j: j, k: k, material: material, section: section };
 
     // get frame's joints
     j = joints.getObjectByName( j );
@@ -771,7 +537,7 @@ export function addFrame( name, j, k, material, section ) {
     var x_local =  k.position.clone().sub( j.position );
 
     // create frame
-    var frame = createFrame( x_local.length(), model.frames[name].section );
+    var frame = createFrame( x_local.length(), structure.frames[name].section );
 
     // set name
     frame.name = name;
@@ -829,10 +595,10 @@ export function addSection( name ) {
     name = name.toString();
 
     // check if section's name already exits
-    if ( model.sections.hasOwnProperty( name ) ) reject( new Error( "Section's name '" + name + "' already exits" ) );
+    if ( structure.sections.hasOwnProperty( name ) ) reject( new Error( "Section's name '" + name + "' already exits" ) );
 
-    // add section to model
-    model.sections[name] = { type: "Section" };
+    // add section to structure
+    structure.sections[name] = { type: "Section" };
     // create section
     sections[name] = createSection();
 
@@ -850,10 +616,10 @@ export function addRectangularSection( name, width, height ) {
     name = name.toString();
 
     // check if section's name already exits
-    if ( model.sections.hasOwnProperty( name ) ) reject( new Error( "section's name '" + name + "' already exits" ) );
+    if ( structure.sections.hasOwnProperty( name ) ) reject( new Error( "section's name '" + name + "' already exits" ) );
     
-    // add section to model
-    model.sections[name] = { type: "RectangularSection", width: width, height: height };
+    // add section to structure
+    structure.sections[name] = { type: "RectangularSection", width: width, height: height };
     // create rectangular section
     sections[name] = createRectangularSection( width, height );
 
@@ -873,8 +639,8 @@ export function addMaterial( name, e, g ) {
     // check if material's name already exits
     if ( materials.hasOwnProperty( name ) ) reject( new Error( "material's name '" + name + "' already exist" ) );
 
-    // add material to model
-    model.materials[name] = { "E": e, "G": g };
+    // add material to structure
+    structure.materials[name] = { "E": e, "G": g };
 
     resolve();
   });
@@ -890,11 +656,11 @@ export function addJoint( name, x, y, z ) {
     name = name.toString();
     
     // check if joint's name or joint's coordinate already exits
-    if ( model.joints.hasOwnProperty( name ) ) reject( new Error("joint's name '" + name + "' already exist" ));
-    if ( Object.values( model.joints ).some( joint => joint.x == x && joint.y == y && joint.z == z ) ) reject( new Error("joint's coordinate [" + x + ", " + y + ", " + z + "] already exist" )); ; 
+    if ( structure.joints.hasOwnProperty( name ) ) reject( new Error("joint's name '" + name + "' already exist" ));
+    if ( Object.values( structure.joints ).some( joint => joint.x == x && joint.y == y && joint.z == z ) ) reject( new Error("joint's coordinate [" + x + ", " + y + ", " + z + "] already exist" )); ; 
     
-    // add joint to model
-    model.joints[name] = { x: x, y: y, z: z };
+    // add joint to structure
+    structure.joints[name] = { x: x, y: y, z: z };
   
     // create joint
     var joint = createJoint( config.jointSize );
@@ -987,7 +753,7 @@ function isJointInUse( name ) {
   // check if joint is in use
   let count = 0;
   
-  for ( let frame of model.frames ) {
+  for ( let frame of structure.frames ) {
     if ( frame.J == name ) count += 1;
     if ( frame.k == name ) count += 1;
   }
@@ -999,7 +765,7 @@ export function removeJoint( name ) {
   // remove a joint
   
   var promise = new Promise( ( resolve, reject ) => {
-    if ( model.joints.hasOwnProperty( name ) && (isJointInUse( name ) > 1) ) {
+    if ( structure.joints.hasOwnProperty( name ) && (isJointInUse( name ) > 1) ) {
       deleteJoint( name );
       
       resolve();
@@ -1046,8 +812,8 @@ function deleteJoint( name ) {
   // remove joint of the scene
   joints.remove( joint );
   
-  // remove joint from model
-  delete model.joints[name];
+  // remove joint from structure
+  delete structure.joints[name];
 }
 
 function createFrame( length, section ) {
@@ -1067,7 +833,7 @@ function createFrame( length, section ) {
   var extrudeFrame = new THREE.Mesh( extrudeFrameGeometry, frameMaterial );
   extrudeFrame.name = 'extrudeFrame';
 
-  if ( model.sections[section].type == 'Section' ) {
+  if ( structure.sections[section].type == 'Section' ) {
     // set frame size
     extrudeFrame.scale.set( config.frameSize, config.frameSize, 1 );
   } else {
@@ -1081,8 +847,8 @@ function createFrame( length, section ) {
   }
 
   // set visibility
-  if ( config.viewType == 'wireframe' ) extrudeFrame.visible = false;
-  if ( config.viewType == 'extrude' ) wireFrame.visible = false;
+  if ( config.model.view == 'wireframe' ) extrudeFrame.visible = false;
+  if ( config.model.view == 'extrude' ) wireFrame.visible = false;
 
   // x local along frame
   var quaternion = new THREE.Quaternion().setFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), 2 * Math.PI / 3 );
@@ -1392,13 +1158,13 @@ function setFrameSize() {
   let scale = new THREE.Vector3( config.frameSize, config.frameSize, 1 );
   let frame, wireFrame, extrudeFrame;
 
-  for ( const name in model.frames ) {
+  for ( const name in structure.frames ) {
     frame = frames.getObjectByName( name );
     wireFrame = frame.getObjectByName( 'wireFrame' );
     extrudeFrame = frame.getObjectByName( 'extrudeFrame');
     
     wireFrame.scale.copy( scale );
-    if ( model.sections[model.frames[name].section].type == 'Section') extrudeFrame.scale.copy( scale );
+    if ( structure.sections[structure.frames[name].section].type == 'Section') extrudeFrame.scale.copy( scale );
   }
 
 }
@@ -1407,20 +1173,6 @@ function setJointSize() {
   // set joint's size
 
   for ( const joint of joints.children ) joint.scale.setScalar( config.jointSize );
-}
-
-function setCameraPosition( x, y, z ) {
-  // set camera's position
-
-  // save the lookAt vector
-  var lookAt = new THREE.Vector3();
-  camera.getWorldDirection( lookAt );
-
-  // set the camera's position
-  camera.position.set( x, y, z );
-
-  // set the lookAt
-  camera.lookAt( lookAt );
 }
 
 function setBackgroundColor( topColor, bottomColor ) {
@@ -1442,27 +1194,106 @@ function setJointsVisible ( visible ) {
   joints.visible = visible;
 }
 
-function createModel() {
-  // create model
+function createstructure() {
+  // create structure
 
   return { joints: {}, materials: {}, sections: {}, frames: {} };
 }
 
-function createPerpectiveCamera( fov, near, far ) {
-  // create a perspective camera
+function setCameraType( type ) {
+  // set the camera type
 
-  return new THREE.PerspectiveCamera( fov, canvasWebGLRenderer.width / canvasWebGLRenderer.height, near, far );
+  // save the controls target
+  var target = controls.target.clone();
+  
+  // save previous camera quaternion
+  var quaternion = camera.quaternion.clone();
+    
+  // save previous camera position
+  var position = camera.position.clone();
+
+  // save previous zoom
+  var zoom = camera.zoom;
+
+  // set the camera
+  camera = createCamera( type, position );
+
+  // set the controls
+  controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
+  controls.target.copy( target );
+
+  // set rotation
+  camera.quaternion.copy( quaternion );
+
+  // set position
+  if ( type == 'perspective' ) {
+    // z local in globar coordinates
+    var worldDirection = new THREE.Vector3();
+    camera.getWorldDirection( worldDirection );
+
+    worldDirection.multiplyScalar( position.length() - 1 / ( 2 * zoom * Math.tan( ( camera.fov / 2 ) * Math.PI / 180 ) ) );
+    position.add( worldDirection );
+  }
+
+  camera.position.copy( position );
 }
 
-function createOrthographicCamera( near, far ) {
-  // create a orthographic camera
+  // set zoom
+  // camera.zoom = 1 / position.length();
 
-  return new THREE.OrthographicCamera( canvasWebGLRenderer.clientWidth / -2, canvasWebGLRenderer.clientWidth / 2, canvasWebGLRenderer.clientHeight / 2, canvasWebGLRenderer.clientHeight / -2, near, far );
+  // set postiion
+  // camera.position.copy( position );
+
+
+  // create the controls
+  // controls.dispose();
+  // if (config.cameraType == "perspective") {
+  //   controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
+  // } else if (config.cameraType == "orthographic") {
+  //   controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
+  // }
+  // set the target
+  // controls.target = target;
+  // set the properties
+  // controls.rotateSpeed = config.rotateSpeed;
+  // controls.zoomSpeed = config.zoomSpeed;
+  // controls.panSpeed = config.panSpeed;
+
+function createCamera( type, position ) {
+  // create the camera
+
+  var camera;
+
+  var fov = 45;
+  var near = 0.01;
+  var far = 1000;
+  var aspect = canvasWebGLRenderer.clientWidth / canvasWebGLRenderer.clientHeight;
+
+  // set the camera
+  if ( type == 'perspective' ) {
+    camera = new THREE.PerspectiveCamera( fov, aspect, near, far );
+  } else if ( type == 'orthographic' ) {
+    camera = new THREE.OrthographicCamera( -0.5 * aspect, 0.5 * aspect, 0.5, -0.5, near, far );
+    camera.zoom = 1 / ( 2 * Math.tan( ( fov / 2 ) * Math.PI / 180 ) * position.length() );
+  }
+  // set the up
+  camera.up.set( 0, 0, 1 );
+
+  // set the camera position
+  camera.position.copy( position );
+
+  // set the look at
+  camera.lookAt( new THREE.Vector3( 0, 0, 0 ) );
+
+  // update camera
+  camera.updateProjectionMatrix();
+
+  return camera;
 }
 
 function render() {
   // render the scene
-  
+
   // call the render function
   requestAnimationFrame( render );
 

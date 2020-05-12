@@ -95,10 +95,10 @@ terminal.add_function("setUpwardsAxis", {
 });
 
 // loadModel
-terminal.add_function("loadModel", {
-  func: FEM.loadModel,
-  successful: function (model) {
-    return "the " + "'" + model + "'" + " has been loaded";
+terminal.add_function("open", {
+  func: FEM.open,
+  successful: function (file) {
+    return "the " + "'" + file + "'" + " has been loaded";
   }
 });
 
