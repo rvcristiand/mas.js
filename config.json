@@ -54,18 +54,20 @@
             "color": "#000000"
           }
         },
-        "jointSize": 0.1,
-        "jointColor": "#00FF00",
-        "jointTransparent": true,
-        "jointOpacity": 1,
-        "viewJointLabel": false,
+        "joint": {
+          "visible": true,
+          "size": 0.1,
+          "color": "#00FF00",
+          "transparent": true,
+          "opacity": 1,
+          "label": false
+        },
         "frameColor": "#0000FF",
         "frameSize": 0.05,
         "frameTransparent": true,
         "frameOpacity": 0.5,
         "viewFrameLabel": true,
         "viewType": "extrude",
-        "jointsVisible": true,
         "framesVisible": true      }
     }
   },

@@ -74,7 +74,7 @@ function init() {
       // set the geometry
       jointGeometry = new THREE.SphereGeometry( 1, 32, 32 );
       // set the material
-      jointMaterial = new THREE.MeshBasicMaterial({ color: config.jointColor });
+      jointMaterial = new THREE.MeshBasicMaterial({ color: config.joint.color });
       // add to the model
       model.add( joints );
 
@@ -113,7 +113,7 @@ function init() {
       canvasCSS2DRenderer.appendChild( CSS2DRenderer.domElement );
 
       // create the controls
-      controls = createControls( config.controls.rotateSpeed, config.controls.zoomSpeed, config.controls.panSpeed, config.controls.screenSpacePanning, config.controls.damping.enable, config.controls.damping.factor );
+      controls = createControls( config.controls.rotateSpeed, config.controls.zoomSpeed, config.controls.panSpeed, config.controls.screenPanning, config.controls.damping.enable, config.controls.damping.factor );
 
       return json;
     })
@@ -204,40 +204,25 @@ function init() {
       planeFolder.addFolder( "grid" ).addColor( config.plane.grid, "color" ).onChange( ( color ) => setGridColor( color ));
 
       // add a Joint folder
-      let jointFolder = gui.addFolder( "Joints" );
+      let jointFolder = gui.addFolder( "joint" );
 
       // set joints visible
-      let jointsVisibleController = jointFolder.add( config, 'jointsVisible' );
-      jointsVisibleController.name( "Visible" );
-      jointsVisibleController.onChange( () => setJointsVisible( config.jointsVisible ));
+      jointFolder.add( config.joint, 'visible' ).onChange( ( visible ) => setJointsVisible( visible ));
 
       // set control joint size
-      let jointSizeController = jointFolder.add( config, "jointSize" ).min( 0.01 ).max( 1 ).step( 0.01 );
-      jointSizeController.name( "Size" );
-      jointSizeController.onChange( () => setJointSize() );
+      jointFolder.add( config.joint, "size" ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( ( size ) => setJointSize( size ) );
       
       // set view joint's label
-      let viewJointLabelController = jointFolder.add( config, 'viewJointLabel' );
-      viewJointLabelController.name( "Labels" );
-      viewJointLabelController.onChange( () => setViewJointLabel( config.viewJointLabel ) );
-
-      // add a Color folder
-      let jointColorFolder = jointFolder.addFolder( "Colors" );
+      jointFolder.add( config.joint, 'label' ).onChange( ( visible ) => setViewJointLabel( visible ) );
 
       // set control joint color
-      let jointColorController = jointColorFolder.addColor( config, "jointColor" );
-      jointColorController.name( "Color" );
-      jointColorController.onChange( () => setJointColor( config.jointColor ) );
+      jointFolder.addColor( config.joint, "color" ).onChange( ( color ) => setJointColor( color ) );
 
       // set transparent joint
-      let jointTransparentController = jointColorFolder.add( config, 'jointTransparent' );
-      jointTransparentController.name( "Transparent" );
-      jointTransparentController.onChange( () => setJointTransparent( config.jointTransparent ) );
+      jointFolder.add( config.joint, 'transparent' ).onChange( ( transparent ) => setJointTransparent( transparent ) );
 
       // set opacity joint
-      let jointOpacityController = jointColorFolder.add( config, 'jointOpacity' ).min( 0 ).max( 1 ).step( 0.01 );
-      jointOpacityController.name( "jointOpacity" );
-      jointOpacityController.onChange( () => setJointOpacity( config.jointOpacity ));
+      jointFolder.add( config.joint, 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( ( opacity ) => setJointOpacity( opacity ));
 
       // add a Frame folder
       let frameFolder = gui.addFolder( "Frames" );
@@ -1123,10 +1108,10 @@ function setFrameSize() {
 
 }
 
-function setJointSize() {
+function setJointSize( size ) {
   // set joint's size
 
-  for ( const joint of joints.children ) joint.scale.setScalar( config.jointSize );
+  for ( const joint of joints.children ) joint.scale.setScalar( size );
 }
 
 function setBackgroundColor( topColor, bottomColor ) {
