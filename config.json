@@ -10,7 +10,8 @@
         },
         "model": {
           "view": "extrude",
-          "axisUpwards": "z"
+          "axisUpwards": "z",
+          "axes": true
         },
         "camera": {
           "type": "perspective",
@@ -29,10 +30,16 @@
         "cameraPosition_x": 10,
         "cameraPosition_y": 10,
         "cameraPosition_z": 10,
-        "rotateSpeed": 1,
-        "zoomSpeed": 1.2,
-        "panSpeed": 0.3,
-        "screenSpacePanning": true,
+        "controls": {
+          "rotateSpeed": 1,
+          "zoomSpeed": 1.2,
+          "panSpeed": 0.3,
+          "screenPanning": true,
+          "damping": {
+            "enable": false,
+            "factor": 0.05
+          }
+        },
         "plane": {
           "size": 10,
           "divisions": 10,

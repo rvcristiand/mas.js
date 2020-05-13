@@ -57,6 +57,7 @@ function init() {
       // create axes
       var axes = new THREE.AxesHelper();
       axes.name = 'axes';
+      axes.visible = config.model.axes;
       // add to model
       model.add( axes );
       
@@ -112,7 +113,7 @@ function init() {
       canvasCSS2DRenderer.appendChild( CSS2DRenderer.domElement );
 
       // create the controls
-      controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
+      controls = createControls( config.controls.rotateSpeed, config.controls.zoomSpeed, config.controls.panSpeed, config.controls.screenSpacePanning, config.controls.damping.enable, config.controls.damping.factor );
 
       return json;
     })
@@ -121,25 +122,28 @@ function init() {
       gui = new dat.GUI( { load: json, preset: json.preset } );
 
       // remember config
-      gui.remember( config );
+      // gui.remember( config );
       
-      // add a model folder
+      // add model folder
       let modelFolder = gui.addFolder( "model" );
       
-      // add a control view
+      // set control view
       modelFolder.add( config.model, 'view', [ 'wireframe', 'extrude' ] ).onChange( ( view )  => setViewType( view ) );
 
       // set control axisUpwards
-      modelFolder.add( config.model, 'axisUpwards' ).options( [ "x", "y" , "z" ] ).onChange( ( axisUpwards ) => setUpwardsAxis( axisUpwards ) ).listen();
+      modelFolder.add( config.model, 'axisUpwards' ).options( [ 'x', 'y', 'z' ] ).onChange( ( axis ) => setUpwardsAxis( axis ) ).listen();
+
+      // set control axes
+      modelFolder.add( config.model, 'axes' ).onChange( ( visible ) => model.getObjectByName( 'axes' ).visible = visible );
 
       // add a background folder
       let backgroundFolder = gui.addFolder( "background" );
 
       // add a control topBackgroundColor
-      backgroundFolder.addColor( config.background, "topColor" ).onChange( ( color ) => setBackgroundColor( color, config.background.bottomColor ) );
+      backgroundFolder.addColor( config.background, 'topColor' ).onChange( ( color ) => setBackgroundColor( color, config.background.bottomColor ) );
 
       // add a control bottomBackgroundColor
-      backgroundFolder.addColor( config.background, "bottomColor" ).onChange( ( color ) => setBackgroundColor( config.background.topColor, color ) );
+      backgroundFolder.addColor( config.background, 'bottomColor' ).onChange( ( color ) => setBackgroundColor( config.background.topColor, color ) );
 
       // add a Camera folder
       let cameraFolder = gui.addFolder( "camera" );
@@ -147,49 +151,29 @@ function init() {
       // set control cameraType
       cameraFolder.add( config.camera, "type" ).options( [ "perspective", "orthographic" ] ).onChange( ( type ) => setCameraType( type ) );
 
-      // add a cameraPosition folder
-      let cameraPositionFolder = cameraFolder.addFolder( "Position" );
-      // set control cameraPosition_x
-      let cameraPosition_xController = cameraPositionFolder.add( config, "cameraPosition_x" ).min( -100 ).max( 100 ).step( 1 );
-      cameraPosition_xController.name( "x" );
-      cameraPosition_xController.onChange(() => setCameraPosition( config.cameraPosition_x, config.cameraPosition_y, config.cameraPosition_z ));
-
-      // set control cameraPosition_y
-      let cameraPosition_yController = cameraPositionFolder.add( config, "cameraPosition_y" ).min( -100 ).max( 100 ).step( 1 );
-      cameraPosition_yController.name( "y" );
-      cameraPosition_yController.onChange(() => setCameraPosition( config.cameraPosition_x, config.cameraPosition_y, config.cameraPosition_z ));
-
-      // set control cameraPosition_z
-      let cameraPosition_zController = cameraPositionFolder.add( config, "cameraPosition_z" ).min( -100 ).max( 100 ).step( 1 );
-      cameraPosition_zController.name( "z" );
-      cameraPosition_zController.onChange(() => setCameraPosition( config.cameraPosition_x, config.cameraPosition_y, config.cameraPosition_z ));
-
-      // add a Trackball controls folder
-      let controlsFolder = gui.addFolder( "Trackball controls" );
+      // add controls folder
+      let controlsFolder = gui.addFolder( "controls" );
 
       // set control rotateSpeed
-      let rotateSpeedController = controlsFolder.add( config, "rotateSpeed" ).min( 0.1 ).max( 10 ).step( 0.1 );
-      rotateSpeedController.name( "Rotate speed" );
-      rotateSpeedController.onFinishChange(() => controls.rotateSpeed = config.rotateSpeed);
+      controlsFolder.add( config.controls, "rotateSpeed" ).min( 0.1 ).max( 10 ).step( 0.1 ).onChange( ( speed ) => controls.rotateSpeed = speed );
 
       // set control zoomSpeed
-      let zoomSpeedController = controlsFolder.add( config, "zoomSpeed" ).min( 0.12 ).max( 12 ).step( 0.12 );
-      zoomSpeedController.name( "Zoom speed" );
-      zoomSpeedController.onFinishChange(() => controls.zoomSpeed = config.zoomSpeed);
+      controlsFolder.add( config.controls, "zoomSpeed" ).min( 0.12 ).max( 12 ).step( 0.12 ).onChange( ( speed ) => controls.zoomSpeed = speed );
 
       // set control panSpeed
-      let panSpeedController = controlsFolder.add( config, "panSpeed" ).min( 0.03 ).max( 3 ).step( 0.03 );
-      panSpeedController.name( "Pan speed" );
-      panSpeedController.onFinishChange(() => controls.panSpeed = config.panSpeed);
+      controlsFolder.add( config.controls, "panSpeed" ).min( 0.03 ).max( 3 ).step( 0.03 ).onChange( ( speed ) => controls.panSpeed = speed );
       
       // set control screenSpacePanning
-      let screenSpacePanningController = controlsFolder.add( config, 'screenSpacePanning' );
-      screenSpacePanningController.onFinishChange(() => controls.screenSpacePanning = config.screenSpacePanning);
+      controlsFolder.add( config.controls, 'screenPanning' ).onChange( ( screenPanning ) => controls.screenSpacePanning = screenPanning );
 
-      // set control staticMoving
-      // let staticMovingController = trackbackControlsFolder.add( config, "staticMoving" );
-      // staticMovingController.name( "Static moving" );
-      // staticMovingController.onFinishChange( () => trackballControls.staticMoving = staticMoving );
+      // add damping folder
+      var dampingFolder = controlsFolder.addFolder( "damping" );
+
+      // set control damping
+      dampingFolder.add( config.controls.damping, 'enable' ).onChange( ( enable ) => controls.enableDamping = enable );
+
+      // set control damping factor
+      dampingFolder.add( config.controls.damping, 'factor' ).min( 0.005 ).max( 0.5 ).step( 0.005 ).onChange( ( factor ) => controls.dampingFactor = factor );
 
       // add a Plane folder
       let planeFolder = gui.addFolder( "Plane" );
@@ -377,7 +361,7 @@ function init() {
 
 window.onload = init;
 
-function createControls( rotateSpeed, zoomSpeed, panSpeed, screenSpacePanning ) {
+function createControls( rotateSpeed, zoomSpeed, panSpeed, screenSpacePanning, enableDamping, dampingFactor ) {
   // create the controls
 
   // create the controls
@@ -388,7 +372,8 @@ function createControls( rotateSpeed, zoomSpeed, panSpeed, screenSpacePanning ) 
   controls.zoomSpeed = zoomSpeed;
   controls.panSpeed = panSpeed;
   controls.screenSpacePanning = screenSpacePanning;
-  // controls.staticMoving = config.staticMoving;
+  controls.enableDamping = enableDamping;
+  controls.dampingFactor = dampingFactor;
 
   return controls;
 }
@@ -1221,7 +1206,7 @@ function setCameraType( type ) {
   camera = createCamera( type, position );
 
   // set the controls
-  controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
+  controls = createControls( config.controls.rotateSpeed, config.controls.zoomSpeed, config.controls.panSpeed, config.controls.screenPanning, config.controls.damping.enable, config.controls.damping.factor );
   controls.target.copy( target );
 
   // set rotation
@@ -1305,6 +1290,9 @@ function render() {
   // update the scene
   webGLRenderer.render( scene, camera );
   CSS2DRenderer.render( scene, camera );
+
+  // update controls
+  if ( config.controls.damping ) controls.update();
 }
 
 function initStats() {
