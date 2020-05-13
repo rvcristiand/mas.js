@@ -130,9 +130,7 @@ function init() {
       modelFolder.add( config.model, 'view', [ 'wireframe', 'extrude' ] ).onChange( ( view )  => setViewType( view ) );
 
       // set control axisUpwards
-      let axisUpwardsController = modelFolder.add( config.model, 'axisUpwards' ).options( [ "x", "y" , "z" ] );
-      axisUpwardsController.onChange( ( axisUpwards ) => setUpwardsAxis( axisUpwards ));
-      axisUpwardsController.updateDisplay()
+      modelFolder.add( config.model, 'axisUpwards' ).options( [ "x", "y" , "z" ] ).onChange( ( axisUpwards ) => setUpwardsAxis( axisUpwards ) ).listen();
 
       // add a background folder
       let backgroundFolder = gui.addFolder( "background" );
@@ -406,6 +404,7 @@ export function setUpwardsAxis( axis ) {
   
   var promise = new Promise( ( resolve, reject ) => {
     if ( axis =='x' || axis == 'y' || axis == 'z' ) {
+      // set model rotation
       switch( axis ) {
         case 'x':
           setModelRotation( 4 * Math.PI / 3 );
@@ -417,6 +416,9 @@ export function setUpwardsAxis( axis ) {
           setModelRotation( 0 );
           break;
       }
+
+      // save the value
+      config.model.axisUpwards = axis;
 
       resolve();
     } else {
