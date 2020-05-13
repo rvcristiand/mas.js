@@ -9,7 +9,8 @@
           "bottomColor": "#818181"
         },
         "model": {
-          "view": "extrude"
+          "view": "extrude",
+          "axisUpwards": "z"
         },
         "camera": {
           "type": "perspective",
@@ -28,7 +29,6 @@
         "cameraPosition_x": 10,
         "cameraPosition_y": 10,
         "cameraPosition_z": 10,
-        "axisUpwards": "z",
         "rotateSpeed": 1,
         "zoomSpeed": 1.2,
         "panSpeed": 0.3,
@@ -58,8 +58,7 @@
         "viewFrameLabel": true,
         "viewType": "extrude",
         "jointsVisible": true,
-        "framesVisible": true
-      }
+        "framesVisible": true      }
     }
   },
   "folders": {

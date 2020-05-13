@@ -49,7 +49,7 @@ function init() {
       // create the model
       model = new THREE.Group();
       // set the upwards axis
-      setUpwardsAxis( config.axisUpwards );
+      setUpwardsAxis( config.model.axisUpwards );
 
       // create the camera
       camera = createCamera( config.camera.type, new THREE.Vector3( config.camera.position.x, config.camera.position.y, config.camera.position.z ) );
@@ -129,6 +129,11 @@ function init() {
       // add a control view
       modelFolder.add( config.model, 'view', [ 'wireframe', 'extrude' ] ).onChange( ( view )  => setViewType( view ) );
 
+      // set control axisUpwards
+      let axisUpwardsController = modelFolder.add( config.model, 'axisUpwards' ).options( [ "x", "y" , "z" ] );
+      axisUpwardsController.onChange( ( axisUpwards ) => setUpwardsAxis( axisUpwards ));
+      axisUpwardsController.updateDisplay()
+
       // add a background folder
       let backgroundFolder = gui.addFolder( "background" );
 
@@ -160,11 +165,6 @@ function init() {
       let cameraPosition_zController = cameraPositionFolder.add( config, "cameraPosition_z" ).min( -100 ).max( 100 ).step( 1 );
       cameraPosition_zController.name( "z" );
       cameraPosition_zController.onChange(() => setCameraPosition( config.cameraPosition_x, config.cameraPosition_y, config.cameraPosition_z ));
-
-      // set control axisUpwards
-      let axisUpwardsController = cameraFolder.add( config, "axisUpwards" ).options( ["x", "y", "z"] );
-      axisUpwardsController.name( "Upwards axis" );
-      axisUpwardsController.onChange(() => setUpwardsAxis( config.axisUpwards ));
 
       // add a Trackball controls folder
       let controlsFolder = gui.addFolder( "Trackball controls" );
@@ -404,7 +404,7 @@ function setModelRotation( angle ) {
 export function setUpwardsAxis( axis ) {
   // set the upwards axis
   
-  var promise = new Promise( (resolve, reject) => {
+  var promise = new Promise( ( resolve, reject ) => {
     if ( axis =='x' || axis == 'y' || axis == 'z' ) {
       switch( axis ) {
         case 'x':
@@ -420,7 +420,7 @@ export function setUpwardsAxis( axis ) {
 
       resolve();
     } else {
-      reject(new Error("'" + axis + "' axis does not exist"));
+      reject( new Error( "'" + axis + "' axis does not exist" ) );
     }
   });
 
