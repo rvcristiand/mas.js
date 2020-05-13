@@ -63,7 +63,7 @@ function init() {
       
       // create the plane
       plane = createPlane( config.plane.size, config.plane.divisions, config.plane.color, config.plane.transparent, config.plane.opacity, config.plane.centerLine.color, config.plane.grid.color );
- 
+      plane.name = 'plane';
       // add the plane to the scene
       scene.add( plane );
 
@@ -149,19 +149,19 @@ function init() {
       let cameraFolder = gui.addFolder( "camera" );
 
       // set control cameraType
-      cameraFolder.add( config.camera, "type" ).options( [ "perspective", "orthographic" ] ).onChange( ( type ) => setCameraType( type ) );
+      cameraFolder.add( config.camera, 'type' ).options( [ 'perspective', 'orthographic' ] ).onChange( ( type ) => setCameraType( type ) );
 
       // add controls folder
       let controlsFolder = gui.addFolder( "controls" );
 
       // set control rotateSpeed
-      controlsFolder.add( config.controls, "rotateSpeed" ).min( 0.1 ).max( 10 ).step( 0.1 ).onChange( ( speed ) => controls.rotateSpeed = speed );
+      controlsFolder.add( config.controls, 'rotateSpeed' ).min( 0.1 ).max( 10 ).step( 0.1 ).onChange( ( speed ) => controls.rotateSpeed = speed );
 
       // set control zoomSpeed
-      controlsFolder.add( config.controls, "zoomSpeed" ).min( 0.12 ).max( 12 ).step( 0.12 ).onChange( ( speed ) => controls.zoomSpeed = speed );
+      controlsFolder.add( config.controls, 'zoomSpeed' ).min( 0.12 ).max( 12 ).step( 0.12 ).onChange( ( speed ) => controls.zoomSpeed = speed );
 
       // set control panSpeed
-      controlsFolder.add( config.controls, "panSpeed" ).min( 0.03 ).max( 3 ).step( 0.03 ).onChange( ( speed ) => controls.panSpeed = speed );
+      controlsFolder.add( config.controls, 'panSpeed' ).min( 0.03 ).max( 3 ).step( 0.03 ).onChange( ( speed ) => controls.panSpeed = speed );
       
       // set control screenSpacePanning
       controlsFolder.add( config.controls, 'screenPanning' ).onChange( ( screenPanning ) => controls.screenSpacePanning = screenPanning );
@@ -175,43 +175,33 @@ function init() {
       // set control damping factor
       dampingFolder.add( config.controls.damping, 'factor' ).min( 0.005 ).max( 0.5 ).step( 0.005 ).onChange( ( factor ) => controls.dampingFactor = factor );
 
-      // add a Plane folder
-      let planeFolder = gui.addFolder( "Plane" );
+      // add plane folder
+      let planeFolder = gui.addFolder( "plane" );
       planeFolder.close()
 
+      // set visible plane
+      planeFolder.add( config.plane, 'visible' ).onChange( ( visible ) => scene.getObjectByName( 'plane' ).visible = visible )
+
       // set control planeSize
-      let planeSizeController = planeFolder.add( config.plane, 'size' ).min( 1 ).max( 100 ).step( 1 );
-      planeSizeController.onChange( ( size ) => setPlaneSize( size ) );
+      planeFolder.add( config.plane, 'size' ).min( 1 ).max( 100 ).step( 1 ).onChange( ( size ) => setPlaneSize( size ) );
 
       // set control planeDivisions
-      let planeDivisions = planeFolder.add( config.plane, 'divisions' ).min( 0 ).max( 100 ).step( 5 );
-      planeDivisions.onChange( ( divisions ) => setPlaneDivisions( divisions ) );
+      planeFolder.add( config.plane, 'divisions' ).min( 0 ).max( 100 ).step( 5 ).onChange( ( divisions ) => setPlaneDivisions( divisions ) );
 
       // set control planeColor
-      let planeColorController = planeFolder.addColor( config.plane, 'color' );
-      planeColorController.onChange( ( color ) => setPlaneColor( color ) );
+      planeFolder.addColor( config.plane, 'color' ).onChange( ( color ) => setPlaneColor( color ) );
       
       // set control planeTransparent
-      let planeTransparentController = planeFolder.add( config.plane, 'transparent' );
-      planeTransparentController.onChange( ( transparent ) => setPlaneTransparent( transparent ));
+      planeFolder.add( config.plane, 'transparent' ).onChange( ( transparent ) => setPlaneTransparent( transparent ));
 
       // set control planeOpacity
-      let planeOpacityController = planeFolder.add( config.plane, "opacity" ).min( 0 ).max( 1 ).step( 0.01 );
-      planeOpacityController.onChange( ( opacity ) => setPlaneOpacity( opacity ));
-
-      // add a centerLine folder
-      let centerLineFolder = planeFolder.addFolder( 'Center line');
+      planeFolder.add( config.plane, "opacity" ).min( 0 ).max( 1 ).step( 0.01 ).onChange( ( opacity ) => setPlaneOpacity( opacity ) );
 
       // set control planeColorCenterLine
-      let planeColorCenterLineController = centerLineFolder.addColor( config.plane.centerLine, 'color' );
-      planeColorCenterLineController.onChange( ( color ) => setCenterLineColor( color ));
+      planeFolder.addFolder( "center line" ).addColor( config.plane.centerLine, 'color' ).onChange( ( color ) => setCenterLineColor( color ));
 
       // add a grid folder
-      let gridFolder = planeFolder.addFolder( 'Grid' );
-
-      // set control planeColorCenterLine
-      let planeColorGridController = gridFolder.addColor( config.plane.grid, "color" );
-      planeColorGridController.onChange( ( color ) => setGridColor( color ));
+      planeFolder.addFolder( "grid" ).addColor( config.plane.grid, "color" ).onChange( ( color ) => setGridColor( color ));
 
       // add a Joint folder
       let jointFolder = gui.addFolder( "Joints" );
@@ -881,29 +871,6 @@ function createJoint( size ) {
   return joint;
 }
 
-function updatePlane() {
-  // update the plane
-
-  // remove the plane
-  scene.remove( plane );
-
-  // create the plane
-  plane = createPlane( 
-    config.planeSize,
-    config.planeDivisions, 
-    config.planeColor,
-    config.planeColorCenterLine,
-    config.planeColorGrid,
-    config.planeTransparent,
-    config.planeOpacity
-  );
-  // set the orientation
-  setPlaneOrientation( config.axisUpwards );
-
-  // add the plane to the scene
-  scene.add( plane );
-}
-
 function createPlane( size, divisions, color, transparent, opacity, colorCenterLine, colorGrid ) {
   // create the plane
 
@@ -917,7 +884,7 @@ function createPlane( size, divisions, color, transparent, opacity, colorCenterL
   var planeGometry = new THREE.PlaneBufferGeometry();
   var planeMaterial = new THREE.MeshBasicMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } );
   var plane = new THREE.Mesh( planeGometry, planeMaterial );
-  plane.name = 'plane';
+  plane.name = '_plane';
   
   // add the plane to the parent
   parent.add( plane );
@@ -960,19 +927,19 @@ function setPlaneDivisions( divisions ) {
 function setPlaneColor( color ) {
   // set plane color
 
-  plane.getObjectByName( 'plane' ).material.color = new THREE.Color( color );
+  plane.getObjectByName( '_plane' ).material.color = new THREE.Color( color );
 }
 
 function setPlaneTransparent( transparent ) {
   // set plane transparent
 
-  plane.getObjectByName( 'plane' ).material.transparent = transparent;
+  plane.getObjectByName( '_plane' ).material.transparent = transparent;
 }
 
 function setPlaneOpacity( opacity ) {
   // set plane opacity
 
-  plane.getObjectByName( 'plane' ).material.opacity = opacity;
+  plane.getObjectByName( '_plane' ).material.opacity = opacity;
 }
 
 function setCenterLineColor( color ) {

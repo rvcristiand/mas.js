@@ -41,6 +41,7 @@
           }
         },
         "plane": {
+          "visible": true,
           "size": 10,
           "divisions": 10,
           "color": "#000000",
