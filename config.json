@@ -20,15 +20,6 @@
             "z": 10
           }
         },
-        "cameraType": "perspective",
-        "perspectiveCameraFOV": 50,
-        "perspectiveCameraNear": 1,
-        "perspectiveCameraFar": 1000,
-        "orthographicCameraNear": 1,
-        "orthographicCameraFar": 1000,
-        "cameraPosition_x": 10,
-        "cameraPosition_y": 10,
-        "cameraPosition_z": 10,
         "controls": {
           "rotateSpeed": 1,
           "zoomSpeed": 1.2,
