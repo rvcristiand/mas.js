@@ -9,7 +9,6 @@
           "bottomColor": "#818181"
         },
         "model": {
-          "view": "extrude",
           "axisUpwards": "z",
           "axes": true
         },
@@ -56,19 +55,24 @@
         },
         "joint": {
           "visible": true,
+          "view": "extrude",
           "size": 0.1,
           "color": "#00FF00",
           "transparent": true,
           "opacity": 1,
           "label": false
         },
-        "frameColor": "#0000FF",
-        "frameSize": 0.05,
-        "frameTransparent": true,
-        "frameOpacity": 0.5,
-        "viewFrameLabel": true,
-        "viewType": "extrude",
-        "framesVisible": true      }
+        "frame": {
+          "visible": true,
+          "view": "extrude",
+          "size": 0.05,
+          "color": "#0000FF",
+          "transparent": true,
+          "opacity": 0.5,
+          "label": true,
+          "axes": true
+        }
+      }
     }
   },
   "folders": {

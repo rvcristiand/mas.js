@@ -74,7 +74,7 @@ function init() {
       // set the geometry
       jointGeometry = new THREE.SphereGeometry( 1, 32, 32 );
       // set the material
-      jointMaterial = new THREE.MeshBasicMaterial({ color: config.joint.color });
+      jointMaterial = new THREE.MeshBasicMaterial( { color: config.joint.color, transparent: config.joint.transparent, opacity: config.joint.opacity } );
       // add to the model
       model.add( joints );
 
@@ -83,7 +83,7 @@ function init() {
       frames.name = 'frames';
       frames.visible = config.frameVisible;
       // set the material
-      frameMaterial = new THREE.MeshBasicMaterial( { color: config.frameColor, transparent: config.frameTransparent, opacity: config.frameOpacity } );
+      frameMaterial = new THREE.MeshBasicMaterial( { color: config.frame.color, transparent: config.frame.transparent, opacity: config.frame.opacity } );
       // set the shape
       wireFrameShape = new THREE.Shape().absarc();
       // add to the scene
@@ -99,7 +99,7 @@ function init() {
       stats = initStats();
 
       // create the WebGL renderer
-      webGLRenderer = new THREE.WebGLRenderer({ canvas: canvasWebGLRenderer, alpha: true });
+      webGLRenderer = new THREE.WebGLRenderer( { canvas: canvasWebGLRenderer, alpha: true } );
       // set pixel ratio
       webGLRenderer.setPixelRatio( window.devicePixelRatio );
       // set the size
@@ -123,12 +123,12 @@ function init() {
 
       // remember config
       // gui.remember( config );
+
+      // close controllers
+      gui.close();
       
       // add model folder
       let modelFolder = gui.addFolder( "model" );
-      
-      // set control view
-      modelFolder.add( config.model, 'view', [ 'wireframe', 'extrude' ] ).onChange( ( view )  => setViewType( view ) );
 
       // set control axisUpwards
       modelFolder.add( config.model, 'axisUpwards' ).options( [ 'x', 'y', 'z' ] ).onChange( ( axis ) => setUpwardsAxis( axis ) ).listen();
@@ -177,10 +177,10 @@ function init() {
 
       // add plane folder
       let planeFolder = gui.addFolder( "plane" );
-      planeFolder.close()
+      planeFolder.close();
 
       // set visible plane
-      planeFolder.add( config.plane, 'visible' ).onChange( ( visible ) => scene.getObjectByName( 'plane' ).visible = visible )
+      planeFolder.add( config.plane, 'visible' ).onChange( ( visible ) => scene.getObjectByName( 'plane' ).visible = visible );
 
       // set control planeSize
       planeFolder.add( config.plane, 'size' ).min( 1 ).max( 100 ).step( 1 ).onChange( ( size ) => setPlaneSize( size ) );
@@ -224,47 +224,38 @@ function init() {
       // set opacity joint
       jointFolder.add( config.joint, 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( ( opacity ) => setJointOpacity( opacity ));
 
-      // add a Frame folder
-      let frameFolder = gui.addFolder( "Frames" );
+      // add a frame folder
+      let frameFolder = gui.addFolder( "frame" );
 
       // set joints visible
-      let framesVisibleController = frameFolder.add( config, 'framesVisible' );
-      framesVisibleController.name( "Visible" );
-      framesVisibleController.onChange( () => setFramesVisible( config.framesVisible ));
+      frameFolder.add( config.frame, 'visible' ).onChange( ( visible ) => setFramesVisible( visible ));
+
+      // set control view
+      frameFolder.add( config.frame, 'view', [ 'wireframe', 'extrude' ] ).onChange( ( view )  => setViewType( view ) );
 
       // set the control frame size
-      let frameSizeController = frameFolder.add( config, "frameSize" ).min( 0.01 ).max( 1 ).step( 0.01 );
-      frameSizeController.name( "Size" );
-      frameSizeController.onChange( () => setFrameSize() );
-
-      // set view frame's label
-      let viewFrameLabelController = frameFolder.add( config, 'viewFrameLabel' );
-      viewFrameLabelController.name( "Labels" );
-      viewFrameLabelController.onChange( () => setViewFrameLabel( config.viewFrameLabel ));
-
-      // add a Color folder
-      let frameColorFolder = frameFolder.addFolder( "Colors" );
+      frameFolder.add( config.frame, "size" ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( ( size ) => setFrameSize( size ) );
 
       // set control frame color
-      let frameColorController = frameColorFolder.addColor( config, "frameColor" );
-      frameColorController.name( "Colors" );
-      frameColorController.onChange( () => setFrameColor( config.frameColor ) );
+      frameFolder.addColor( config.frame, "color" ).onChange( ( color ) => setFrameColor( color ) );
 
       // set control frame transparent
-      let frameTransparentController = frameColorFolder.add( config, "frameTransparent" );
-      frameTransparentController.name( "Transparent" );
-      frameTransparentController.onChange( () => setFrameTransparent( config.frameTransparent ) );
+      frameFolder.add( config.frame, "transparent" ).onChange( ( transparent ) => setFrameTransparent( transparent ) );
 
       // set control frame opcity
-      let frameOpacityController = frameColorFolder.add( config, "frameOpacity" ).min( 0 ).max( 1 ).step( 0.01 );
-      frameOpacityController.name( "Opacity" );
-      frameOpacityController.onChange( () => setFrameOpacity( config.frameOpacity ) );
+      frameFolder.add( config.frame, "opacity" ).min( 0 ).max( 1 ).step( 0.01 ).onChange( ( opacity ) => setFrameOpacity( opacity ) );
+
+      // set view frame's label
+      frameFolder.add( config.frame, 'label' ).onChange( ( visible ) => setViewFrameLabel( visible ) );
+
+      // set view frame's axes
+      frameFolder.add( config.frame, 'axes' ).onChange( ( visible ) => setFramesAxesDisplay( visible ) );
     })
-    .then(function() {
+    .then( function() {
       render();
     })
-    .catch(function (error) {
-      console.log("Error occurred in sequence:", error);
+    .catch(function ( error ) {
+      console.log( "Error occurred in sequence:", error );
     })
 
   // // casting
@@ -409,7 +400,7 @@ export function setViewType( viewType ) {
       
       resolve();
     } else {
-      reject( new Error(viewType + " does not exits") );
+      reject( new Error( viewType + " does not exits" ) );
     }
   });
 
@@ -481,69 +472,75 @@ export function addFrame( name, j, k, material, section ) {
     section = section.toString();
 
     // check if frame's name of frame's joints already exits
-    if ( structure.frames.hasOwnProperty( name ) ) reject( new Error("frame's name '" + name + "' already exits") );
-    if ( Object.values( structure.frames ).some( frame => frame.j == j && frame.k == k ) ) reject( new Error("frame's joints [" + j + ", " + k + "] already taked") );
-
-    // check if joints exits
-    if ( !structure.joints.hasOwnProperty( j ) ) reject( new Error("joint's '" + j + "' does not exits") );
-    if ( !structure.joints.hasOwnProperty( k ) ) reject( new Error("joint's '" + k + "' does not exits") );
+    if ( structure.frames.hasOwnProperty( name ) || Object.values( structure.frames ).some( frame => frame.j == j && frame.k == k ) ) {
+      if ( structure.frames.hasOwnProperty( name ) ) { 
+        reject( new Error( "frame's name '" + name + "' already exits" ) );
+      } else {
+        reject( new Error( "frame's joints [" + j + ", " + k + "] already taked") );
+      }
+    } else {
+      // check if joints exits
+      if ( structure.joints.hasOwnProperty( j ) || structure.joints.hasOwnProperty( k ) ) {
+        // add frame to structure
+        structure.frames[name] = { j: j, k: k, material: material, section: section };
     
-    // add frame to structure
-    structure.frames[name] = { j: j, k: k, material: material, section: section };
-
-    // get frame's joints
-    j = joints.getObjectByName( j );
-    k = joints.getObjectByName( k );
-
-    // get local axis
-    var x_local =  k.position.clone().sub( j.position );
-
-    // create frame
-    var frame = createFrame( x_local.length(), structure.frames[name].section );
-
-    // set name
-    frame.name = name;
-
-    // set material
-    // frame.structural_material = structural_material;
-
-    // set section
-    // frame.section = section;
-
-    // add axes
-    // var axes = new THREE.AxesHelper();
-    // frame.add( axes );
-    // axes.position.set(0, 0, length / 2);
-
-    // set position
-    frame.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0 ), x_local.clone().normalize() );
-    frame.position.copy( x_local.clone().multiplyScalar(0.5) );
-    frame.position.add( j.position );
-
-    // add label
-    const label = document.createElement( 'div' );
-    label.classList.add( 'frame' );
-    label.textContent = name;
-    var frameLabel = new THREE.CSS2DObject( label );
-    frameLabel.name = 'label';
-    frameLabel.visible = config.viewFrameLabel;
-    frame.add( frameLabel );
-
-    // add frame's joints info
-    // frame.j = j;
-    // frame.k = k;
-    // frame.joints = [j, k];
+        // get frame's joints
+        j = joints.getObjectByName( j );
+        k = joints.getObjectByName( k );
     
-    // add frame to scene
-    frames.add( frame );
-
-    // track frame's name
-    // frames_name.add(name);
+        // get local axis
+        var x_local =  k.position.clone().sub( j.position );
     
-    // track frame's joints
-    // frames_joints.push( [j, k] );
-  
-    resolve();
+        // create frame
+        var frame = createFrame( x_local.length(), structure.frames[name].section );
+    
+        // set name
+        frame.name = name;
+    
+        // add axes
+        var axes = new THREE.AxesHelper();
+        axes.name = 'axes';
+        axes.visible = config.frame.axes;
+        axes.position.set( 0, 0, length / 2 );
+        frame.add( axes );
+    
+        // set position
+        frame.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0 ), x_local.clone().normalize() );
+        frame.position.copy( x_local.clone().multiplyScalar(0.5) );
+        frame.position.add( j.position );
+    
+        // add label
+        const label = document.createElement( 'div' );
+        label.classList.add( 'frame' );
+        label.textContent = name;
+        var frameLabel = new THREE.CSS2DObject( label );
+        frameLabel.name = 'label';
+        frameLabel.visible = config.frame.label;
+        frame.add( frameLabel );
+    
+        // add frame's joints info
+        // frame.j = j;
+        // frame.k = k;
+        // frame.joints = [j, k];
+        
+        // add frame to scene
+        frames.add( frame );
+    
+        // track frame's name
+        // frames_name.add(name);
+        
+        // track frame's joints
+        // frames_joints.push( [j, k] );
+      
+        resolve();
+      } else {
+        if ( !structure.joints.hasOwnProperty( j ) ) {
+          reject( new Error("joint's '" + j + "' does not exits") );
+        } else {
+          reject( new Error("joint's '" + k + "' does not exits") );
+        }
+      }
+    }
   });
 
   return promise;
@@ -618,36 +615,41 @@ export function addJoint( name, x, y, z ) {
     name = name.toString();
     
     // check if joint's name or joint's coordinate already exits
-    if ( structure.joints.hasOwnProperty( name ) ) reject( new Error("joint's name '" + name + "' already exist" ));
-    if ( Object.values( structure.joints ).some( joint => joint.x == x && joint.y == y && joint.z == z ) ) reject( new Error("joint's coordinate [" + x + ", " + y + ", " + z + "] already exist" )); ; 
+    if ( structure.joints.hasOwnProperty( name ) || Object.values( structure.joints ).some( joint => joint.x == x && joint.y == y && joint.z == z ) ) {
+      if ( structure.joints.hasOwnProperty( name ) ) {
+        reject( new Error( "joint's name '" + name + "' already exist" ) );
+      } else {
+        reject( new Error( "joint's coordinate [" + x + ", " + y + ", " + z + "] already exist" )); 
+      }
+    } else {
+      // add joint to structure
+      structure.joints[name] = { x: x, y: y, z: z };
     
-    // add joint to structure
-    structure.joints[name] = { x: x, y: y, z: z };
+      // create joint
+      var joint = createJoint( config.joint.size );
   
-    // create joint
-    var joint = createJoint( config.jointSize );
-
-    // set name
-    joint.name = name;
-
-    // set position
-    joint.position.set( x, y, z );
-
-    // add label
-    const label = document.createElement( 'div' );
-    label.className = 'joint';
-    label.textContent = name;
-    var jointLabel = new THREE.CSS2DObject( label );
-    jointLabel.name = 'label';
-    jointLabel.visible = config.viewJointLabel;
-    jointLabel.position.set( 1, 1, 1 );
-    joint.add( jointLabel );
-    // joint.label = label;
-    
-    // add joint to scene
-    joints.add( joint );
-
-    resolve();
+      // set name
+      joint.name = name;
+  
+      // set position
+      joint.position.set( x, y, z );
+  
+      // add label
+      const label = document.createElement( 'div' );
+      label.className = 'joint';
+      label.textContent = name;
+      var jointLabel = new THREE.CSS2DObject( label );
+      jointLabel.name = 'label';
+      jointLabel.visible = config.joint.label;
+      jointLabel.position.set( 1, 1, 1 );
+      joint.add( jointLabel );
+      // joint.label = label;
+      
+      // add joint to scene
+      joints.add( joint );
+  
+      resolve();
+    }    
   });
 
   return promise;
@@ -787,7 +789,7 @@ function createFrame( length, section ) {
   // create wire frame
   var wireFrameGoemetry = new THREE.ExtrudeBufferGeometry( wireFrameShape, extrudeSettings );
   var wireFrame = new THREE.Mesh( wireFrameGoemetry, frameMaterial );
-  wireFrame.scale.set( config.frameSize, config.frameSize, 1 );
+  wireFrame.scale.set( config.frame.size, config.frame.size, 1 );
   wireFrame.name = 'wireFrame';
 
   // create extrude frame
@@ -797,7 +799,7 @@ function createFrame( length, section ) {
 
   if ( structure.sections[section].type == 'Section' ) {
     // set frame size
-    extrudeFrame.scale.set( config.frameSize, config.frameSize, 1 );
+    extrudeFrame.scale.set( config.frame.size, config.frame.size, 1 );
   } else {
     // create edges
     var frameEdgesGeomtry = new THREE.EdgesGeometry( extrudeFrameGeometry );
@@ -809,8 +811,8 @@ function createFrame( length, section ) {
   }
 
   // set visibility
-  if ( config.model.view == 'wireframe' ) extrudeFrame.visible = false;
-  if ( config.model.view == 'extrude' ) wireFrame.visible = false;
+  if ( config.frame.view == 'wireframe' ) extrudeFrame.visible = false;
+  if ( config.frame.view == 'extrude' ) wireFrame.visible = false;
 
   // x local along frame
   var quaternion = new THREE.Quaternion().setFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), 2 * Math.PI / 3 );
@@ -993,6 +995,14 @@ export function hideFramesLabel() {
   return promise;
 }
 
+function setFramesAxesDisplay( visible ) {
+  // set joint's label display
+
+  for ( let frame of frames.children ) {
+    frame.getObjectByName( 'axes' ).visible = visible
+  }
+}
+
 function setFramesLabelDisplay( display ) {
   // set joint's label display
 
@@ -1091,10 +1101,10 @@ function setJointOpacity( opacity ) {
   jointMaterial.opacity = opacity;
 }
 
-function setFrameSize() {
+function setFrameSize( size ) {
   // set frame's size
 
-  let scale = new THREE.Vector3( config.frameSize, config.frameSize, 1 );
+  let scale = new THREE.Vector3( size, size, 1 );
   let frame, wireFrame, extrudeFrame;
 
   for ( const name in structure.frames ) {
@@ -1105,7 +1115,6 @@ function setFrameSize() {
     wireFrame.scale.copy( scale );
     if ( structure.sections[structure.frames[name].section].type == 'Section') extrudeFrame.scale.copy( scale );
   }
-
 }
 
 function setJointSize( size ) {
