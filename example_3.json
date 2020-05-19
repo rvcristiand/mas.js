@@ -66,5 +66,31 @@
             "material": "material1",
             "section": "section1"
         }
+    },
+    "supports": {
+        "2": {
+            "ux": true,
+            "uy": true,
+            "uz": true,
+            "rx": true,
+            "ry": true,
+            "rz": true
+        },
+        "3": {
+            "ux": true,
+            "uy": true,
+            "uz": true,
+            "rx": true,
+            "ry": true,
+            "rz": true
+        },
+        "4": {
+            "ux": true,
+            "uy": true,
+            "uz": true,
+            "rx": true,
+            "ry": true,
+            "rz": true
+        }
     }
 }

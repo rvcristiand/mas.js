@@ -30,6 +30,15 @@
             "factor": 0.05
           }
         },
+        "lights": {
+          "ambient": {
+            "color": "#0c0c0c"
+          },
+          "direction": {
+            "color": "#ffffff",
+            "intensity": 1
+          }
+        },
         "plane": {
           "visible": true,
           "size": 10,
@@ -37,31 +46,40 @@
           "color": "#000000",
           "transparent": true,
           "opacity": 0.5,
-          "centerLine": {
-            "color": "#ff0000"
-          },
           "grid": {
-            "color": "#000000"
+            "visible": true,
+            "major": "#ff0000",
+            "menor": "#000000"
           }
         },
         "joint": {
           "visible": true,
           "view": "extrude",
-          "size": 0.1,
-          "color": "#00FF00",
+          "size": 0.03,
+          "color": "#ffff00",
           "transparent": true,
           "opacity": 1,
-          "label": false
+          "label": true
         },
         "frame": {
           "visible": true,
-          "view": "extrude",
-          "size": 0.05,
-          "color": "#0000FF",
-          "transparent": true,
-          "opacity": 0.5,
-          "label": true,
-          "axes": true
+          "view": "wireframe",
+          "size": 0.02,
+          "color": "#000000",
+          "transparent": false,
+          "opacity": 1,
+          "label": false,
+          "axes": false
+        },
+        "support": {
+          "visible": true,
+          "foundation": {
+            "size": 0.5,
+            "depth": 0.05
+          },
+          "pedestal": {
+            "size": 0.3
+          }
         }
       }
     }

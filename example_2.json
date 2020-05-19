@@ -140,5 +140,31 @@
             "material": "2100 t/cm2",
             "section": "10 cm2"
         }
+    },
+    "supports": {
+        "4": {
+            "ux": true,
+            "uy": true,
+            "uz": true,
+            "rx": false,
+            "ry": false,
+            "rz": false
+        },
+        "5": {
+            "ux": true,
+            "uy": true,
+            "uz": true,
+            "rx": false,
+            "ry": false,
+            "rz": false
+        },
+        "6": {
+            "ux": true,
+            "uy": true,
+            "uz": true,
+            "rx": false,
+            "ry": false,
+            "rz": false
+        }
     }
 }

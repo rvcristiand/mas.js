@@ -1,4 +1,4 @@
- // global variables
+// global variables
 
 //
 var scene;
@@ -9,6 +9,11 @@ var webGLRenderer, CSS2DRenderer;
 //
 var canvasWebGLRenderer = document.getElementById( "canvas" );
 var canvasCSS2DRenderer = document.getElementById( "labels" );
+
+//
+// var ambientLight;
+// var hemisphereLight;
+// var directionalLight;
 
 //
 var stats, gui;
@@ -29,6 +34,13 @@ var plane;
 var joints, jointMaterial, jointGeometry;
 var frames, frameMaterial, wireFrameShape;
 
+var xSupportMaterial, ySupportMaterial, zSupportMaterial;
+var pedestalMaterial;
+
+var foundationGeometry, pedestalGeometry, pyramidGeometry;
+
+// , rGeometry;
+
 //
 var materials = {};
 var sections = {};
@@ -39,6 +51,9 @@ function init() {
     .then(function ( json ) {
       // set the config
       config = json.remembered[json.preset]["0"];
+
+      // create the structure
+      structure = createstructure();
       
       // set the background
       setBackgroundColor( config.background.topColor, config.background.bottomColor );
@@ -46,10 +61,49 @@ function init() {
       // create the scene
       scene = new THREE.Scene();
 
+      // background
+      // scene.background = new THREE.Color( 'white' ); // .setHSL( 0.6, 0, 1 )
+
+      // fog
+      // scene.fog = new THREE.Fog( scene.background, 1, 5000 );
+
+      // ambient light
+      // ambientLight = new THREE.AmbientLight( config.lights.ambient.color );
+      // scene.add( ambientLight );
+
+
+      // hemisphereLight
+      // hemisphereLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
+      // hemisphereLight.color.setHSL( 0.6, 1, 0.6 );
+      // hemisphereLight.groundColor.setHSL( 0.095, 1, 0.75 );
+      // hemisphereLight.position.set( 0, 50, 0 );
+      // scene.add( hemisphereLight );
+
+      // directionalLight
+      // directionalLight = new THREE.DirectionalLight( config.lights.direction.color, config.lights.direction.intensity );
+      // directionalLight.color.setHSL( 0.1, 1, 0.95 );
+      // directionalLight.position.set( -1, 1.75, 1 );
+      // directionalLight.position.multiplyScalar( 30 );
+      // scene.add( directionalLight );
+
+      // directionalLight.castShadow = true;
+
+      // directionalLight.shadow.mapSize.widht = 2048;
+      // directionalLight.shadow.mapSize.height = 2048;
+      
+      // var d = 50;
+
+      // directionalLight.shadow.camera.left = -d;
+      // directionalLight.shadow.camera.right = d;
+      // directionalLight.shadow.camera.top = d;
+      // directionalLight.shadow.camera.bottom = -d;
+
+      // directionalLight.shadow.camera.far = 3500;
+      // directionalLight.shadow.bias = -0.0001
+
+
       // create the model
       model = new THREE.Group();
-      // set the upwards axis
-      setUpwardsAxis( config.model.axisUpwards );
 
       // create the camera
       camera = createCamera( config.camera.type, new THREE.Vector3( config.camera.position.x, config.camera.position.y, config.camera.position.z ) );
@@ -62,8 +116,7 @@ function init() {
       model.add( axes );
       
       // create the plane
-      plane = createPlane( config.plane.size, config.plane.divisions, config.plane.color, config.plane.transparent, config.plane.opacity, config.plane.centerLine.color, config.plane.grid.color );
-      plane.name = 'plane';
+      plane = createPlane( config.plane.size, config.plane.divisions, config.plane.color, config.plane.transparent, config.plane.opacity, config.plane.grid.major, config.plane.grid.minor );
       // add the plane to the scene
       scene.add( plane );
 
@@ -77,11 +130,11 @@ function init() {
       jointMaterial = new THREE.MeshBasicMaterial( { color: config.joint.color, transparent: config.joint.transparent, opacity: config.joint.opacity } );
       // add to the model
       model.add( joints );
-
+      
       // set the frames
       frames = new THREE.Group();
       frames.name = 'frames';
-      frames.visible = config.frameVisible;
+      frames.visible = config.frame.visible;
       // set the material
       frameMaterial = new THREE.MeshBasicMaterial( { color: config.frame.color, transparent: config.frame.transparent, opacity: config.frame.opacity } );
       // set the shape
@@ -89,21 +142,37 @@ function init() {
       // add to the scene
       model.add( frames );
 
+      // set the supports
+      // material
+      xSupportMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+      ySupportMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+      zSupportMaterial = new THREE.MeshBasicMaterial( { color: 0x0000ff } );
+
+      pedestalMaterial = [ xSupportMaterial, xSupportMaterial, ySupportMaterial, ySupportMaterial, zSupportMaterial, zSupportMaterial ];
+
+      // geometry
+      foundationGeometry = new THREE.BoxBufferGeometry();
+      pedestalGeometry = new THREE.BoxBufferGeometry();
+      pyramidGeometry = new THREE.TetrahedronBufferGeometry();
+      // rGeometry = new THREE.BoxBufferGeometry();
+
+      // set the upwards axis
+      setUpwardsAxis( config.model.axisUpwards );
+
       // add model to scene
       scene.add( model );
-
-      // create the structure
-      structure = createstructure();
 
       // create the stats
       stats = initStats();
 
       // create the WebGL renderer
-      webGLRenderer = new THREE.WebGLRenderer( { canvas: canvasWebGLRenderer, alpha: true } );
+      webGLRenderer = new THREE.WebGLRenderer( { canvas: canvasWebGLRenderer, alpha: true, antialias: true } );
       // set pixel ratio
       webGLRenderer.setPixelRatio( window.devicePixelRatio );
       // set the size
       webGLRenderer.setSize( canvasWebGLRenderer.clientWidth, canvasWebGLRenderer.clientHeight );
+      // shadows
+      webGLRenderer.shadowMap.enabled = true;
 
       // create the CSS2D renderer
       CSS2DRenderer = new THREE.CSS2DRenderer();
@@ -125,7 +194,7 @@ function init() {
       // gui.remember( config );
 
       // close controllers
-      gui.close();
+      gui.open();
       
       // add model folder
       let modelFolder = gui.addFolder( "model" );
@@ -135,6 +204,16 @@ function init() {
 
       // set control axes
       modelFolder.add( config.model, 'axes' ).onChange( ( visible ) => model.getObjectByName( 'axes' ).visible = visible );
+
+      // add a light folder
+      // let lightsFolder = gui.addFolder( "light");
+
+      // add a ambiernt folder
+
+      // let ambientFolder = lightsFolder.addFolder( "ambient" );
+
+      // add colot controller
+      // ambientFolder.addColor( config.lights.ambient, 'color' ).onChange( color => ambientLight.color = new THREE.Color( color ) );
 
       // add a background folder
       let backgroundFolder = gui.addFolder( "background" );
@@ -180,7 +259,7 @@ function init() {
       planeFolder.close();
 
       // set visible plane
-      planeFolder.add( config.plane, 'visible' ).onChange( ( visible ) => scene.getObjectByName( 'plane' ).visible = visible );
+      planeFolder.add( config.plane, 'visible' ).onChange( ( visible ) => scene.getObjectByName( 'plane' ).getObjectByName( '_plane' ).visible = visible );
 
       // set control planeSize
       planeFolder.add( config.plane, 'size' ).min( 1 ).max( 100 ).step( 1 ).onChange( ( size ) => setPlaneSize( size ) );
@@ -197,11 +276,17 @@ function init() {
       // set control planeOpacity
       planeFolder.add( config.plane, "opacity" ).min( 0 ).max( 1 ).step( 0.01 ).onChange( ( opacity ) => setPlaneOpacity( opacity ) );
 
-      // set control planeColorCenterLine
-      planeFolder.addFolder( "center line" ).addColor( config.plane.centerLine, 'color' ).onChange( ( color ) => setCenterLineColor( color ));
+      // add grid folder
+      let gridFolder = planeFolder.addFolder( "grid" );
+
+      // set control visible
+      gridFolder.add( config.plane.grid, "visible" ).onChange( visible => scene.getObjectByName( 'plane' ).getObjectByName( 'grid' ).visible = visible );
+
+      // set control major color
+      gridFolder.addColor( config.plane.grid, 'major' ).onChange( ( color ) => setCenterLineColor( color ));
 
       // add a grid folder
-      planeFolder.addFolder( "grid" ).addColor( config.plane.grid, "color" ).onChange( ( color ) => setGridColor( color ));
+      gridFolder.addColor( config.plane.grid, "menor" ).onChange( ( color ) => setGridColor( color ));
 
       // add a Joint folder
       let jointFolder = gui.addFolder( "joint" );
@@ -234,22 +319,46 @@ function init() {
       frameFolder.add( config.frame, 'view', [ 'wireframe', 'extrude' ] ).onChange( ( view )  => setViewType( view ) );
 
       // set the control frame size
-      frameFolder.add( config.frame, "size" ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( ( size ) => setFrameSize( size ) );
+      frameFolder.add( config.frame, 'size' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( ( size ) => setFrameSize( size ) );
 
       // set control frame color
-      frameFolder.addColor( config.frame, "color" ).onChange( ( color ) => setFrameColor( color ) );
+      frameFolder.addColor( config.frame, 'color' ).onChange( ( color ) => setFrameColor( color ) );
 
       // set control frame transparent
-      frameFolder.add( config.frame, "transparent" ).onChange( ( transparent ) => setFrameTransparent( transparent ) );
+      frameFolder.add( config.frame, 'transparent' ).onChange( ( transparent ) => setFrameTransparent( transparent ) );
 
       // set control frame opcity
-      frameFolder.add( config.frame, "opacity" ).min( 0 ).max( 1 ).step( 0.01 ).onChange( ( opacity ) => setFrameOpacity( opacity ) );
+      frameFolder.add( config.frame, 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( ( opacity ) => setFrameOpacity( opacity ) );
 
       // set view frame's label
       frameFolder.add( config.frame, 'label' ).onChange( ( visible ) => setViewFrameLabel( visible ) );
 
       // set view frame's axes
       frameFolder.add( config.frame, 'axes' ).onChange( ( visible ) => setFramesAxesDisplay( visible ) );
+
+      // add support folder
+      let supportFolder = gui.addFolder( "support" );
+      supportFolder.open();
+
+      // add foundation folder
+      let foundationFolder = supportFolder.addFolder( "foundation" );
+      foundationFolder.open();
+
+      // set control size
+      foundationFolder.add( config.support.foundation, 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setFoundationSize( size ) );
+
+      // add pedestal folder
+      let pedestalFolder = supportFolder.addFolder( "pedestal" );
+      pedestalFolder.open();
+
+      // set control size
+      pedestalFolder.add( config.support.pedestal, 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setPedestalSize( size ) );
+
+      // set control length
+      // supportFolder.add( config.support, 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( ( length ) => setSupportLength( length ) );
+
+      // set control radius
+      // supportFolder.add( config.support, 'radius' ).min( 0.01 ).max( 0.1 ).step( 0.001 ).onChange( ( radius ) => setSupportRadius( radius ) );
     })
     .then( function() {
       render();
@@ -355,7 +464,7 @@ export function setUpwardsAxis( axis ) {
   
   var promise = new Promise( ( resolve, reject ) => {
     if ( axis =='x' || axis == 'y' || axis == 'z' ) {
-      // set model rotation
+      // set model rotation and foundationMaterial
       switch( axis ) {
         case 'x':
           setModelRotation( 4 * Math.PI / 3 );
@@ -367,7 +476,19 @@ export function setUpwardsAxis( axis ) {
           setModelRotation( 0 );
           break;
       }
+      
+      // redraw the supports
+      for ( let [ joint, support ] of Object.entries( structure.supports ) ) {
+        // get joint
+        joint = joints.getObjectByName( joint );
+        
+        // remove support
+        joint.remove( joint.getObjectByName( 'support' ) );
 
+        // add support
+        joint.add( createSupport( support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) );
+      }
+      
       // save the value
       config.model.axisUpwards = axis;
 
@@ -404,7 +525,7 @@ export function setViewType( viewType ) {
     }
   });
 
-  return promise;
+  return promise; 
 }
 
 export function open( filename ) {
@@ -419,6 +540,7 @@ export function open( filename ) {
       // delete frames label
       for ( const frame of frames.children ) frame.remove( frame.getObjectByName( 'label' ) );
 
+      // delete joints
       joints.children = [];
 
       // delete frames
@@ -430,6 +552,7 @@ export function open( filename ) {
       // add joints
       for ( const key in json.joints ) addJoint( key, json.joints[key].x, json.joints[key].y, json.joints[key].z );
 
+      // add materials
       for ( const key in json.materials ) addMaterial( key, json.materials[key].E, json.materials[key].G );
       
       // add section
@@ -449,11 +572,49 @@ export function open( filename ) {
       // add frames
       for ( const key in json.frames ) addFrame( key, json.frames[key].j, json.frames[key].k, json.frames[key].material, json.frames[key].section );
 
+      // add suports
+      for ( const key in json.supports ) addSupport( key, json.supports[key].ux, json.supports[key].uy, json.supports[key].uz, json.supports[key].rx, json.supports[key].ry, json.supports[key].rz );
+
       return;
     })
     .catch(function ( e ) {
       throw e;
     })
+
+  return promise;
+}
+
+export function addSupport( joint, ux, uy, uz, rx, ry, rz ) {
+  // add a support
+  
+  var promise = new Promise( ( resolve, reject ) => {
+    // only strings accepted as joint
+    joint = joint.toString();
+
+    // check if joint's support already exist
+    if ( structure.supports.hasOwnProperty( joint ) ) {
+      reject( new Error( "support's joint '" + joint + "' already exits" ) );
+    } else {
+      // check if joint exist
+      if ( structure.joints.hasOwnProperty( joint ) ) {
+        // add support to structure
+        structure.supports[ joint ] = { ux: ux, uy: uy, uz: uz, rx: rx, ry: ry, rz: rz };
+        
+        // create support
+        var support = createSupport( ux, uy, uz, rx, ry, rz );
+
+        // get joint
+        joint = joints.getObjectByName( joint );
+
+        // add support
+        joint.add( support );
+
+        resolve();
+      } else {
+        reject( new Error( "joint '" + "' does not exist" ) );
+      }
+    }
+  });
 
   return promise;
 }
@@ -624,12 +785,16 @@ export function addJoint( name, x, y, z ) {
     } else {
       // add joint to structure
       structure.joints[name] = { x: x, y: y, z: z };
-    
+
       // create joint
-      var joint = createJoint( config.joint.size );
-  
-      // set name
+      var joint = new THREE.Object3D();
       joint.name = name;
+    
+      // create sphere
+      var _joint = createJoint( config.joint.size );
+      _joint.name = "joint";
+      _joint.visible = config.joint.visible;
+      joint.add( _joint );
   
       // set position
       joint.position.set( x, y, z );
@@ -641,8 +806,8 @@ export function addJoint( name, x, y, z ) {
       var jointLabel = new THREE.CSS2DObject( label );
       jointLabel.name = 'label';
       jointLabel.visible = config.joint.label;
-      jointLabel.position.set( 1, 1, 1 );
-      joint.add( jointLabel );
+      jointLabel.position.set( 2, 2, 2 );
+      _joint.add( jointLabel );
       // joint.label = label;
       
       // add joint to scene
@@ -780,11 +945,158 @@ function deleteJoint( name ) {
   delete structure.joints[name];
 }
 
+function createFoundation() {
+  // create a foundation
+
+  var foundationMaterial;
+
+  // foundation material
+  switch ( config.model.axisUpwards )  {
+    case 'x':
+      foundationMaterial = xSupportMaterial;
+      break;
+    case 'y':
+      foundationMaterial = ySupportMaterial;
+      break;
+    case 'z':
+      foundationMaterial = zSupportMaterial;
+      break;
+  }
+
+  // create foundation
+  var foundation = new THREE.Mesh( foundationGeometry, foundationMaterial );
+  foundation.name = 'foundation';
+
+  // create edges
+  var foundationEdgesGeometry = new THREE.EdgesGeometry( foundationGeometry );
+  var foundationEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );  
+  var foundationEdges = new THREE.LineSegments( foundationEdgesGeometry, foundationEdgesMaterial );
+  foundationEdges.name = 'foundationEdges';
+
+  // add edges
+  foundation.add( foundationEdges );
+
+  // set rotation
+  var quaternion = new THREE.Quaternion().copy( model.quaternion ).inverse();
+  foundation.quaternion.copy( quaternion );
+
+  // set position
+  foundation.position.setZ( -( config.support.pedestal.size + config.support.foundation.depth / 2 ) ).applyQuaternion( quaternion );
+
+  // set scale 
+  foundation.scale.set( config.support.foundation.size, config.support.foundation.size, config.support.foundation.depth );
+
+  return foundation;
+}
+
+function createPedestal() {
+  // create a pedestal
+
+  // create pedestal
+  var pedestal = new THREE.Mesh( pedestalGeometry, pedestalMaterial );
+  pedestal.name = 'pedestal';
+
+  // create edges
+  var pedestalEdgesGeometry = new THREE.EdgesGeometry( pedestalGeometry );
+  var pedestalEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
+  var pedestalEdges = new THREE.LineSegments( pedestalEdgesGeometry, pedestalEdgesMaterial );
+  pedestalEdges.name = 'pedestaEdges';
+
+  // add edges
+  pedestal.add( pedestalEdges );
+  
+  // set quaternion
+  var quaternion = new THREE.Quaternion().copy( model.quaternion );
+  quaternion.inverse();
+
+  // set position
+  pedestal.position.setZ( -config.support.pedestal.size / 2 ).applyQuaternion( quaternion );
+
+  // set scale
+  pedestal.scale.setScalar( config.support.pedestal.size );
+
+  return pedestal;
+}
+
+function createSupport( ux, uy, uz, rx, ry, rz ) {
+  // create a support
+
+  var support = new THREE.Group();
+  
+  if ( ux && uy && uz && rx && ry && rz ) {
+    // create foundation
+    var foundation = createFoundation();
+    support.add( foundation );
+
+    // pedestal
+    var pedestal = createPedestal();
+    support.add( pedestal );
+  } 
+
+  // if ( config.model.axisUpwards == 'x' ) axis = 0;
+  // if ( config.model.axisUpwards == 'y' ) axis = 1;
+  // if ( config.model.axisUpwards == 'z' ) axis = 2;
+
+  // var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
+  // var quaternion = new THREE.Quaternion();
+
+  // var mesh;
+  // var uScale = new THREE.Vector3( config.support.radius, config.support.length, config.support.radius );
+  // var rScale = new THREE.Vector3( config.support.rotation.thickness, 1, 1 );
+
+  // if ( ux ) {
+  //   mesh = new THREE.Mesh( uGeometry, uxMaterial );
+  //   mesh.quaternion.copy( quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 ) );
+  //   mesh.scale.copy( uScale );
+  //   u.add( mesh );
+  // }
+  // if ( uy ) {
+  //   mesh = new THREE.Mesh( uGeometry, uyMaterial );
+  //   mesh.scale.copy( uScale );
+  //   u.add( mesh );
+  // }
+  // if ( uz ) {
+  //   mesh = new THREE.Mesh( uGeometry, uzMaterial );
+  //   mesh.scale.copy( uScale );
+  //   mesh.quaternion.copy( quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 ) );
+  //   u.add( mesh );
+  // }
+  // if ( rx ) {
+  //   mesh = new THREE.Mesh( rGeometry, rxMaterial );
+  //   mesh.scale.copy( rScale )
+  //   mesh.quaternion.copy( quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 ) );
+  //   r.add( mesh );
+  // }
+  // if ( ry ) {
+  //   mesh = new THREE.Mesh( rGeometry, ryMaterial );
+  //   mesh.scale.copy( rScale )
+  //   mesh.quaternion.copy( quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 ) );
+  //   r.add( mesh );
+  // }
+  // if ( rz ) {
+  //   mesh = new THREE.Mesh( rGeometry, rzMaterial );
+  //   mesh.scale.copy( rScale )
+  //   r.add( mesh );
+  // }
+
+  support.name = 'support';
+  support.visible = config.support.visible;
+  // u.name = 'u';
+  // r.name = 'r';
+
+  // r.scale.setScalar( config.support.rotation.size );
+
+  // support.add( u );
+  // support.add( r)
+
+  return support;
+}
+
 function createFrame( length, section ) {
   // create a frame
 
   var parent = new THREE.Group();
-  var extrudeSettings = { depth: length, bevelEnabled: false };
+  var extrudeSettings = { depth: length, bevelEnabled: false };  // curveSegments: 24, 
 
   // create wire frame
   var wireFrameGoemetry = new THREE.ExtrudeBufferGeometry( wireFrameShape, extrudeSettings );
@@ -792,10 +1104,16 @@ function createFrame( length, section ) {
   wireFrame.scale.set( config.frame.size, config.frame.size, 1 );
   wireFrame.name = 'wireFrame';
 
+  // wireFrame.castShadow = true;
+  // wireFrame.receiveShadow = true;
+
   // create extrude frame
   var extrudeFrameGeometry = new THREE.ExtrudeBufferGeometry( sections[section], extrudeSettings );
   var extrudeFrame = new THREE.Mesh( extrudeFrameGeometry, frameMaterial );
   extrudeFrame.name = 'extrudeFrame';
+
+  // extrudeFrame.castShadow = true;
+  // extrudeFrame.receiveShadow = true;
 
   if ( structure.sections[section].type == 'Section' ) {
     // set frame size
@@ -863,6 +1181,10 @@ function createPlane( size, divisions, color, transparent, opacity, colorCenterL
 
   // create the parent
   var parent = new THREE.Group();
+  // set name
+  parent.name = 'plane';
+  // set visible
+  parent.visible = config.plane.visible;
 
   // add the grid to the parent
   parent.add( createGrid( divisions, colorCenterLine, colorGrid ) );
@@ -878,6 +1200,9 @@ function createPlane( size, divisions, color, transparent, opacity, colorCenterL
   
   // set size
   parent.scale.setScalar( size );
+
+  // receive shadow
+  parent.receiveShadow = true;
   
   return parent;
 }
@@ -889,6 +1214,8 @@ function createGrid( divisions, colorCenterLine, colorGrid ) {
   var grid = new THREE.GridHelper( 1, divisions, colorCenterLine, colorGrid );
   // set the name
   grid.name = 'grid';
+  // set visible
+  grid.visible = config.plane.grid.visible;
   // set the rotation
   grid.rotation.x = 0.5 * Math.PI;
 
@@ -908,7 +1235,7 @@ function setPlaneDivisions( divisions ) {
   plane.remove( plane.getObjectByName( 'grid' ) );
   
   // add new grid
-  plane.add( createGrid( divisions, config.plane.centerLine.color, config.plane.grid.color ) );
+  plane.add( createGrid( divisions, config.plane.grid.major, config.plane.grid.menor ) );
 }
 
 function setPlaneColor( color ) {
@@ -946,7 +1273,7 @@ function setGridColor( color ) {
   plane.remove( plane.getObjectByName( 'grid' ) );
 
   // add new grid
-  plane.add( createGrid( config.plane.divisions, config.plane.centerLine.color, color ) ); 
+  plane.add( createGrid( config.plane.divisions, config.plane.grid.major, color ) ); 
 }
 
 function listsEqual( a, b ) {
@@ -1101,6 +1428,35 @@ function setJointOpacity( opacity ) {
   jointMaterial.opacity = opacity;
 }
 
+function setPedestalSize( size ) {
+  // set pedestal size
+
+  var pedestal;
+  var foundation;
+
+  for ( const joint in structure.supports ) {
+    pedestal = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'pedestal' );
+    foundation = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'foundation' );
+
+    // set scale
+    pedestal.scale.setScalar( size );
+
+    // set pedestal  position
+    pedestal.position.setZ( -size / 2 );
+
+    // set foundation position
+    foundation.position.setZ( -( size + config.support.foundation.depth / 2 ) );
+  }
+}
+
+function setFoundationSize( size ) {
+  // set foundation size
+
+  for ( const joint in structure.supports ) {
+    joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'foundation' ).scale.set( size, size, config.support.foundation.depth );
+  }
+}
+
 function setFrameSize( size ) {
   // set frame's size
 
@@ -1120,7 +1476,7 @@ function setFrameSize( size ) {
 function setJointSize( size ) {
   // set joint's size
 
-  for ( const joint of joints.children ) joint.scale.setScalar( size );
+  joints.children.forEach( joint => joint.getObjectByName( 'joint' ).scale.setScalar( size ) );
 }
 
 function setBackgroundColor( topColor, bottomColor ) {
@@ -1139,13 +1495,13 @@ function setFramesVisible ( visible ) {
 function setJointsVisible ( visible ) {
   // set joint's visible
 
-  joints.visible = visible;
+  joints.children.forEach( joint => joint.getObjectByName( 'joint' ).visible = visible );
 }
 
 function createstructure() {
   // create structure
 
-  return { joints: {}, materials: {}, sections: {}, frames: {} };
+  return { joints: {}, materials: {}, sections: {}, frames: {}, supports: {} };
 }
 
 function setCameraType( type ) {
@@ -1186,27 +1542,6 @@ function setCameraType( type ) {
   camera.position.copy( position );
 }
 
-  // set zoom
-  // camera.zoom = 1 / position.length();
-
-  // set postiion
-  // camera.position.copy( position );
-
-
-  // create the controls
-  // controls.dispose();
-  // if (config.cameraType == "perspective") {
-  //   controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
-  // } else if (config.cameraType == "orthographic") {
-  //   controls = createControls( config.rotateSpeed, config.zoomSpeed, config.panSpeed, config.screenSpacePanning );
-  // }
-  // set the target
-  // controls.target = target;
-  // set the properties
-  // controls.rotateSpeed = config.rotateSpeed;
-  // controls.zoomSpeed = config.zoomSpeed;
-  // controls.panSpeed = config.panSpeed;
-
 function createCamera( type, position ) {
   // create the camera
 
@@ -1231,7 +1566,7 @@ function createCamera( type, position ) {
   camera.position.copy( position );
 
   // set the look at
-  camera.lookAt( new THREE.Vector3( 0, 0, 0 ) );
+  camera.lookAt( 0, 0, 0 );
 
   // update camera
   camera.updateProjectionMatrix();

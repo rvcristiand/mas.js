@@ -102,6 +102,11 @@ terminal.add_function("open", {
   }
 });
 
+// default command
+command_line.value = "open(" + '"' + "example_3.json" + '"' + ")";
+
+// focus terminal
+terminal.give_focus();
 
 // set events
 canvas.addEventListener("mousedown", terminal.remove_focus);
