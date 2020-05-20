@@ -37,7 +37,7 @@ var frames, frameMaterial, wireFrameShape;
 var xSupportMaterial, ySupportMaterial, zSupportMaterial;
 var pedestalMaterial;
 
-var foundationGeometry, pedestalGeometry, pyramidGeometry;
+var foundationGeometry, pedestalGeometry, pinGeometry;
 
 // , rGeometry;
 
@@ -117,6 +117,7 @@ function init() {
       
       // create the plane
       plane = createPlane( config.plane.size, config.plane.divisions, config.plane.color, config.plane.transparent, config.plane.opacity, config.plane.grid.major, config.plane.grid.minor );
+      plane.position.set( 0, 0, -0.01 );
       // add the plane to the scene
       scene.add( plane );
 
@@ -153,7 +154,23 @@ function init() {
       // geometry
       foundationGeometry = new THREE.BoxBufferGeometry();
       pedestalGeometry = new THREE.BoxBufferGeometry();
-      pyramidGeometry = new THREE.TetrahedronBufferGeometry();
+
+      pinGeometry = new THREE.ConeBufferGeometry( 1, 1, 4, 1, true );
+
+      // materials
+      pinGeometry.groups = [ ];
+      pinGeometry.addGroup(  0, 6, 0 );
+      pinGeometry.addGroup(  6, 6, 1 );
+      pinGeometry.addGroup( 12, 6, 2 );
+      pinGeometry.addGroup( 18, 6, 3 );
+
+      // rotate
+      pinGeometry.rotateX( Math.PI / 2 );
+      pinGeometry.rotateZ( Math.PI / 4 );
+
+      // translate
+      pinGeometry.translate( 0, 0, -0.5 );
+
       // rGeometry = new THREE.BoxBufferGeometry();
 
       // set the upwards axis
@@ -338,24 +355,27 @@ function init() {
 
       // add support folder
       let supportFolder = gui.addFolder( "support" );
-      supportFolder.open();
 
       // add foundation folder
       let foundationFolder = supportFolder.addFolder( "foundation" );
-      foundationFolder.open();
 
       // set control size
       foundationFolder.add( config.support.foundation, 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setFoundationSize( size ) );
 
       // add pedestal folder
       let pedestalFolder = supportFolder.addFolder( "pedestal" );
-      pedestalFolder.open();
 
       // set control size
       pedestalFolder.add( config.support.pedestal, 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setPedestalSize( size ) );
 
-      // set control length
-      // supportFolder.add( config.support, 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( ( length ) => setSupportLength( length ) );
+      // add pin folder
+      let pinFolder = supportFolder.addFolder( "pin" );
+
+      // set control height
+      pinFolder.add( config.support.pin, 'height' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setPinHeight( size ) );
+
+      // set control radius
+      pinFolder.add( config.support.pin, 'radius' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( radius => setPinRadius( radius ) );
 
       // set control radius
       // supportFolder.add( config.support, 'radius' ).min( 0.01 ).max( 0.1 ).step( 0.001 ).onChange( ( radius ) => setSupportRadius( radius ) );
@@ -535,7 +555,7 @@ export function open( filename ) {
     .then(function ( json ) {
 
       // delete joints label
-      for ( const joint of joints.children ) joint.remove( joint.getObjectByName( 'label' ) );
+      for ( const joint of joints.children ) joint.getObjectByName( 'joint' ).remove( joint.getObjectByName( 'joint' ).getObjectByName( 'label') );
 
       // delete frames label
       for ( const frame of frames.children ) frame.remove( frame.getObjectByName( 'label' ) );
@@ -980,9 +1000,6 @@ function createFoundation() {
   var quaternion = new THREE.Quaternion().copy( model.quaternion ).inverse();
   foundation.quaternion.copy( quaternion );
 
-  // set position
-  foundation.position.setZ( -( config.support.pedestal.size + config.support.foundation.depth / 2 ) ).applyQuaternion( quaternion );
-
   // set scale 
   foundation.scale.set( config.support.foundation.size, config.support.foundation.size, config.support.foundation.depth );
 
@@ -1000,7 +1017,7 @@ function createPedestal() {
   var pedestalEdgesGeometry = new THREE.EdgesGeometry( pedestalGeometry );
   var pedestalEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
   var pedestalEdges = new THREE.LineSegments( pedestalEdgesGeometry, pedestalEdgesMaterial );
-  pedestalEdges.name = 'pedestaEdges';
+  pedestalEdges.name = 'edges';
 
   // add edges
   pedestal.add( pedestalEdges );
@@ -1018,20 +1035,79 @@ function createPedestal() {
   return pedestal;
 }
 
+function createPin() {
+  
+  // create a pin
+  var color1;
+  var color2;
+
+  switch ( config.model.axisUpwards ) {
+    case 'x':
+      color1 = ySupportMaterial;
+      color2 = zSupportMaterial;
+      break;
+    case 'y':
+      color1 = zSupportMaterial;
+      color2 = xSupportMaterial;
+      break;
+    case 'z':
+      color1 = xSupportMaterial;
+      color2 = ySupportMaterial;
+      break;
+  }
+
+  // create pin
+  var pin = new THREE.Mesh( pinGeometry, [ color1, color2, color1, color2 ] );
+  pin.name = 'pin';
+
+  // create edges
+  var pinEdgesGeometry = new THREE.EdgesGeometry( pinGeometry );
+  var pinEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
+  var pinEdges = new THREE.LineSegments( pinEdgesGeometry, pinEdgesMaterial );
+  pinEdges.name = 'edges';
+
+  // add edges
+  pin.add( pinEdges );
+  
+  // set scale
+  pin.scale.set( config.support.pin.radius, config.support.pin.radius, config.support.pin.height );
+
+  // set quaternion
+  var quaternion = new THREE.Quaternion().copy( model.quaternion ).inverse();
+  pin.quaternion.copy( quaternion );
+
+  return pin;
+}
+
 function createSupport( ux, uy, uz, rx, ry, rz ) {
   // create a support
 
   var support = new THREE.Group();
   
+  // fixed
   if ( ux && uy && uz && rx && ry && rz ) {
     // create foundation
     var foundation = createFoundation();
+    // set position
+    foundation.position.setZ( -( config.support.pedestal.size + config.support.foundation.depth / 2 ) ).applyQuaternion( new THREE.Quaternion().copy( model.quaternion ).inverse() );
     support.add( foundation );
 
     // pedestal
     var pedestal = createPedestal();
     support.add( pedestal );
-  } 
+  }
+
+  // pined
+  if ( ux && uy && uz && !rx && !ry && !rz ) {
+    // create foundation
+    var foundation = createFoundation();
+    foundation.position.setZ( -( config.support.pin.height + config.support.foundation.depth / 2 ) ).applyQuaternion( new THREE.Quaternion().copy( model.quaternion ).inverse() );
+    support.add( foundation );
+
+    // create pin
+    var pin = createPin();
+    support.add( pin );
+  }
 
   // if ( config.model.axisUpwards == 'x' ) axis = 0;
   // if ( config.model.axisUpwards == 'y' ) axis = 1;
@@ -1428,6 +1504,48 @@ function setJointOpacity( opacity ) {
   jointMaterial.opacity = opacity;
 }
 
+function setPinRadius( radius ) {
+  // set pin radius
+  var pin;
+  var foundation;
+
+  for ( const joint in structure.supports ) {
+    pin = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'pin' );
+    foundation = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'foundation' );
+
+    if ( pin && foundation ) {
+      // set scale
+      pin.scale.set( radius, radius, config.support.pin.height );
+
+      // set position
+      var quaternion = new THREE.Quaternion().copy( model.quaternion ).inverse();
+      var position = new THREE.Vector3( 0, 0, -( config.support.pin.height + config.support.foundation.depth / 2 ) ).applyQuaternion( quaternion );
+      foundation.position.copy( position );
+    }
+  }
+}
+
+function setPinHeight( height ) {
+  // set pin size
+  var pin;
+  var foundation;
+
+  for ( const joint in structure.supports ) {
+    pin = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'pin' );
+    foundation = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'foundation' );
+
+    if ( pin && foundation ) {
+      // set scale
+      pin.scale.set( config.support.pin.radius, config.support.pin.radius, height );
+
+      // set position
+      var quaternion = new THREE.Quaternion().copy( model.quaternion ).inverse();
+      var position = new THREE.Vector3( 0, 0, -( height + config.support.foundation.depth / 2 ) ).applyQuaternion( quaternion );
+      foundation.position.copy( position );
+    }
+  }
+}
+
 function setPedestalSize( size ) {
   // set pedestal size
 
@@ -1438,14 +1556,21 @@ function setPedestalSize( size ) {
     pedestal = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'pedestal' );
     foundation = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'foundation' );
 
-    // set scale
-    pedestal.scale.setScalar( size );
+    if ( pedestal && foundation ) {
+      // set scale
+      pedestal.scale.setScalar( size );
 
-    // set pedestal  position
-    pedestal.position.setZ( -size / 2 );
 
-    // set foundation position
-    foundation.position.setZ( -( size + config.support.foundation.depth / 2 ) );
+      var quaternion = new THREE.Quaternion().copy( model.quaternion ).inverse();
+      var position = new THREE.Vector3( 0, 0, -size / 2 ).applyQuaternion( quaternion );
+
+      // set pedestal  position
+      pedestal.position.copy( position );
+
+      // set foundation position
+      var position = new THREE.Vector3( 0, 0, -( size + config.support.foundation.depth / 2 ) ).applyQuaternion( quaternion );
+      foundation.position.copy( position );
+    }
   }
 }
 

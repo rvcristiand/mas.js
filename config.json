@@ -9,7 +9,7 @@
           "bottomColor": "#818181"
         },
         "model": {
-          "axisUpwards": "z",
+          "axisUpwards": "y",
           "axes": true
         },
         "camera": {
@@ -59,15 +59,15 @@
           "color": "#ffff00",
           "transparent": true,
           "opacity": 1,
-          "label": true
+          "label": false
         },
         "frame": {
           "visible": true,
-          "view": "wireframe",
+          "view": "extrude",
           "size": 0.02,
-          "color": "#000000",
-          "transparent": false,
-          "opacity": 1,
+          "color": "#ff00ff",
+          "transparent": true,
+          "opacity": 0.5,
           "label": false,
           "axes": false
         },
@@ -79,6 +79,10 @@
           },
           "pedestal": {
             "size": 0.3
+          },
+          "pin": {
+            "height": 0.3,
+            "radius": 0.3
           }
         }
       }
