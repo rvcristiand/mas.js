@@ -624,11 +624,8 @@ export function addSupport( joint, ux, uy, uz, rx, ry, rz ) {
         // create support
         var support = createSupport( ux, uy, uz, rx, ry, rz );
 
-        // get joint
-        joint = joints.getObjectByName( joint );
-
         // add support
-        joint.add( support );
+        joints.getObjectByName( joint ).add( support );
 
         resolve();
       } else {
@@ -1089,7 +1086,7 @@ function createDisplacementSupport( axis ) {
 
   var arrow, circle;
 
-  var circleGeometry = new THREE.CircleBufferGeometry();
+  var circleGeometry = new THREE.CircleBufferGeometry( 1, 32 );
   circleGeometry.rotateX( -Math.PI / 2 );
   circleGeometry.rotateZ( -Math.PI / 4 );
   circleGeometry.scale( 0.1, 0.1, 0.1 ); 
@@ -1128,6 +1125,61 @@ function createDisplacementSupport( axis ) {
   return displacementSupport;
 }
 
+function createRotationSupport( axis ) {
+  // create a rotational suppoort
+  var rotationSupport = new THREE.Group();
+
+  var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
+  var quaternion = new THREE.Quaternion();
+
+  var coneGeometry = new THREE.ConeBufferGeometry();
+  coneGeometry.translate( 0, 0.5, 0 );
+  
+  var circumferenceCurve = new THREE.EllipseCurve( 0, 0, 1, 1, 0, 5 * Math.PI / 4 );
+  var points = circumferenceCurve.getPoints( 32 );
+  var circumferenceGeometry = new THREE.BufferGeometry().setFromPoints( points );
+  circumferenceGeometry.rotateY( Math.PI / 2 );
+  
+  var circumferenceMaterial;
+  var cone;
+
+  switch ( axis ) {
+    case'x':
+      circumferenceMaterial = new THREE.LineBasicMaterial( { color: xSupportMaterial.color } );
+      cone = new THREE.Mesh( coneGeometry, xSupportMaterial );
+      break;
+    case 'y':
+      quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
+      circumferenceMaterial = new THREE.LineBasicMaterial( { color: ySupportMaterial.color } );
+      cone = new THREE.Mesh( coneGeometry, ySupportMaterial );
+      break;
+    case 'z':
+      quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
+      circumferenceMaterial = new THREE.LineBasicMaterial( { color: zSupportMaterial.color } );
+      cone = new THREE.Mesh( coneGeometry, zSupportMaterial );
+      break;
+  }
+
+  var circumference = new THREE.Line( circumferenceGeometry, circumferenceMaterial );
+  circumference.position.set( -0.5, 0, 0 );
+  circumference.scale.setScalar( 0.5 );
+  
+  cone.position.set( 0, points[ points.length - 1 ].x, -points[ points.length - 1 ].x );
+  cone.rotateX( 5 * Math.PI / 4 );
+  cone.scale.set( 0.05, 0.5, 0.05 );
+
+  circumference.name = 'circumference';
+  cone.name = 'cone';
+  
+  circumference.add( cone );
+
+  rotationSupport.add( circumference );
+
+  rotationSupport.quaternion.copy( quaternion );
+
+  return rotationSupport;
+}
+
 function createSupport( ux, uy, uz, rx, ry, rz ) {
   // create a support
 
@@ -1138,6 +1190,9 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
   if ( ux ) analytical.add( createDisplacementSupport( 'x' ) );
   if ( uy ) analytical.add( createDisplacementSupport( 'y' ) );
   if ( uz ) analytical.add( createDisplacementSupport( 'z' ) );
+  if ( rx ) analytical.add( createRotationSupport( 'x' ) );
+  if ( ry ) analytical.add( createRotationSupport( 'y' ) );
+  if ( rz ) analytical.add( createRotationSupport( 'z' ) );
 
   // con las coordenadas identificar en que cara del cubo está el apoyo
   // aun no tengo un ejercicio el cual pueda usar para desarrollar esta herramienta
