@@ -39,8 +39,6 @@ var pedestalMaterial;
 
 var foundationGeometry, pedestalGeometry, pinGeometry;
 
-// , rGeometry;
-
 //
 var materials = {};
 var sections = {};
@@ -145,9 +143,9 @@ function init() {
 
       // set the supports
       // material
-      xSupportMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
-      ySupportMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-      zSupportMaterial = new THREE.MeshBasicMaterial( { color: 0x0000ff } );
+      xSupportMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, side: THREE.DoubleSide } );
+      ySupportMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00, side: THREE.DoubleSide } );
+      zSupportMaterial = new THREE.MeshBasicMaterial( { color: 0x0000ff, side: THREE.DoubleSide } );
 
       pedestalMaterial = [ xSupportMaterial, xSupportMaterial, ySupportMaterial, ySupportMaterial, zSupportMaterial, zSupportMaterial ];
 
@@ -355,6 +353,9 @@ function init() {
 
       // add support folder
       let supportFolder = gui.addFolder( "support" );
+
+      // set control mode
+      supportFolder.add( config.support, 'mode' ).options( [ "space", "analytical" ]).onChange( mode => setSupportMode( mode ) );
 
       // add foundation folder
       let foundationFolder = supportFolder.addFolder( "foundation" );
@@ -1079,10 +1080,86 @@ function createPin() {
   return pin;
 }
 
+function createDisplacementSupport( axis ) {
+  // create a displacement support
+  var displacementSupport = new THREE.Group();
+
+  var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
+  var quaternion = new THREE.Quaternion();
+
+  var arrow, circle;
+
+  var circleGeometry = new THREE.CircleBufferGeometry();
+  circleGeometry.rotateX( -Math.PI / 2 );
+  circleGeometry.rotateZ( -Math.PI / 4 );
+  circleGeometry.scale( 0.1, 0.1, 0.1 ); 
+
+  // create displacementSupport
+  switch ( axis ) {
+    case 'x': 
+      arrow = new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0,  0, 0 ), 1, xSupportMaterial.color.getHex() )
+      circle = new THREE.Mesh( circleGeometry, xSupportMaterial );
+      break;
+    case 'y':
+      arrow = new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0, 0, 0 ), 1, ySupportMaterial.color.getHex() );
+      quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
+      circle = new THREE.Mesh( circleGeometry, ySupportMaterial );
+      break;
+    case 'z':
+      arrow = new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0,  0, 0 ), 1, zSupportMaterial.color.getHex() );
+      quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
+      circle = new THREE.Mesh( circleGeometry, zSupportMaterial );
+      break;
+  }
+  
+  circle.position.set( 0, 0.5, 0 );
+
+  arrow.add( circle );
+
+  arrow.applyQuaternion( quaternion );
+  arrow.position.set( -1, 0, 0 ).applyQuaternion( quaternion );
+
+  arrow.name = 'arrow';
+  circle.name = 'circle';
+
+  displacementSupport.add( arrow );
+  // set size
+
+  return displacementSupport;
+}
+
 function createSupport( ux, uy, uz, rx, ry, rz ) {
   // create a support
 
   var support = new THREE.Group();
+
+  var analytical = new THREE.Group();
+
+  if ( ux ) analytical.add( createDisplacementSupport( 'x' ) );
+  if ( uy ) analytical.add( createDisplacementSupport( 'y' ) );
+  if ( uz ) analytical.add( createDisplacementSupport( 'z' ) );
+
+  // con las coordenadas identificar en que cara del cubo está el apoyo
+  // aun no tengo un ejercicio el cual pueda usar para desarrollar esta herramienta
+  // a al espera de ejemplos de mayor complejidad
+
+  // var box = new THREE.Box3();
+  // box.setFromObject( joints );
+
+  // var boxHelper = new THREE.BoxHelper( joints, 0xffff00 );
+  // scene.add( boxHelper );
+
+  // var vector = new THREE.Vector3();
+  // for ( var joint of joints.children ) {
+  //   box.clampPoint( joint.position, vector );
+  //   console.log( joint.name, vector );
+  // }
+
+  // create analytical support
+  var space = new THREE.Group();
+
+  // fallback support
+  if ( ( !ux && rx ) || ( !uy && ry ) || ( !uz && ry )) space.copy( analytical );
   
   // fixed
   if ( ux && uy && uz && rx && ry && rz ) {
@@ -1090,11 +1167,11 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
     var foundation = createFoundation();
     // set position
     foundation.position.setZ( -( config.support.pedestal.size + config.support.foundation.depth / 2 ) ).applyQuaternion( new THREE.Quaternion().copy( model.quaternion ).inverse() );
-    support.add( foundation );
+    space.add( foundation );
 
     // pedestal
     var pedestal = createPedestal();
-    support.add( pedestal );
+    space.add( pedestal );
   }
 
   // pined
@@ -1102,12 +1179,15 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
     // create foundation
     var foundation = createFoundation();
     foundation.position.setZ( -( config.support.pin.height + config.support.foundation.depth / 2 ) ).applyQuaternion( new THREE.Quaternion().copy( model.quaternion ).inverse() );
-    support.add( foundation );
+    space.add( foundation );
 
     // create pin
     var pin = createPin();
-    support.add( pin );
+    space.add( pin );
   }
+  // if ( rx ) analytical.add( new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0, 0, 0 ), 1, xSupportMaterial.color.getHex() ) );
+  // if ( ry ) analytical.add( new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0, 0, 0 ), 1, xSupportMaterial.color.getHex() ) );
+  // if ( rz ) analytical.add( new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0, 0, 0 ), 1, xSupportMaterial.color.getHex() ) );
 
   // if ( config.model.axisUpwards == 'x' ) axis = 0;
   // if ( config.model.axisUpwards == 'y' ) axis = 1;
@@ -1154,6 +1234,15 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
   //   mesh.scale.copy( rScale )
   //   r.add( mesh );
   // }
+
+  analytical.name = 'analytical';
+  space.name = 'space';
+
+  space.visible = config.support.mode == 'space';
+  analytical.visible = config.support.mode == 'analytical';
+
+  support.add( analytical );
+  support.add( space );
 
   support.name = 'support';
   support.visible = config.support.visible;
@@ -1579,6 +1668,21 @@ function setFoundationSize( size ) {
 
   for ( const joint in structure.supports ) {
     joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'foundation' ).scale.set( size, size, config.support.foundation.depth );
+  }
+}
+
+function setSupportMode( mode ) {
+  // set support mode
+  var support, analytical, space;
+
+  for ( const joint in structure.supports ) {
+    support = joints.getObjectByName( joint ).getObjectByName( 'support' );
+
+    analytical = support.getObjectByName( 'analytical' );
+    space = support.getObjectByName( 'space' );
+
+    analytical.visible = mode == 'analytical';
+    space.visible = mode == 'space';
   }
 }
 

@@ -73,6 +73,7 @@
         },
         "support": {
           "visible": true,
+          "mode": "analytical",
           "foundation": {
             "size": 0.5,
             "depth": 0.05
