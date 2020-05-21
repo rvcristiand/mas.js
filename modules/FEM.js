@@ -1139,24 +1139,33 @@ function createRotationSupport( axis ) {
   var points = circumferenceCurve.getPoints( 32 );
   var circumferenceGeometry = new THREE.BufferGeometry().setFromPoints( points );
   circumferenceGeometry.rotateY( Math.PI / 2 );
+
+  var circleGeometry = new THREE.CircleBufferGeometry( 1, 32 );
+  circleGeometry.rotateX( -Math.PI / 2 );
+  circleGeometry.rotateZ( -Math.PI / 4 );
+  circleGeometry.scale( 0.1, 0.1, 0.1 );
   
   var circumferenceMaterial;
   var cone;
+  var circle;
 
   switch ( axis ) {
     case'x':
       circumferenceMaterial = new THREE.LineBasicMaterial( { color: xSupportMaterial.color } );
       cone = new THREE.Mesh( coneGeometry, xSupportMaterial );
+      circle = new THREE.Mesh( circleGeometry, xSupportMaterial );
       break;
     case 'y':
       quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
       circumferenceMaterial = new THREE.LineBasicMaterial( { color: ySupportMaterial.color } );
       cone = new THREE.Mesh( coneGeometry, ySupportMaterial );
+      circle = new THREE.Mesh( circleGeometry, ySupportMaterial );
       break;
     case 'z':
       quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
       circumferenceMaterial = new THREE.LineBasicMaterial( { color: zSupportMaterial.color } );
       cone = new THREE.Mesh( coneGeometry, zSupportMaterial );
+      circle = new THREE.Mesh( circleGeometry, zSupportMaterial );
       break;
   }
 
@@ -1168,10 +1177,14 @@ function createRotationSupport( axis ) {
   cone.rotateX( 5 * Math.PI / 4 );
   cone.scale.set( 0.05, 0.5, 0.05 );
 
+  circle.position.set( 0, 1, 0 );
+
   circumference.name = 'circumference';
   cone.name = 'cone';
+  circle.name = 'circle';
   
   circumference.add( cone );
+  circumference.add( circle );
 
   rotationSupport.add( circumference );
 
