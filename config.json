@@ -60,7 +60,6 @@
         },
         "joint": {
           "visible": true,
-          "view": "extrude",
           "size": 0.03,
           "color": "#ffff00",
           "transparent": true,

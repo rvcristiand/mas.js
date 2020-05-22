@@ -110,6 +110,16 @@ function init() {
       // add the ground to the scene
       scene.add( ground );
 
+      // set the geometry
+      jointGeometry = new THREE.SphereGeometry( 1, 32, 32 );
+      // set the material
+      jointMaterial = new THREE.MeshBasicMaterial( { color: config.joint.color, transparent: config.joint.transparent, opacity: config.joint.opacity } );
+
+      // set the material
+      frameMaterial = new THREE.MeshBasicMaterial( { color: config.frame.color, transparent: config.frame.transparent, opacity: config.frame.opacity } );
+      // set the shape
+      wireFrameShape = new THREE.Shape().absarc();
+
       // set the supports
       // material
       xSupportMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, side: THREE.DoubleSide } );
@@ -173,7 +183,7 @@ function init() {
       // gui.remember( config );
 
       // close controllers
-      gui.open();
+      gui.close();
       
       // add model folder
       let modelFolder = gui.addFolder( "model" );
@@ -279,8 +289,8 @@ function init() {
       // add a Joint folder
       let jointFolder = gui.addFolder( "joint" );
 
-      // set joints visible
-      jointFolder.add( config.joint, 'visible' ).onChange( ( visible ) => setJointsVisible( visible ));
+      // set joint visible
+      jointFolder.add( config.joint, 'visible' ).onChange( visible => setJointsVisible( visible ) );
 
       // set control joint size
       jointFolder.add( config.joint, "size" ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( ( size ) => setJointSize( size ) );
@@ -300,7 +310,7 @@ function init() {
       // add a frame folder
       let frameFolder = gui.addFolder( "frame" );
 
-      // set joints visible
+      // set frame visible
       frameFolder.add( config.frame, 'visible' ).onChange( ( visible ) => setFramesVisible( visible ));
 
       // set control view
@@ -782,18 +792,16 @@ export function addJoint( name, x, y, z ) {
       // add joint to structure
       structure.joints[name] = { x: x, y: y, z: z };
 
-      // create joint
-      var joint = new THREE.Object3D();
-      joint.name = name;
+      // create parent
+      var parent = new THREE.Group();
+      parent.name = name;
     
       // create sphere
-      var _joint = createJoint( config.joint.size );
-      _joint.name = "joint";
-      _joint.visible = config.joint.visible;
-      joint.add( _joint );
+      var joint = createJoint( config.joint.size );
+      parent.add( joint );
   
       // set position
-      joint.position.set( x, y, z );
+      parent.position.set( x, y, z );
   
       // add label
       const label = document.createElement( 'div' );
@@ -803,11 +811,11 @@ export function addJoint( name, x, y, z ) {
       jointLabel.name = 'label';
       jointLabel.visible = config.joint.label;
       jointLabel.position.set( 2, 2, 2 );
-      _joint.add( jointLabel );
+      joint.add( jointLabel );
       // joint.label = label;
       
       // add joint to scene
-      joints.add( joint );
+      joints.add( parent );
   
       resolve();
     }    
@@ -1306,38 +1314,51 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
 function createFrame( length, section ) {
   // create a frame
 
-  var parent = new THREE.Group();
+  var frame = new THREE.Group();
   var extrudeSettings = { depth: length, bevelEnabled: false };  // curveSegments: 24, 
 
   // create wire frame
-  var wireFrameGoemetry = new THREE.ExtrudeBufferGeometry( wireFrameShape, extrudeSettings );
-  var wireFrame = new THREE.Mesh( wireFrameGoemetry, frameMaterial );
-  wireFrame.scale.set( config.frame.size, config.frame.size, 1 );
+  var wireFrameGeometry = new THREE.ExtrudeBufferGeometry( wireFrameShape, extrudeSettings );
+  var wireFrame = new THREE.Mesh( wireFrameGeometry, frameMaterial );
   wireFrame.name = 'wireFrame';
+  wireFrame.scale.set( config.frame.size, config.frame.size, 1 );
+
+  // add covers
+  var wireFrameCoverGeometry = new THREE.ShapeBufferGeometry( wireFrameShape );
+  var wireFrameCoverEdgesGeometry = new THREE.EdgesGeometry( wireFrameCoverGeometry );
+  var wireFrameCoverEdgesMaterial = new THREE.LineBasicMaterial( { color: config.frame.color } );
+  var wireFrameCoverTop = new THREE.LineSegments( wireFrameCoverEdgesGeometry, wireFrameCoverEdgesMaterial );
+  var wireFrameCoverBottom = wireFrameCoverTop.clone();
+  wireFrameCoverBottom.position.setZ( length );
+
+  wireFrame.add( wireFrameCoverTop );
+  wireFrame.add( wireFrameCoverBottom );
+  
+  // create extrude frame
+  var extrudeFrame;
+  
+  if ( structure.sections[section].type == 'Section' ) {
+    extrudeFrame = wireFrame.clone();
+  } else {
+    var extrudeFrameGeometry = new THREE.ExtrudeBufferGeometry( sections[section], extrudeSettings );
+    extrudeFrame = new THREE.Mesh( extrudeFrameGeometry, frameMaterial );
+    
+    // create edges
+    var frameEdgesGeomtry = new THREE.EdgesGeometry( extrudeFrameGeometry );
+    var frameEdges = new THREE.LineSegments( frameEdgesGeomtry, new THREE.LineBasicMaterial( { color: config.frame.color } ) );
+    frameEdges.name = 'edges';
+    
+    // add edges to frame
+    extrudeFrame.add( frameEdges );
+  }
+
+  extrudeFrame.name = 'extrudeFrame';
 
   // wireFrame.castShadow = true;
   // wireFrame.receiveShadow = true;
 
-  // create extrude frame
-  var extrudeFrameGeometry = new THREE.ExtrudeBufferGeometry( sections[section], extrudeSettings );
-  var extrudeFrame = new THREE.Mesh( extrudeFrameGeometry, frameMaterial );
-  extrudeFrame.name = 'extrudeFrame';
-
   // extrudeFrame.castShadow = true;
   // extrudeFrame.receiveShadow = true;
-
-  if ( structure.sections[section].type == 'Section' ) {
-    // set frame size
-    extrudeFrame.scale.set( config.frame.size, config.frame.size, 1 );
-  } else {
-    // create edges
-    var frameEdgesGeomtry = new THREE.EdgesGeometry( extrudeFrameGeometry );
-    var frameEdges = new THREE.LineSegments( frameEdgesGeomtry, new THREE.LineBasicMaterial( { color: 0x000000 } ) );
-    frameEdges.name = 'edges';
-
-    // add edges to frame
-    extrudeFrame.add( frameEdges );
-  }
 
   // set visibility
   if ( config.frame.view == 'wireframe' ) extrudeFrame.visible = false;
@@ -1353,11 +1374,11 @@ function createFrame( length, section ) {
   extrudeFrame.position.copy( position );
   wireFrame.position.copy( position );
 
-  // add wire frame and extrudeFrameto parent
-  parent.add( wireFrame );
-  parent.add( extrudeFrame );
+  // add wire frame and extrudeFrame
+  frame.add( wireFrame );
+  frame.add( extrudeFrame );
 
-  return parent;
+  return frame;
 }
 
 function createSection() {
@@ -1382,6 +1403,14 @@ function createJoint( size ) {
   // create a joint
 
   var joint = new THREE.Mesh( jointGeometry, jointMaterial );
+
+  // set name
+  joint.name = "joint";
+
+  // set visible
+  joint.visible = config.joint.visible;
+
+  // set scale
   joint.scale.setScalar( size );
   
   return joint;
@@ -1850,27 +1879,18 @@ function createModel() {
   axes.name = 'axes';
   axes.visible = config.model.axes.visible;
   axes.scale.setScalar( config.model.axes.size );
-  // add to model
-  model.add( axes );
-
+  
   // set the joints
   joints = new THREE.Group();
   joints.name = 'joints';
-  // set the geometry
-  jointGeometry = new THREE.SphereGeometry( 1, 32, 32 );
-  // set the material
-  jointMaterial = new THREE.MeshBasicMaterial( { color: config.joint.color, transparent: config.joint.transparent, opacity: config.joint.opacity } );
-  // add to the model
-  model.add( joints );
-
+  
   // set the frames
   frames = new THREE.Group();
   frames.name = 'frames';
-  // set the material
-  frameMaterial = new THREE.MeshBasicMaterial( { color: config.frame.color, transparent: config.frame.transparent, opacity: config.frame.opacity } );
-  // set the shape
-  wireFrameShape = new THREE.Shape().absarc();
-  // add to the scene
+  
+  // add to model
+  model.add( axes );
+  model.add( joints );
   model.add( frames );
 
   return model;
