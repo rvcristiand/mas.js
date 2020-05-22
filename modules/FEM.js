@@ -28,9 +28,6 @@ var structure;
 var model;
 
 //
-var plane;
-
-//
 var joints, jointMaterial, jointGeometry;
 var frames, frameMaterial, wireFrameShape;
 
@@ -48,7 +45,7 @@ function init() {
   loadJSON("./config.json")
     .then(function ( json ) {
       // set the config
-      config = json.remembered[json.preset]["0"];
+      config = json.remembered[ json.preset ][ "0" ];
 
       // create the structure
       structure = createstructure();
@@ -68,7 +65,6 @@ function init() {
       // ambient light
       // ambientLight = new THREE.AmbientLight( config.lights.ambient.color );
       // scene.add( ambientLight );
-
 
       // hemisphereLight
       // hemisphereLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
@@ -99,47 +95,20 @@ function init() {
       // directionalLight.shadow.camera.far = 3500;
       // directionalLight.shadow.bias = -0.0001
 
-
       // create the model
-      model = new THREE.Group();
+      model = createModel();
+
+      // set the upwards axis
+      setModelRotation( config.model.axisUpwards );
 
       // create the camera
       camera = createCamera( config.camera.type, new THREE.Vector3( config.camera.position.x, config.camera.position.y, config.camera.position.z ) );
-
-      // create axes
-      var axes = new THREE.AxesHelper();
-      axes.name = 'axes';
-      axes.visible = config.model.axes;
-      // add to model
-      model.add( axes );
       
-      // create the plane
-      plane = createPlane( config.plane.size, config.plane.divisions, config.plane.color, config.plane.transparent, config.plane.opacity, config.plane.grid.major, config.plane.grid.minor );
-      plane.position.set( 0, 0, -0.01 );
-      // add the plane to the scene
-      scene.add( plane );
-
-      // set the joints
-      joints = new THREE.Group();
-      joints.name = 'joints';
-      joints.visible = config.jointVisible;
-      // set the geometry
-      jointGeometry = new THREE.SphereGeometry( 1, 32, 32 );
-      // set the material
-      jointMaterial = new THREE.MeshBasicMaterial( { color: config.joint.color, transparent: config.joint.transparent, opacity: config.joint.opacity } );
-      // add to the model
-      model.add( joints );
-      
-      // set the frames
-      frames = new THREE.Group();
-      frames.name = 'frames';
-      frames.visible = config.frame.visible;
-      // set the material
-      frameMaterial = new THREE.MeshBasicMaterial( { color: config.frame.color, transparent: config.frame.transparent, opacity: config.frame.opacity } );
-      // set the shape
-      wireFrameShape = new THREE.Shape().absarc();
-      // add to the scene
-      model.add( frames );
+      // create the ground
+      var ground = createGround( config.ground.size, config.ground.grid.divisions, config.ground.plane.color, config.ground.plane.transparent, config.ground.plane.opacity, config.ground.grid.major, config.ground.grid.minor );
+      ground.position.set( 0, 0, -0.01 );
+      // add the ground to the scene
+      scene.add( ground );
 
       // set the supports
       // material
@@ -169,11 +138,6 @@ function init() {
       // translate
       pinGeometry.translate( 0, 0, -0.5 );
 
-      // rGeometry = new THREE.BoxBufferGeometry();
-
-      // set the upwards axis
-      setUpwardsAxis( config.model.axisUpwards );
-
       // add model to scene
       scene.add( model );
 
@@ -187,7 +151,7 @@ function init() {
       // set the size
       webGLRenderer.setSize( canvasWebGLRenderer.clientWidth, canvasWebGLRenderer.clientHeight );
       // shadows
-      webGLRenderer.shadowMap.enabled = true;
+      // webGLRenderer.shadowMap.enabled = true;
 
       // create the CSS2D renderer
       CSS2DRenderer = new THREE.CSS2DRenderer();
@@ -215,10 +179,16 @@ function init() {
       let modelFolder = gui.addFolder( "model" );
 
       // set control axisUpwards
-      modelFolder.add( config.model, 'axisUpwards' ).options( [ 'x', 'y', 'z' ] ).onChange( ( axis ) => setUpwardsAxis( axis ) ).listen();
+      modelFolder.add( config.model, 'axisUpwards' ).options( [ 'x', 'y', 'z' ] ).onChange( axis => setUpwardsAxis( axis ) ).listen();
+      
+      // add axes folder
+      let axesFolder = modelFolder.addFolder( "axes" );
 
-      // set control axes
-      modelFolder.add( config.model, 'axes' ).onChange( ( visible ) => model.getObjectByName( 'axes' ).visible = visible );
+      // set control visible
+      axesFolder.add( config.model.axes, 'visible' ).onChange( visible => model.getObjectByName( 'axes' ).visible = visible );
+
+      // set control size
+      axesFolder.add( config.model.axes, 'size' ).min( 0.1 ).max( 1 ).step( 0.01).onChange( size => model.getObjectByName( 'axes' ).scale.setScalar( size ) );
 
       // add a light folder
       // let lightsFolder = gui.addFolder( "light");
@@ -269,39 +239,42 @@ function init() {
       // set control damping factor
       dampingFolder.add( config.controls.damping, 'factor' ).min( 0.005 ).max( 0.5 ).step( 0.005 ).onChange( ( factor ) => controls.dampingFactor = factor );
 
+      // add ground folder
+      let groundFolder = gui.addFolder( "ground" );
+      groundFolder.close();
+
+      // set visible ground
+      groundFolder.add( config.ground, 'visible' ).onChange( visible => setGroundVisible( visible ) );
+
+      // set control ground size
+      groundFolder.add( config.ground, 'size' ).min( 1 ).max( 100 ).step( 1 ).onChange( size => setGroundSize( size ) );
+
       // add plane folder
-      let planeFolder = gui.addFolder( "plane" );
-      planeFolder.close();
+      let planeFolder = groundFolder.addFolder( "plane" );
 
-      // set visible plane
-      planeFolder.add( config.plane, 'visible' ).onChange( ( visible ) => scene.getObjectByName( 'plane' ).getObjectByName( '_plane' ).visible = visible );
-
-      // set control planeSize
-      planeFolder.add( config.plane, 'size' ).min( 1 ).max( 100 ).step( 1 ).onChange( ( size ) => setPlaneSize( size ) );
-
-      // set control planeDivisions
-      planeFolder.add( config.plane, 'divisions' ).min( 0 ).max( 100 ).step( 5 ).onChange( ( divisions ) => setPlaneDivisions( divisions ) );
-
-      // set control planeColor
-      planeFolder.addColor( config.plane, 'color' ).onChange( ( color ) => setPlaneColor( color ) );
+      // set control plane color
+      planeFolder.addColor( config.ground.plane, 'color' ).onChange( color => setPlaneColor( color ) );
       
-      // set control planeTransparent
-      planeFolder.add( config.plane, 'transparent' ).onChange( ( transparent ) => setPlaneTransparent( transparent ));
+      // set control plane transparent
+      planeFolder.add( config.ground.plane, 'transparent' ).onChange( transparent => setPlaneTransparent( transparent ) );
 
-      // set control planeOpacity
-      planeFolder.add( config.plane, "opacity" ).min( 0 ).max( 1 ).step( 0.01 ).onChange( ( opacity ) => setPlaneOpacity( opacity ) );
+      // set control plane opacity
+      planeFolder.add( config.ground.plane, 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( opacity => setPlaneOpacity( opacity ) );
 
       // add grid folder
-      let gridFolder = planeFolder.addFolder( "grid" );
+      let gridFolder = groundFolder.addFolder( "grid" );
 
-      // set control visible
-      gridFolder.add( config.plane.grid, "visible" ).onChange( visible => scene.getObjectByName( 'plane' ).getObjectByName( 'grid' ).visible = visible );
+      // set control grid visible
+      gridFolder.add( config.ground.grid, "visible" ).onChange( visible => setGridVisible( visible ) );
 
+      // set control grid divisions
+      gridFolder.add( config.ground.grid, 'divisions' ).min( 0 ).max( 100 ).step( 5 ).onChange( divisions => setGridDivisions( divisions ) );
+      
       // set control major color
-      gridFolder.addColor( config.plane.grid, 'major' ).onChange( ( color ) => setCenterLineColor( color ));
+      gridFolder.addColor( config.ground.grid, 'major' ).onChange( ( color ) => setCenterLineColor( color ));
 
       // add a grid folder
-      gridFolder.addColor( config.plane.grid, "menor" ).onChange( ( color ) => setGridColor( color ));
+      gridFolder.addColor( config.ground.grid, "menor" ).onChange( ( color ) => setGridColor( color ));
 
       // add a Joint folder
       let jointFolder = gui.addFolder( "joint" );
@@ -474,10 +447,25 @@ function createControls( rotateSpeed, zoomSpeed, panSpeed, screenSpacePanning, e
   return controls;
 }
 
-function setModelRotation( angle ) {
+function setModelRotation( axis ) {
   // set the model rotation
 
-  model.setRotationFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), angle );
+  var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
+  var angle;
+
+  switch( axis ) {
+    case 'x':
+      angle = 4 * Math.PI / 3
+      break;
+    case 'y':
+      angle = 2 * Math.PI / 3;
+      break;
+    case 'z':
+      angle = 0;
+      break;
+  }
+
+  model.setRotationFromAxisAngle( vector, angle );
 }
 
 export function setUpwardsAxis( axis ) {
@@ -485,18 +473,8 @@ export function setUpwardsAxis( axis ) {
   
   var promise = new Promise( ( resolve, reject ) => {
     if ( axis =='x' || axis == 'y' || axis == 'z' ) {
-      // set model rotation and foundationMaterial
-      switch( axis ) {
-        case 'x':
-          setModelRotation( 4 * Math.PI / 3 );
-          break;
-        case 'y':
-          setModelRotation( 2 * Math.PI / 3 );
-          break;
-        case 'z':
-          setModelRotation( 0 );
-          break;
-      }
+      // set model rotation
+      setModelRotation( axis );
       
       // redraw the supports
       for ( let [ joint, support ] of Object.entries( structure.supports ) ) {
@@ -1409,35 +1387,36 @@ function createJoint( size ) {
   return joint;
 }
 
-function createPlane( size, divisions, color, transparent, opacity, colorCenterLine, colorGrid ) {
-  // create the plane
+function createGround( size, divisions, color, transparent, opacity, colorCenterLine, colorGrid ) {
+  // create the ground
 
-  // create the parent
-  var parent = new THREE.Group();
+  // create the ground
+  var ground = new THREE.Group();
   // set name
-  parent.name = 'plane';
+  ground.name = 'ground';
   // set visible
-  parent.visible = config.plane.visible;
+  ground.visible = config.ground.visible;
 
   // add the grid to the parent
-  parent.add( createGrid( divisions, colorCenterLine, colorGrid ) );
+  var grid = createGrid( divisions, colorCenterLine, colorGrid );
+  ground.add( grid );
   
   // create colorCenterLine
   var planeGometry = new THREE.PlaneBufferGeometry();
   var planeMaterial = new THREE.MeshBasicMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } );
   var plane = new THREE.Mesh( planeGometry, planeMaterial );
-  plane.name = '_plane';
+  plane.name = 'plane';
   
-  // add the plane to the parent
-  parent.add( plane );
+  // add the plane to the ground
+  ground.add( plane );
   
   // set size
-  parent.scale.setScalar( size );
+  ground.scale.setScalar( size );
 
   // receive shadow
-  parent.receiveShadow = true;
+  // parent.receiveShadow = true;
   
-  return parent;
+  return ground;
 }
 
 function createGrid( divisions, colorCenterLine, colorGrid ) {
@@ -1448,65 +1427,93 @@ function createGrid( divisions, colorCenterLine, colorGrid ) {
   // set the name
   grid.name = 'grid';
   // set visible
-  grid.visible = config.plane.grid.visible;
+  grid.visible = config.ground.grid.visible;
   // set the rotation
   grid.rotation.x = 0.5 * Math.PI;
 
   return grid;
 }
 
-function setPlaneSize( size ) {
-  // set plane's size
+function setGroundVisible( visible ) {
+  // set ground visible
 
-  plane.scale.setScalar( size );
+  scene.getObjectByName( 'ground' ).visible = visible;
 }
 
-function setPlaneDivisions( divisions ) {
-  // set plane's divisions
+function setGroundSize( size ) {
+  // set ground size
 
-  // remove actual grid
-  plane.remove( plane.getObjectByName( 'grid' ) );
-  
-  // add new grid
-  plane.add( createGrid( divisions, config.plane.grid.major, config.plane.grid.menor ) );
+  scene.getObjectByName( 'ground' ).scale.setScalar( size );
 }
 
 function setPlaneColor( color ) {
   // set plane color
-
-  plane.getObjectByName( '_plane' ).material.color = new THREE.Color( color );
+  
+  var ground = scene.getObjectByName( 'ground' );
+  
+  ground.getObjectByName( 'plane' ).material.color = new THREE.Color( color );
 }
 
 function setPlaneTransparent( transparent ) {
   // set plane transparent
-
-  plane.getObjectByName( '_plane' ).material.transparent = transparent;
+  
+  var ground = scene.getObjectByName( 'ground' );
+  
+  ground.getObjectByName( 'plane' ).material.transparent = transparent;
 }
 
 function setPlaneOpacity( opacity ) {
   // set plane opacity
+  
+  var ground = scene.getObjectByName( 'ground' );
+  
+  ground.getObjectByName( 'plane' ).material.opacity = opacity;
+}
 
-  plane.getObjectByName( '_plane' ).material.opacity = opacity;
+function setGridVisible( visible ) {
+  // set grid visible
+  var ground = scene.getObjectByName( 'ground' );
+
+  ground.getObjectByName( 'grid' ).visible = visible;
+}
+
+function setGridDivisions( divisions ) {
+  // set grid divisions
+
+  var ground = scene.getObjectByName( 'ground' );
+
+  // remove actual grid
+  ground.remove( ground.getObjectByName( 'grid' ) );
+  
+  // add new grid
+  var grid = createGrid( divisions, config.ground.grid.major, config.ground.grid.menor );
+  ground.add( grid );
 }
 
 function setCenterLineColor( color ) {
-  // set center line color
+  // set grid center line color
+
+  var ground = scene.getObjectByName( 'ground' );
 
   // remove actual grid
-  plane.remove( plane.getObjectByName( 'grid' ) );
+  ground.remove( ground.getObjectByName( 'grid' ) );
 
   // add new grid
-  plane.add( createGrid( config.plane.divisions, color, config.plane.grid.color ) ); 
+  var grid = createGrid( config.ground.grid.divisions, color, config.ground.grid.minor );
+  ground.add( grid ); 
 }
 
 function setGridColor( color ) {
   // set grid color
 
+  var ground = scene.getObjectByName( 'ground' );
+
   // remove actual grid
-  plane.remove( plane.getObjectByName( 'grid' ) );
+  ground.remove( ground.getObjectByName( 'grid' ) );
 
   // add new grid
-  plane.add( createGrid( config.plane.divisions, config.plane.grid.major, color ) ); 
+  var grid = createGrid( config.ground.grid.divisions, config.ground.grid.major, color );
+  ground.add( grid ); 
 }
 
 function listsEqual( a, b ) {
@@ -1517,12 +1524,6 @@ function listsEqual( a, b ) {
   }
   
   return true;
-}
-
-function coordinatesEqual( a, b ) {
-  // check if coordinate 'a' is equal to coordinate 'b'
-
-  return listsEqual( a, b );
 }
 
 function jointsEqual( a, b ) {
@@ -1839,6 +1840,42 @@ function setCameraType( type ) {
   camera.position.copy( position );
 }
 
+function createModel() {
+  // create the model
+
+  var model = new THREE.Group();
+
+  // create axes
+  var axes = new THREE.AxesHelper();
+  axes.name = 'axes';
+  axes.visible = config.model.axes.visible;
+  axes.scale.setScalar( config.model.axes.size );
+  // add to model
+  model.add( axes );
+
+  // set the joints
+  joints = new THREE.Group();
+  joints.name = 'joints';
+  // set the geometry
+  jointGeometry = new THREE.SphereGeometry( 1, 32, 32 );
+  // set the material
+  jointMaterial = new THREE.MeshBasicMaterial( { color: config.joint.color, transparent: config.joint.transparent, opacity: config.joint.opacity } );
+  // add to the model
+  model.add( joints );
+
+  // set the frames
+  frames = new THREE.Group();
+  frames.name = 'frames';
+  // set the material
+  frameMaterial = new THREE.MeshBasicMaterial( { color: config.frame.color, transparent: config.frame.transparent, opacity: config.frame.opacity } );
+  // set the shape
+  wireFrameShape = new THREE.Shape().absarc();
+  // add to the scene
+  model.add( frames );
+
+  return model;
+}
+
 function createCamera( type, position ) {
   // create the camera
 
@@ -1891,14 +1928,16 @@ function render() {
 function initStats() {
   // init stats
   
+  // create stats
   var stats = new Stats();
 
+  // append stats
   document.getElementById( "Stats-output" ).appendChild( stats.domElement );
 
   return stats;
 }
 
-function loadJSON(json) {
+function loadJSON( json ) {
   // load json
 
   var promise = fetch( json + "?nocache=" + new Date().getTime() )

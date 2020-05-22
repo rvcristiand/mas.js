@@ -10,7 +10,10 @@
         },
         "model": {
           "axisUpwards": "y",
-          "axes": true
+          "axes": {
+            "visible": true,
+            "size": 1
+          }
         },
         "camera": {
           "type": "perspective",
@@ -39,15 +42,18 @@
             "intensity": 1
           }
         },
-        "plane": {
+        "ground": {
           "visible": true,
           "size": 10,
-          "divisions": 10,
-          "color": "#000000",
-          "transparent": true,
-          "opacity": 0.5,
+          "plane": {
+            "visible": true,
+            "color": "#000000",
+            "transparent": true,
+            "opacity": 0.5
+          },
           "grid": {
             "visible": true,
+            "divisions": 10,
             "major": "#ff0000",
             "menor": "#000000"
           }
