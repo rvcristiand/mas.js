@@ -1,9 +1,7 @@
 // global variables
 
 //
-var scene;
-var camera;
-var controls;
+var scene, camera, controls;
 var webGLRenderer, CSS2DRenderer;
 
 //
@@ -99,8 +97,9 @@ var structure;
 var model;
 
 //
-var jointMaterial, jointGeometry;
-var frameMaterial, wireFrameShape;
+var jointMaterial;
+var frameMaterial, frameEdgesMaterial;
+var wireFrameShape;
 
 var xSupportMaterial, ySupportMaterial, zSupportMaterial;
 var pedestalMaterial;
@@ -115,19 +114,19 @@ function init() {
   // refresh the config
   var json = JSON.parse( localStorage.getItem( window.location.href + '.gui' ) );
   if ( json ) {
-    var preset = json.remembered[json.preset]['0'];
-    for ( const key in preset ) config[ key ] = preset[ key ];
+    var preset = json.remembered[ json.preset ]['0'];
+    for ( let [ key, value ] of Object.entries( preset ) ) config[ key ] = value;
   }
-
-  // create the structure
-  structure = createStructure();
   
   // set the background
   setBackgroundColor( config[ 'background.topColor' ], config[ 'background.bottomColor' ] );
   
   // create the scene
   scene = new THREE.Scene();
-
+  
+  // create the camera
+  camera = createCamera( config[ 'camera.type' ], new THREE.Vector3( config[ 'camera.position.x' ], config[ 'camera.position.y' ], config[ 'camera.position.z' ] ) );
+  
   // background
   // scene.background = new THREE.Color( 'white' ); // .setHSL( 0.6, 0, 1 )
 
@@ -167,28 +166,38 @@ function init() {
   // directionalLight.shadow.camera.far = 3500;
   // directionalLight.shadow.bias = -0.0001
 
+  // create the WebGL renderer
+  webGLRenderer = new THREE.WebGLRenderer( { canvas: canvasWebGLRenderer, alpha: true, antialias: true } );
+  webGLRenderer.setPixelRatio( window.devicePixelRatio );
+  webGLRenderer.setSize( canvasWebGLRenderer.clientWidth, canvasWebGLRenderer.clientHeight );
+  // webGLRenderer.shadowMap.enabled = true;
+  
+  // create the CSS2D renderer
+  CSS2DRenderer = new THREE.CSS2DRenderer();
+  CSS2DRenderer.setSize( canvasCSS2DRenderer.clientWidth, canvasCSS2DRenderer.clientHeight );
+  CSS2DRenderer.domElement.style.position = 'absolute';
+  CSS2DRenderer.domElement.style.top = 0;
+  canvasCSS2DRenderer.appendChild( CSS2DRenderer.domElement );
+  
+  // create the controls
+  controls = createControls( config[ 'controls.rotateSpeed' ], config[ 'controls.zoomSpeed' ], config[ 'controls.panSpeed' ], config[ 'controls.screenPanning' ], config[ 'controls.damping.enable' ], config[ 'controls.damping.factor' ] );
+  
   // create the model
   model = createModel();
 
   // set the upwards axis
-  setModelRotation( config[ 'model.axisUpwards' ] );
-
-  // create the camera
-  camera = createCamera( config[ 'camera.type' ], new THREE.Vector3( config[ 'camera.position.x' ], config[ 'camera.position.y' ], config[ 'camera.position.z' ] ) );
+  setModelRotation( config[ 'model.axisUpwards' ] ); // TODO: tener en cuenta la direccion de la aceleracion de la gravedad
   
   // create the ground
   var ground = createGround( config[ 'ground.size' ], config[ 'ground.grid.divisions' ], config[ 'ground.plane.color' ], config[ 'ground.plane.transparent' ], config[ 'ground.plane.opacity' ], config[ 'ground.grid.major' ], config[ 'ground.grid.minor' ] );
   // ground.position.set( 0, 0, -0.01 );
-  // add the ground to the scene
   scene.add( ground );
 
-  // set the geometry
-  jointGeometry = new THREE.SphereGeometry( 1, 32, 32 );
   // set the material
   jointMaterial = new THREE.MeshBasicMaterial( { color: config[ 'joint.color' ], transparent: config[ 'joint.transparent' ], opacity: config[ 'joint.opacity' ] } );
-
-  // set the material
   frameMaterial = new THREE.MeshBasicMaterial( { color: config[ 'frame.color' ], transparent: config[ 'frame.transparent' ], opacity: config[ 'frame.opacity' ] } );
+  frameEdgesMaterial = new THREE.LineBasicMaterial( { color: config[ 'frame.color' ] } ) ;
+  
   // set the shape
   wireFrameShape = new THREE.Shape().absarc();
 
@@ -223,24 +232,53 @@ function init() {
   // add model to scene
   scene.add( model );
 
+  // // casting
+  // var projector = new THREE.Projector();
+
+  // document.addEventListener('mousedown', onDocumentMouseDown, false);
+  // document.addEventListener('mousemove', onDocumentMouseMove, false);
+
+  // // // setupKeyLogger();
+  // // setupKeyControls();
+
+  // function onDocumentMouseDown(event) {
+  //     var vector = new THREE.Vector3((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1, 0.5);
+  //     vector = vector.unproject(camera);
+
+  //     var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+
+  //     var intersects = raycaster.intersectObjects([joint]);
+
+  //     if (intersects.length > 0) {
+  //         console.log(intersects[0]);
+
+  //         intersects[0].object.material.transparent = !intersects[0].object.material.transparent;
+  //         intersects[0].object.material.opacity = 0.1;
+  //     }
+  // }
+
+  // function onDocumentMouseMove(event) {
+  // var vector = new THREE.Vector3((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1, 0.5);
+  // var vector = vector.unproject(camera);
+
+  // var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
+  // var intersects = raycaster.intersectObjects([joint]);
+
+  // if (intersects.length > 0) {
+  //     var points = [];
+  //     points.push(new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z));
+  //     points.push(intersects[0].point);
+
+  //     var mat = new THREE.MeshBasicMaterial({color: 0xff0000, transparent: true, opacity: 0.6});
+  //     var tubeGeometry = new THREE.TubeGeometry(new THREE.SplineCurve3(points), 60, 0.001);
+
+  //     tube = new THREE.Mesh(tubeGeometry, mat);
+  //     scene.add(tube);
+  // }
+  // }
+
   // create the stats
   stats = initStats();
-
-  // create the WebGL renderer
-  webGLRenderer = new THREE.WebGLRenderer( { canvas: canvasWebGLRenderer, alpha: true, antialias: true } );
-  webGLRenderer.setPixelRatio( window.devicePixelRatio );
-  webGLRenderer.setSize( canvasWebGLRenderer.clientWidth, canvasWebGLRenderer.clientHeight );
-  // webGLRenderer.shadowMap.enabled = true;
-
-  // create the CSS2D renderer
-  CSS2DRenderer = new THREE.CSS2DRenderer();
-  CSS2DRenderer.setSize( canvasCSS2DRenderer.clientWidth, canvasCSS2DRenderer.clientHeight );
-  CSS2DRenderer.domElement.style.position = 'absolute';
-  CSS2DRenderer.domElement.style.top = 0;
-  canvasCSS2DRenderer.appendChild( CSS2DRenderer.domElement );
-
-  // create the controls
-  controls = createControls( config[ 'controls.rotateSpeed' ], config[ 'controls.zoomSpeed' ], config[ 'controls.panSpeed' ], config[ 'controls.screenPanning' ], config[ 'controls.damping.enable' ], config[ 'controls.damping.factor' ] );
 
   // create the dat gui
   gui = new dat.GUI();
@@ -258,7 +296,6 @@ function init() {
 
   // add a light folder
   // let lightsFolder = gui.addFolder( "light");
-
   // add a ambiernt folder
   // let ambientFolder = lightsFolder.addFolder( "ambient" );
   // ambientFolder.addColor( config.lights.ambient, 'color' ).onChange( color => ambientLight.color = new THREE.Color( color ) );
@@ -336,51 +373,7 @@ function init() {
   // supportFolder.add( config, 'radius' ).min( 0.01 ).max( 0.1 ).step( 0.001 ).onChange( ( radius ) => setSupportRadius( radius ) );
 
   render();
-  // // casting
-  // var projector = new THREE.Projector();
-
-  // document.addEventListener('mousedown', onDocumentMouseDown, false);
-  // document.addEventListener('mousemove', onDocumentMouseMove, false);
-
-  // // // setupKeyLogger();
-  // // setupKeyControls();
 }
-
-// function onDocumentMouseDown(event) {
-//     var vector = new THREE.Vector3((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1, 0.5);
-//     vector = vector.unproject(camera);
-
-//     var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
-
-//     var intersects = raycaster.intersectObjects([joint]);
-
-//     if (intersects.length > 0) {
-//         console.log(intersects[0]);
-
-//         intersects[0].object.material.transparent = !intersects[0].object.material.transparent;
-//         intersects[0].object.material.opacity = 0.1;
-//     }
-// }
-
-// function onDocumentMouseMove(event) {
-// var vector = new THREE.Vector3((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1, 0.5);
-// var vector = vector.unproject(camera);
-
-// var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
-// var intersects = raycaster.intersectObjects([joint]);
-
-// if (intersects.length > 0) {
-//     var points = [];
-//     points.push(new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z));
-//     points.push(intersects[0].point);
-
-//     var mat = new THREE.MeshBasicMaterial({color: 0xff0000, transparent: true, opacity: 0.6});
-//     var tubeGeometry = new THREE.TubeGeometry(new THREE.SplineCurve3(points), 60, 0.001);
-
-//     tube = new THREE.Mesh(tubeGeometry, mat);
-//     scene.add(tube);
-// }
-// }
 
 window.onload = init;
 
@@ -400,25 +393,7 @@ function createControls( rotateSpeed, zoomSpeed, panSpeed, screenSpacePanning, e
   return controls;
 }
 
-function setModelRotation( axis ) {
-  // set model rotation
-
-  var angle;
-
-  switch( axis ) {
-    case 'x':
-      angle = 4 * Math.PI / 3
-      break;
-    case 'y':
-      angle = 2 * Math.PI / 3;
-      break;
-    case 'z':
-      angle = 0;
-      break;
-  }
-
-  model.setRotationFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), angle );
-}
+function setModelRotation( axis ) { model.setRotationFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), { x: 4 * Math.PI / 3, y: 2 * Math.PI / 3, z: 0 }[ axis ] ) };
 
 export function setUpwardsAxis( axis ) {
   // set the upwards axis
@@ -1267,7 +1242,7 @@ function createRectangularSection( widht, height ) { return new THREE.Shape().mo
 function createJoint( size ) {
   // create a joint
 
-  var joint = new THREE.Mesh( jointGeometry, jointMaterial );
+  var joint = new THREE.Mesh( new THREE.SphereGeometry( 1, 32, 32 ), jointMaterial );
 
   joint.name = "joint";
   joint.visible = config[ 'joint.visible' ];
@@ -1283,12 +1258,12 @@ function createGround( size, divisions, color, transparent, opacity, colorCenter
   ground.name = 'ground';
   ground.visible = config[ 'ground.visible' ];
 
+  // add grid
   var grid = createGrid( divisions, colorCenterLine, colorGrid );
   ground.add( grid );
   
-  var planeGometry = new THREE.PlaneBufferGeometry();
-  var planeMaterial = new THREE.MeshBasicMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } );
-  var plane = new THREE.Mesh( planeGometry, planeMaterial );
+  // add plane
+  var plane = new THREE.Mesh( new THREE.PlaneBufferGeometry(), new THREE.MeshBasicMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } ) );
   plane.name = 'plane';
   ground.add( plane );
   
@@ -1540,18 +1515,23 @@ function createModel() {
 
   var model = new THREE.Group();
 
+  // add axes
   var axes = new THREE.AxesHelper();
   axes.name = 'axes';
-  axes.visible = config['model.axes.visible'];
-  axes.scale.setScalar( config['model.axes.size'] );
+  axes.visible = config[ 'model.axes.visible' ];
+  axes.scale.setScalar( config[ 'model.axes.size' ] );
   model.add( axes );
   
+  // add joints
   var joints = new THREE.Group();
   joints.name = 'joints';
   model.add( joints );
   
+  // add frames
   var frames = new THREE.Group();
   frames.name = 'frames';
+  frames.visible = config[ 'frame.visible' ];
+  
   model.add( frames );
 
   return model;
