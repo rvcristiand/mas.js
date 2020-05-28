@@ -1174,15 +1174,6 @@ function createFrame( length, section ) {
   var wireFrame = new THREE.Mesh( new THREE.ExtrudeBufferGeometry( wireFrameShape, extrudeSettings ), frameMaterial );
   wireFrame.name = 'wireFrame';
   wireFrame.scale.set( config[ 'frame.size' ], config[ 'frame.size' ], 1 );
-  // top cover
-  var wireFrameCoverTop = new THREE.LineSegments( new THREE.EdgesGeometry( new THREE.ShapeBufferGeometry( wireFrameShape ) ), frameEdgesMaterial );
-  wireFrameCoverTop.name = 'top';
-  wireFrame.add( wireFrameCoverTop );
-  // botom cover
-  var wireFrameCoverBottom = wireFrameCoverTop.clone();
-  wireFrameCoverBottom.name = 'bottom';
-  wireFrameCoverBottom.position.setZ( length );
-  wireFrame.add( wireFrameCoverBottom );
 
   // create extrude frame
   var extrudeFrame;  
