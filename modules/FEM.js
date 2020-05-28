@@ -1,10 +1,6 @@
-// global variables
-
-//
 var scene, camera, controls;
 var webGLRenderer, CSS2DRenderer;
 
-//
 var canvasWebGLRenderer = document.getElementById( "canvas" );
 var canvasCSS2DRenderer = document.getElementById( "labels" );
 
@@ -13,10 +9,8 @@ var canvasCSS2DRenderer = document.getElementById( "labels" );
 // var hemisphereLight;
 // var directionalLight;
 
-//
 var stats, gui;
 
-//
 var config = {
   'background.topColor': '#000000',
   'background.bottomColor': '#818181',
@@ -90,16 +84,14 @@ var config = {
   'support.pin.radius': 0.3,
 };
 
-//
 var structure;
 
-//
 var model;
 
-//
 var jointMaterial;
 var frameMaterial, frameEdgesMaterial;
-var wireFrameShape;
+
+var jointGeometry, wireFrameShape;
 
 var xSupportMaterial, ySupportMaterial, zSupportMaterial;
 var pedestalMaterial;
@@ -198,7 +190,8 @@ function init() {
   frameMaterial = new THREE.MeshBasicMaterial( { color: config[ 'frame.color' ], transparent: config[ 'frame.transparent' ], opacity: config[ 'frame.opacity' ] } );
   frameEdgesMaterial = new THREE.LineBasicMaterial( { color: config[ 'frame.color' ] } ) ;
   
-  // set the shape
+  // set the geometry
+  jointGeometry = new THREE.SphereBufferGeometry( 1, 32, 32 );
   wireFrameShape = new THREE.Shape().absarc();
 
   // set the supports
@@ -1241,7 +1234,7 @@ function createRectangularSection( widht, height ) { return new THREE.Shape().mo
 function createJoint( size ) {
   // create a joint
 
-  var joint = new THREE.Mesh( new THREE.SphereGeometry( 1, 32, 32 ), jointMaterial );
+  var joint = new THREE.Mesh( jointGeometry, jointMaterial );
 
   joint.name = "joint";
   joint.visible = config[ 'joint.visible' ];
