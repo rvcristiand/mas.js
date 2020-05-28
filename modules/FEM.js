@@ -19,7 +19,78 @@ var canvasCSS2DRenderer = document.getElementById( "labels" );
 var stats, gui;
 
 //
-var config;
+var config = {
+  'background.topColor': '#000000',
+  'background.bottomColor': '#818181',
+
+  'model.axisUpwards': 'y',
+
+  'model.axes.visible': true,
+  'model.axes.size': 1,
+
+  'camera.type': 'perspective',
+
+  'camera.position.x': 10,
+  'camera.position.y': 10,
+  'camera.position.z': 10,
+
+  'camera.perspective.fov': 45,
+  'camera.perspective.near': 0.1,
+  'camera.perspective.far': 1000,
+
+  'controls.rotateSpeed': 1,
+  'controls.zoomSpeed': 1.2,
+  'controls.panSpeed': 0.3,
+  'controls.screenPanning': true,
+
+  'controls.damping.enable': false,
+  'controls.damping.factor': 0.05,
+
+  // 'lights.ambient.color': 0x0c0c0c,
+
+  // 'lights.direction.color': 0xffffff,
+  // 'lights.direction.intensity': 1,
+
+  'ground.visible': true,
+  'ground.size': 10,
+
+  'ground.plane.visible': true,
+  'ground.plane.color': 0x000000,
+  'ground.plane.transparent': true,
+  'ground.plane.opacity': 0.5,
+  
+  'ground.grid.visible': true,
+  'ground.grid.divisions': 10,
+  'ground.grid.major': 0xff0000,
+  'ground.grid.menor': 0x000000,
+
+  'joint.visible': true,
+  'joint.size': 0.03,
+  'joint.color': 0xffff00,
+  'joint.transparent': true,
+  'joint.opacity': 1,
+  'joint.label': false,
+
+  'frame.visible': true,
+  'frame.view': 'extrude',
+  'frame.size': 0.02,
+  'frame.color': 0xff00ff,
+  'frame.transparent': true,
+  'frame.opacity': 0.5,
+  'frame.label': false,
+  'frame.axes': false,
+
+  'support.visible': true,
+  'support.mode': 'analytical',
+
+  'support.foundation.size': 0.5,
+  'support.foundation.depth': 0.05,
+
+  'support.pedestal.size': 0.3,
+
+  'support.pin.height': 0.3,
+  'support.pin.radius': 0.3,
+};
 
 //
 var structure;
@@ -28,8 +99,8 @@ var structure;
 var model;
 
 //
-var joints, jointMaterial, jointGeometry;
-var frames, frameMaterial, wireFrameShape;
+var jointMaterial, jointGeometry;
+var frameMaterial, wireFrameShape;
 
 var xSupportMaterial, ySupportMaterial, zSupportMaterial;
 var pedestalMaterial;
@@ -41,336 +112,230 @@ var materials = {};
 var sections = {};
 
 function init() {
-  // load the json config
-  loadJSON("./config.json")
-    .then(function ( json ) {
-      // set the config
-      config = json.remembered[ json.preset ][ "0" ];
-
-      // create the structure
-      structure = createstructure();
-      
-      // set the background
-      setBackgroundColor( config.background.topColor, config.background.bottomColor );
-      
-      // create the scene
-      scene = new THREE.Scene();
-
-      // background
-      // scene.background = new THREE.Color( 'white' ); // .setHSL( 0.6, 0, 1 )
-
-      // fog
-      // scene.fog = new THREE.Fog( scene.background, 1, 5000 );
-
-      // ambient light
-      // ambientLight = new THREE.AmbientLight( config.lights.ambient.color );
-      // scene.add( ambientLight );
-
-      // hemisphereLight
-      // hemisphereLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
-      // hemisphereLight.color.setHSL( 0.6, 1, 0.6 );
-      // hemisphereLight.groundColor.setHSL( 0.095, 1, 0.75 );
-      // hemisphereLight.position.set( 0, 50, 0 );
-      // scene.add( hemisphereLight );
-
-      // directionalLight
-      // directionalLight = new THREE.DirectionalLight( config.lights.direction.color, config.lights.direction.intensity );
-      // directionalLight.color.setHSL( 0.1, 1, 0.95 );
-      // directionalLight.position.set( -1, 1.75, 1 );
-      // directionalLight.position.multiplyScalar( 30 );
-      // scene.add( directionalLight );
-
-      // directionalLight.castShadow = true;
-
-      // directionalLight.shadow.mapSize.widht = 2048;
-      // directionalLight.shadow.mapSize.height = 2048;
-      
-      // var d = 50;
-
-      // directionalLight.shadow.camera.left = -d;
-      // directionalLight.shadow.camera.right = d;
-      // directionalLight.shadow.camera.top = d;
-      // directionalLight.shadow.camera.bottom = -d;
-
-      // directionalLight.shadow.camera.far = 3500;
-      // directionalLight.shadow.bias = -0.0001
-
-      // create the model
-      model = createModel();
-
-      // set the upwards axis
-      setModelRotation( config.model.axisUpwards );
-
-      // create the camera
-      camera = createCamera( config.camera.type, new THREE.Vector3( config.camera.position.x, config.camera.position.y, config.camera.position.z ) );
-      
-      // create the ground
-      var ground = createGround( config.ground.size, config.ground.grid.divisions, config.ground.plane.color, config.ground.plane.transparent, config.ground.plane.opacity, config.ground.grid.major, config.ground.grid.minor );
-      ground.position.set( 0, 0, -0.01 );
-      // add the ground to the scene
-      scene.add( ground );
-
-      // set the geometry
-      jointGeometry = new THREE.SphereGeometry( 1, 32, 32 );
-      // set the material
-      jointMaterial = new THREE.MeshBasicMaterial( { color: config.joint.color, transparent: config.joint.transparent, opacity: config.joint.opacity } );
-
-      // set the material
-      frameMaterial = new THREE.MeshBasicMaterial( { color: config.frame.color, transparent: config.frame.transparent, opacity: config.frame.opacity } );
-      // set the shape
-      wireFrameShape = new THREE.Shape().absarc();
-
-      // set the supports
-      // material
-      xSupportMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, side: THREE.DoubleSide } );
-      ySupportMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00, side: THREE.DoubleSide } );
-      zSupportMaterial = new THREE.MeshBasicMaterial( { color: 0x0000ff, side: THREE.DoubleSide } );
-
-      pedestalMaterial = [ xSupportMaterial, xSupportMaterial, ySupportMaterial, ySupportMaterial, zSupportMaterial, zSupportMaterial ];
-
-      // geometry
-      foundationGeometry = new THREE.BoxBufferGeometry();
-      pedestalGeometry = new THREE.BoxBufferGeometry();
-
-      pinGeometry = new THREE.ConeBufferGeometry( 1, 1, 4, 1, true );
-
-      // materials
-      pinGeometry.groups = [ ];
-      pinGeometry.addGroup(  0, 6, 0 );
-      pinGeometry.addGroup(  6, 6, 1 );
-      pinGeometry.addGroup( 12, 6, 2 );
-      pinGeometry.addGroup( 18, 6, 3 );
-
-      // rotate
-      pinGeometry.rotateX( Math.PI / 2 );
-      pinGeometry.rotateZ( Math.PI / 4 );
-
-      // translate
-      pinGeometry.translate( 0, 0, -0.5 );
-
-      // add model to scene
-      scene.add( model );
-
-      // create the stats
-      stats = initStats();
-
-      // create the WebGL renderer
-      webGLRenderer = new THREE.WebGLRenderer( { canvas: canvasWebGLRenderer, alpha: true, antialias: true } );
-      // set pixel ratio
-      webGLRenderer.setPixelRatio( window.devicePixelRatio );
-      // set the size
-      webGLRenderer.setSize( canvasWebGLRenderer.clientWidth, canvasWebGLRenderer.clientHeight );
-      // shadows
-      // webGLRenderer.shadowMap.enabled = true;
-
-      // create the CSS2D renderer
-      CSS2DRenderer = new THREE.CSS2DRenderer();
-      CSS2DRenderer.setSize( canvasCSS2DRenderer.clientWidth, canvasCSS2DRenderer.clientHeight );
-      CSS2DRenderer.domElement.style.position = 'absolute';
-      CSS2DRenderer.domElement.style.top = 0;
-      canvasCSS2DRenderer.appendChild( CSS2DRenderer.domElement );
-
-      // create the controls
-      controls = createControls( config.controls.rotateSpeed, config.controls.zoomSpeed, config.controls.panSpeed, config.controls.screenPanning, config.controls.damping.enable, config.controls.damping.factor );
-
-      return json;
-    })
-    .then(function ( json ) {
-      // create the dat gui
-      gui = new dat.GUI( { load: json, preset: json.preset } );
-
-      // remember config
-      // gui.remember( config );
-
-      // close controllers
-      gui.close();
-      
-      // add model folder
-      let modelFolder = gui.addFolder( "model" );
-
-      // set control axisUpwards
-      modelFolder.add( config.model, 'axisUpwards' ).options( [ 'x', 'y', 'z' ] ).onChange( axis => setUpwardsAxis( axis ) ).listen();
-      
-      // add axes folder
-      let axesFolder = modelFolder.addFolder( "axes" );
-
-      // set control visible
-      axesFolder.add( config.model.axes, 'visible' ).onChange( visible => model.getObjectByName( 'axes' ).visible = visible );
-
-      // set control size
-      axesFolder.add( config.model.axes, 'size' ).min( 0.1 ).max( 1 ).step( 0.01).onChange( size => model.getObjectByName( 'axes' ).scale.setScalar( size ) );
-
-      // add a light folder
-      // let lightsFolder = gui.addFolder( "light");
-
-      // add a ambiernt folder
-
-      // let ambientFolder = lightsFolder.addFolder( "ambient" );
-
-      // add colot controller
-      // ambientFolder.addColor( config.lights.ambient, 'color' ).onChange( color => ambientLight.color = new THREE.Color( color ) );
-
-      // add a background folder
-      let backgroundFolder = gui.addFolder( "background" );
-
-      // add a control topBackgroundColor
-      backgroundFolder.addColor( config.background, 'topColor' ).onChange( ( color ) => setBackgroundColor( color, config.background.bottomColor ) );
-
-      // add a control bottomBackgroundColor
-      backgroundFolder.addColor( config.background, 'bottomColor' ).onChange( ( color ) => setBackgroundColor( config.background.topColor, color ) );
-
-      // add a Camera folder
-      let cameraFolder = gui.addFolder( "camera" );
-
-      // set control cameraType
-      cameraFolder.add( config.camera, 'type' ).options( [ 'perspective', 'orthographic' ] ).onChange( ( type ) => setCameraType( type ) );
-
-      // add controls folder
-      let controlsFolder = gui.addFolder( "controls" );
-
-      // set control rotateSpeed
-      controlsFolder.add( config.controls, 'rotateSpeed' ).min( 0.1 ).max( 10 ).step( 0.1 ).onChange( ( speed ) => controls.rotateSpeed = speed );
-
-      // set control zoomSpeed
-      controlsFolder.add( config.controls, 'zoomSpeed' ).min( 0.12 ).max( 12 ).step( 0.12 ).onChange( ( speed ) => controls.zoomSpeed = speed );
-
-      // set control panSpeed
-      controlsFolder.add( config.controls, 'panSpeed' ).min( 0.03 ).max( 3 ).step( 0.03 ).onChange( ( speed ) => controls.panSpeed = speed );
-      
-      // set control screenSpacePanning
-      controlsFolder.add( config.controls, 'screenPanning' ).onChange( ( screenPanning ) => controls.screenSpacePanning = screenPanning );
-
-      // add damping folder
-      var dampingFolder = controlsFolder.addFolder( "damping" );
-
-      // set control damping
-      dampingFolder.add( config.controls.damping, 'enable' ).onChange( ( enable ) => controls.enableDamping = enable );
-
-      // set control damping factor
-      dampingFolder.add( config.controls.damping, 'factor' ).min( 0.005 ).max( 0.5 ).step( 0.005 ).onChange( ( factor ) => controls.dampingFactor = factor );
-
-      // add ground folder
-      let groundFolder = gui.addFolder( "ground" );
-      groundFolder.close();
-
-      // set visible ground
-      groundFolder.add( config.ground, 'visible' ).onChange( visible => setGroundVisible( visible ) );
-
-      // set control ground size
-      groundFolder.add( config.ground, 'size' ).min( 1 ).max( 100 ).step( 1 ).onChange( size => setGroundSize( size ) );
-
-      // add plane folder
-      let planeFolder = groundFolder.addFolder( "plane" );
-
-      // set control plane color
-      planeFolder.addColor( config.ground.plane, 'color' ).onChange( color => setPlaneColor( color ) );
-      
-      // set control plane transparent
-      planeFolder.add( config.ground.plane, 'transparent' ).onChange( transparent => setPlaneTransparent( transparent ) );
-
-      // set control plane opacity
-      planeFolder.add( config.ground.plane, 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( opacity => setPlaneOpacity( opacity ) );
-
-      // add grid folder
-      let gridFolder = groundFolder.addFolder( "grid" );
-
-      // set control grid visible
-      gridFolder.add( config.ground.grid, "visible" ).onChange( visible => setGridVisible( visible ) );
-
-      // set control grid divisions
-      gridFolder.add( config.ground.grid, 'divisions' ).min( 0 ).max( 100 ).step( 5 ).onChange( divisions => setGridDivisions( divisions ) );
-      
-      // set control major color
-      gridFolder.addColor( config.ground.grid, 'major' ).onChange( ( color ) => setCenterLineColor( color ));
-
-      // add a grid folder
-      gridFolder.addColor( config.ground.grid, "menor" ).onChange( ( color ) => setGridColor( color ));
-
-      // add a Joint folder
-      let jointFolder = gui.addFolder( "joint" );
-
-      // set joint visible
-      jointFolder.add( config.joint, 'visible' ).onChange( visible => setJointsVisible( visible ) );
-
-      // set control joint size
-      jointFolder.add( config.joint, "size" ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( ( size ) => setJointSize( size ) );
-      
-      // set view joint's label
-      jointFolder.add( config.joint, 'label' ).onChange( ( visible ) => setViewJointLabel( visible ) );
-
-      // set control joint color
-      jointFolder.addColor( config.joint, "color" ).onChange( ( color ) => setJointColor( color ) );
-
-      // set transparent joint
-      jointFolder.add( config.joint, 'transparent' ).onChange( ( transparent ) => setJointTransparent( transparent ) );
-
-      // set opacity joint
-      jointFolder.add( config.joint, 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( ( opacity ) => setJointOpacity( opacity ));
-
-      // add a frame folder
-      let frameFolder = gui.addFolder( "frame" );
-
-      // set frame visible
-      frameFolder.add( config.frame, 'visible' ).onChange( ( visible ) => setFramesVisible( visible ));
-
-      // set control view
-      frameFolder.add( config.frame, 'view', [ 'wireframe', 'extrude' ] ).onChange( ( view )  => setViewType( view ) );
-
-      // set the control frame size
-      frameFolder.add( config.frame, 'size' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( ( size ) => setFrameSize( size ) );
-
-      // set control frame color
-      frameFolder.addColor( config.frame, 'color' ).onChange( ( color ) => setFrameColor( color ) );
-
-      // set control frame transparent
-      frameFolder.add( config.frame, 'transparent' ).onChange( ( transparent ) => setFrameTransparent( transparent ) );
-
-      // set control frame opcity
-      frameFolder.add( config.frame, 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( ( opacity ) => setFrameOpacity( opacity ) );
-
-      // set view frame's label
-      frameFolder.add( config.frame, 'label' ).onChange( ( visible ) => setViewFrameLabel( visible ) );
-
-      // set view frame's axes
-      frameFolder.add( config.frame, 'axes' ).onChange( ( visible ) => setFramesAxesDisplay( visible ) );
-
-      // add support folder
-      let supportFolder = gui.addFolder( "support" );
-
-      // set control mode
-      supportFolder.add( config.support, 'mode' ).options( [ "space", "analytical" ]).onChange( mode => setSupportMode( mode ) );
-
-      // add foundation folder
-      let foundationFolder = supportFolder.addFolder( "foundation" );
-
-      // set control size
-      foundationFolder.add( config.support.foundation, 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setFoundationSize( size ) );
-
-      // add pedestal folder
-      let pedestalFolder = supportFolder.addFolder( "pedestal" );
-
-      // set control size
-      pedestalFolder.add( config.support.pedestal, 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setPedestalSize( size ) );
-
-      // add pin folder
-      let pinFolder = supportFolder.addFolder( "pin" );
-
-      // set control height
-      pinFolder.add( config.support.pin, 'height' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setPinHeight( size ) );
-
-      // set control radius
-      pinFolder.add( config.support.pin, 'radius' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( radius => setPinRadius( radius ) );
-
-      // set control radius
-      // supportFolder.add( config.support, 'radius' ).min( 0.01 ).max( 0.1 ).step( 0.001 ).onChange( ( radius ) => setSupportRadius( radius ) );
-    })
-    .then( function() {
-      render();
-    })
-    .catch(function ( error ) {
-      console.log( "Error occurred in sequence:", error );
-    })
-
+  // refresh the config
+  var json = JSON.parse( localStorage.getItem( window.location.href + '.gui' ) );
+  if ( json ) {
+    var preset = json.remembered[json.preset]['0'];
+    for ( const key in preset ) config[ key ] = preset[ key ];
+  }
+
+  // create the structure
+  structure = createStructure();
+  
+  // set the background
+  setBackgroundColor( config[ 'background.topColor' ], config[ 'background.bottomColor' ] );
+  
+  // create the scene
+  scene = new THREE.Scene();
+
+  // background
+  // scene.background = new THREE.Color( 'white' ); // .setHSL( 0.6, 0, 1 )
+
+  // fog
+  // scene.fog = new THREE.Fog( scene.background, 1, 5000 );
+
+  // ambient light
+  // ambientLight = new THREE.AmbientLight( config.lights.ambient.color );
+  // scene.add( ambientLight );
+
+  // hemisphereLight
+  // hemisphereLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
+  // hemisphereLight.color.setHSL( 0.6, 1, 0.6 );
+  // hemisphereLight.groundColor.setHSL( 0.095, 1, 0.75 );
+  // hemisphereLight.position.set( 0, 50, 0 );
+  // scene.add( hemisphereLight );
+
+  // directionalLight
+  // directionalLight = new THREE.DirectionalLight( config.lights.direction.color, config.lights.direction.intensity );
+  // directionalLight.color.setHSL( 0.1, 1, 0.95 );
+  // directionalLight.position.set( -1, 1.75, 1 );
+  // directionalLight.position.multiplyScalar( 30 );
+  // scene.add( directionalLight );
+
+  // directionalLight.castShadow = true;
+
+  // directionalLight.shadow.mapSize.widht = 2048;
+  // directionalLight.shadow.mapSize.height = 2048;
+  
+  // var d = 50;
+
+  // directionalLight.shadow.camera.left = -d;
+  // directionalLight.shadow.camera.right = d;
+  // directionalLight.shadow.camera.top = d;
+  // directionalLight.shadow.camera.bottom = -d;
+
+  // directionalLight.shadow.camera.far = 3500;
+  // directionalLight.shadow.bias = -0.0001
+
+  // create the model
+  model = createModel();
+
+  // set the upwards axis
+  setModelRotation( config[ 'model.axisUpwards' ] );
+
+  // create the camera
+  camera = createCamera( config[ 'camera.type' ], new THREE.Vector3( config[ 'camera.position.x' ], config[ 'camera.position.y' ], config[ 'camera.position.z' ] ) );
+  
+  // create the ground
+  var ground = createGround( config[ 'ground.size' ], config[ 'ground.grid.divisions' ], config[ 'ground.plane.color' ], config[ 'ground.plane.transparent' ], config[ 'ground.plane.opacity' ], config[ 'ground.grid.major' ], config[ 'ground.grid.minor' ] );
+  // ground.position.set( 0, 0, -0.01 );
+  // add the ground to the scene
+  scene.add( ground );
+
+  // set the geometry
+  jointGeometry = new THREE.SphereGeometry( 1, 32, 32 );
+  // set the material
+  jointMaterial = new THREE.MeshBasicMaterial( { color: config[ 'joint.color' ], transparent: config[ 'joint.transparent' ], opacity: config[ 'joint.opacity' ] } );
+
+  // set the material
+  frameMaterial = new THREE.MeshBasicMaterial( { color: config[ 'frame.color' ], transparent: config[ 'frame.transparent' ], opacity: config[ 'frame.opacity' ] } );
+  // set the shape
+  wireFrameShape = new THREE.Shape().absarc();
+
+  // set the supports
+  // material
+  xSupportMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, side: THREE.DoubleSide } );
+  ySupportMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00, side: THREE.DoubleSide } );
+  zSupportMaterial = new THREE.MeshBasicMaterial( { color: 0x0000ff, side: THREE.DoubleSide } );
+
+  pedestalMaterial = [ xSupportMaterial, xSupportMaterial, ySupportMaterial, ySupportMaterial, zSupportMaterial, zSupportMaterial ];
+
+  // geometry
+  foundationGeometry = new THREE.BoxBufferGeometry();
+  pedestalGeometry = new THREE.BoxBufferGeometry();
+
+  pinGeometry = new THREE.ConeBufferGeometry( 1, 1, 4, 1, true );
+
+  // materials
+  pinGeometry.groups = [ ];
+  pinGeometry.addGroup(  0, 6, 0 );
+  pinGeometry.addGroup(  6, 6, 1 );
+  pinGeometry.addGroup( 12, 6, 2 );
+  pinGeometry.addGroup( 18, 6, 3 );
+
+  // rotate
+  pinGeometry.rotateX( Math.PI / 2 );
+  pinGeometry.rotateZ( Math.PI / 4 );
+
+  // translate
+  pinGeometry.translate( 0, 0, -0.5 );
+
+  // add model to scene
+  scene.add( model );
+
+  // create the stats
+  stats = initStats();
+
+  // create the WebGL renderer
+  webGLRenderer = new THREE.WebGLRenderer( { canvas: canvasWebGLRenderer, alpha: true, antialias: true } );
+  webGLRenderer.setPixelRatio( window.devicePixelRatio );
+  webGLRenderer.setSize( canvasWebGLRenderer.clientWidth, canvasWebGLRenderer.clientHeight );
+  // webGLRenderer.shadowMap.enabled = true;
+
+  // create the CSS2D renderer
+  CSS2DRenderer = new THREE.CSS2DRenderer();
+  CSS2DRenderer.setSize( canvasCSS2DRenderer.clientWidth, canvasCSS2DRenderer.clientHeight );
+  CSS2DRenderer.domElement.style.position = 'absolute';
+  CSS2DRenderer.domElement.style.top = 0;
+  canvasCSS2DRenderer.appendChild( CSS2DRenderer.domElement );
+
+  // create the controls
+  controls = createControls( config[ 'controls.rotateSpeed' ], config[ 'controls.zoomSpeed' ], config[ 'controls.panSpeed' ], config[ 'controls.screenPanning' ], config[ 'controls.damping.enable' ], config[ 'controls.damping.factor' ] );
+
+  // create the dat gui
+  gui = new dat.GUI();
+
+  // remember config
+  gui.remember( config );
+
+  // add model folder
+  let modelFolder = gui.addFolder( "model" );
+  modelFolder.add( config, 'model.axisUpwards' ).options( [ 'x', 'y', 'z' ] ).name( 'axisUpwards' ).onChange( axis => setUpwardsAxis( axis ) ); // .listen();
+  // add axes folder
+  let axesFolder = modelFolder.addFolder( "axes" );
+  axesFolder.add( config, 'model.axes.visible' ).name( 'visible' ).onChange( visible => model.getObjectByName( 'axes' ).visible = visible );
+  axesFolder.add( config, 'model.axes.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => model.getObjectByName( 'axes' ).scale.setScalar( size ) );
+
+  // add a light folder
+  // let lightsFolder = gui.addFolder( "light");
+
+  // add a ambiernt folder
+  // let ambientFolder = lightsFolder.addFolder( "ambient" );
+  // ambientFolder.addColor( config.lights.ambient, 'color' ).onChange( color => ambientLight.color = new THREE.Color( color ) );
+
+  // add a background folder
+  let backgroundFolder = gui.addFolder( "background" );
+  backgroundFolder.addColor( config, 'background.topColor' ).name( 'top' ).onChange( color => setBackgroundColor( color, config[ 'background.bottomColor' ] ) );
+  backgroundFolder.addColor( config, 'background.bottomColor' ).name( 'bottom' ).onChange( color => setBackgroundColor( config[ 'background.topColor' ], color ) );
+
+  // add a Camera folder
+  let cameraFolder = gui.addFolder( "camera" );
+  cameraFolder.add( config, 'camera.type' ).options( [ 'perspective', 'orthographic' ] ).name( 'type' ).onChange( type => setCameraType( type ) );
+
+  // add controls folder
+  let controlsFolder = gui.addFolder( "controls" );
+  controlsFolder.add( config, 'controls.rotateSpeed' ).name( 'rotateSpeed' ).min( 0.1 ).max( 10 ).step( 0.1 ).onChange( speed => controls.rotateSpeed = speed );
+  controlsFolder.add( config, 'controls.zoomSpeed' ).name( 'zoomSpeed' ).min( 0.12 ).max( 12 ).step( 0.12 ).onChange( speed => controls.zoomSpeed = speed );
+  controlsFolder.add( config, 'controls.panSpeed' ).name( 'panSpeed' ).min( 0.03 ).max( 3 ).step( 0.03 ).onChange( speed => controls.panSpeed = speed );
+  controlsFolder.add( config, 'controls.screenPanning' ).name( 'screenPanning' ).onChange( screenPanning => controls.screenSpacePanning = screenPanning );
+  // add damping folder
+  var dampingFolder = controlsFolder.addFolder( "damping" );
+  dampingFolder.add( config, 'controls.damping.enable' ).name( 'enable' ).onChange( enable => controls.enableDamping = enable );
+  dampingFolder.add( config, 'controls.damping.factor' ).name( 'factor' ).min( 0.005 ).max( 0.5 ).step( 0.005 ).onChange( factor => controls.dampingFactor = factor );
+
+  // add ground folder
+  let groundFolder = gui.addFolder( "ground" );
+  groundFolder.add( config, 'ground.visible' ).name( 'visible' ).onChange( visible => setGroundVisible( visible ) );
+  groundFolder.add( config, 'ground.size' ).name( 'size' ).min( 1 ).max( 100 ).step( 1 ).onChange( size => setGroundSize( size ) );
+  // add plane folder
+  let planeFolder = groundFolder.addFolder( "plane" );
+  planeFolder.add( config, 'ground.plane.visible' ).name( 'visible' ).onChange( visible => setPlaneVisible( visible ) );
+  planeFolder.addColor( config, 'ground.plane.color' ).name( 'color' ).onChange( color => setPlaneColor( color ) );
+  planeFolder.add( config, 'ground.plane.transparent' ).name( 'transparent' ).onChange( transparent => setPlaneTransparent( transparent ) );
+  planeFolder.add( config, 'ground.plane.opacity' ).name( 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( opacity => setPlaneOpacity( opacity ) );
+  // add grid folder
+  let gridFolder = groundFolder.addFolder( "grid" );
+  gridFolder.add( config, 'ground.grid.visible' ).name( 'visible' ).onChange( visible => setGridVisible( visible ) );
+  gridFolder.add( config, 'ground.grid.divisions' ).name( 'divisions' ).min( 0 ).max( 100 ).step( 5 ).onChange( divisions => setGridDivisions( divisions ) );
+  gridFolder.addColor( config, 'ground.grid.major' ).name( 'major' ).onChange( color => setGridMajor( color ) );
+  gridFolder.addColor( config, "ground.grid.menor" ).name( 'menor' ).onChange( color => setGridMenor( color ) );
+
+  // add a joint folder
+  let jointFolder = gui.addFolder( "joint" );
+  jointFolder.add( config, 'joint.visible' ).name( 'visible' ).onChange( visible => setJointVisible( visible ) );
+  jointFolder.add( config, "joint.size" ).name( 'size' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( size => setJointSize( size ) );
+  jointFolder.add( config, 'joint.label' ).name( 'label' ).onChange( visible => setJointLabel( visible ) );
+  jointFolder.addColor( config, "joint.color" ).name( 'color' ).onChange( color => setJointColor( color ) );
+  jointFolder.add( config, 'joint.transparent' ).name( 'transparent' ).onChange( transparent => setJointTransparent( transparent ) );
+  jointFolder.add( config, 'joint.opacity' ).name( 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( opacity => setJointOpacity( opacity ));
+
+  // add a frame folder
+  let frameFolder = gui.addFolder( "frame" );
+  frameFolder.add( config, 'frame.visible' ).name( 'visible' ).onChange( visible => setFramesVisible( visible ));
+  frameFolder.add( config, 'frame.view', [ 'wireframe', 'extrude' ] ).name( 'view' ).onChange( view  =>  setFrameView( view ) );
+  frameFolder.add( config, 'frame.size' ).name( 'size' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( size => setFrameSize( size ) );
+  frameFolder.addColor( config, 'frame.color' ).name( 'color' ).onChange( color => setFrameColor( color ) );
+  frameFolder.add( config, 'frame.transparent' ).name( 'transparent' ).onChange( transparent => setFrameTransparent( transparent ) );
+  frameFolder.add( config, 'frame.opacity' ).name( 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( opacity => setFrameOpacity( opacity ) );
+  frameFolder.add( config, 'frame.label' ).name( 'label' ).onChange( visible => setFrameLabel( visible ) );
+  frameFolder.add( config, 'frame.axes' ).name( 'axes' ).onChange( visible => setFrameAxes( visible ) );
+
+  // add support folder
+  let supportFolder = gui.addFolder( "support" );
+  supportFolder.add( config, 'support.mode' ).options( [ "space", "analytical" ]).name( 'mode' ).onChange( mode => setSupportMode( mode ) );
+  // add foundation folder
+  let foundationFolder = supportFolder.addFolder( "foundation" );
+  foundationFolder.add( config, 'support.foundation.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setFoundationSize( size ) );
+  // add pedestal folder
+  let pedestalFolder = supportFolder.addFolder( "pedestal" );
+  pedestalFolder.add( config, 'support.pedestal.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setPedestalSize( size ) );
+  // add pin folder
+  let pinFolder = supportFolder.addFolder( "pin" );
+  pinFolder.add( config, 'support.pin.height' ).name( 'height' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setPinHeight( size ) );
+  pinFolder.add( config, 'support.pin.radius' ).name( 'radius' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( radius => setPinRadius( radius ) );
+  // supportFolder.add( config, 'radius' ).min( 0.01 ).max( 0.1 ).step( 0.001 ).onChange( ( radius ) => setSupportRadius( radius ) );
+
+  render();
   // // casting
   // var projector = new THREE.Projector();
 
@@ -417,33 +382,11 @@ function init() {
 // }
 // }
 
-// function getCSSValuePrefix() {
-//     var rtrnVal = '';
-//     var prefixes = ['-o-', '-ms-', '-moz-', '-webkit-'];
-
-//     var dom = document.createElement('div');
-
-//     for (var i = 0; i < prefixes.length; i++) {
-//         dom.style.background = prefixes[i] + 'linear-gradient(#000000, #ffffff)';
-
-//         if (dom.style.background) {
-//             rtrnVal = prefixes[i];
-//         }
-//     }
-
-//     dom = null;
-
-//     delete dom;
-
-//     return rtrnVal;
-// }
-
 window.onload = init;
 
 function createControls( rotateSpeed, zoomSpeed, panSpeed, screenSpacePanning, enableDamping, dampingFactor ) {
   // create the controls
 
-  // create the controls
   var controls = new THREE.OrbitControls( camera, CSS2DRenderer.domElement );
 
   // set the properties
@@ -458,9 +401,8 @@ function createControls( rotateSpeed, zoomSpeed, panSpeed, screenSpacePanning, e
 }
 
 function setModelRotation( axis ) {
-  // set the model rotation
+  // set model rotation
 
-  var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var angle;
 
   switch( axis ) {
@@ -475,7 +417,7 @@ function setModelRotation( axis ) {
       break;
   }
 
-  model.setRotationFromAxisAngle( vector, angle );
+  model.setRotationFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), angle );
 }
 
 export function setUpwardsAxis( axis ) {
@@ -488,18 +430,13 @@ export function setUpwardsAxis( axis ) {
       
       // redraw the supports
       for ( let [ joint, support ] of Object.entries( structure.supports ) ) {
-        // get joint
-        joint = joints.getObjectByName( joint );
-        
-        // remove support
+        joint = model.getObjectByName( 'joints' ).getObjectByName( joint );
         joint.remove( joint.getObjectByName( 'support' ) );
-
-        // add support
         joint.add( createSupport( support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) );
       }
       
       // save the value
-      config.model.axisUpwards = axis;
+      config[ 'model.axisUpwards' ] = axis;
 
       resolve();
     } else {
@@ -510,12 +447,12 @@ export function setUpwardsAxis( axis ) {
   return promise;
 }
 
-export function setViewType( viewType ) {
-  // set view type
+export function setFrameView( view ) {
+  // set frame view
   
   var promise = new Promise( ( resolve, reject ) => {
-    let wireframeView = viewType == 'wireframe';
-    let extrudeView = viewType == 'extrude';
+    let wireframeView = view == 'wireframe';
+    let extrudeView = view == 'extrude';
 
     if ( wireframeView || extrudeView ) {
       let wireFrame, extrudeFrame;
@@ -541,53 +478,42 @@ export function open( filename ) {
   // open a file
 
   var promise = loadJSON( filename )
-    .then(function ( json ) {
+    .then( json => {
+      // delete labels
+      for ( const joint of model.getObjectByName( 'joints' ).children ) joint.getObjectByName( 'joint' ).remove( joint.getObjectByName( 'joint' ).getObjectByName( 'label') );
+      for ( const frame of model.getObjectByName( 'frames' ).children ) frame.remove( frame.getObjectByName( 'label' ) );
 
-      // delete joints label
-      for ( const joint of joints.children ) joint.getObjectByName( 'joint' ).remove( joint.getObjectByName( 'joint' ).getObjectByName( 'label') );
-
-      // delete frames label
-      for ( const frame of frames.children ) frame.remove( frame.getObjectByName( 'label' ) );
-
-      // delete joints
-      joints.children = [];
-
-      // delete frames
-      frames.children = [];
+      // delete objects
+      model.getObjectByName( 'joints' ).children = [];
+      model.getObjectByName( 'frames' ).children = [];
 
       // create structure
-      structure = createstructure();
+      structure = createStructure();
       
-      // add joints
-      for ( const key in json.joints ) addJoint( key, json.joints[key].x, json.joints[key].y, json.joints[key].z );
-
-      // add materials
-      for ( const key in json.materials ) addMaterial( key, json.materials[key].E, json.materials[key].G );
+      // add objects
+      for ( let [ name, joint ] of Object.entries( json.joints ) ) addJoint( name, joint.x, joint.y, joint.z );
+      for ( let [ name, material ] of Object.entries( json.materials ) ) addMaterial( name, material.E, material.G );
       
-      // add section
-      for ( const key in json.sections ) {
-        let section = json.sections[key];
-
-        switch ( section.type ){
+      // add sections
+      for ( let [ name, section ] of Object.entries( json.sections ) ) {
+        switch ( section.type ) {
           case "Section":
-            addSection( key );
+            addSection( name );
             break;
           case "RectangularSection":
-            addRectangularSection( key, section.width, section.height );
+            addRectangularSection( name, section.width, section.height );
             break;
         }
       }
       
       // add frames
-      for ( const key in json.frames ) addFrame( key, json.frames[key].j, json.frames[key].k, json.frames[key].material, json.frames[key].section );
+      for ( let [ name, frame ] of Object.entries( json.frames ) ) addFrame( name, frame.j, frame.k, frame.material, frame.section );
 
       // add suports
-      for ( const key in json.supports ) addSupport( key, json.supports[key].ux, json.supports[key].uy, json.supports[key].uz, json.supports[key].rx, json.supports[key].ry, json.supports[key].rz );
-
-      return;
+      for ( let [ name, support ] of Object.entries( json.supports ) ) addSupport( name, support.ux, support.uy, support.uz, support.rx, support.ry, support.rz );
     })
     .catch(function ( e ) {
-      throw e;
+      console.log( e ); // throw e;
     })
 
   return promise;
@@ -613,7 +539,7 @@ export function addSupport( joint, ux, uy, uz, rx, ry, rz ) {
         var support = createSupport( ux, uy, uz, rx, ry, rz );
 
         // add support
-        joints.getObjectByName( joint ).add( support );
+        model.getObjectByName( 'joints' ) .getObjectByName( joint ).add( support );
 
         resolve();
       } else {
@@ -652,8 +578,8 @@ export function addFrame( name, j, k, material, section ) {
         structure.frames[name] = { j: j, k: k, material: material, section: section };
     
         // get frame's joints
-        j = joints.getObjectByName( j );
-        k = joints.getObjectByName( k );
+        j = model.getObjectByName( 'joints' ).getObjectByName( j );
+        k = model.getObjectByName( 'joints' ).getObjectByName( k );
     
         // get local axis
         var x_local =  k.position.clone().sub( j.position );
@@ -667,7 +593,7 @@ export function addFrame( name, j, k, material, section ) {
         // add axes
         var axes = new THREE.AxesHelper();
         axes.name = 'axes';
-        axes.visible = config.frame.axes;
+        axes.visible = config[ 'frame.axes' ];
         axes.position.set( 0, 0, length / 2 );
         frame.add( axes );
     
@@ -682,7 +608,7 @@ export function addFrame( name, j, k, material, section ) {
         label.textContent = name;
         var frameLabel = new THREE.CSS2DObject( label );
         frameLabel.name = 'label';
-        frameLabel.visible = config.frame.label;
+        frameLabel.visible = config[ 'frame.label' ];
         frame.add( frameLabel );
     
         // add frame's joints info
@@ -691,7 +617,7 @@ export function addFrame( name, j, k, material, section ) {
         // frame.joints = [j, k];
         
         // add frame to scene
-        frames.add( frame );
+        model.getObjectByName( 'frames' ).add( frame );
     
         // track frame's name
         // frames_name.add(name);
@@ -721,14 +647,17 @@ export function addSection( name ) {
     name = name.toString();
 
     // check if section's name already exits
-    if ( structure.sections.hasOwnProperty( name ) ) reject( new Error( "Section's name '" + name + "' already exits" ) );
+    if ( structure.sections.hasOwnProperty( name ) ) {
+      reject( new Error( "Section's name '" + name + "' already exits" ) );
+    } else {
+      structure.sections[name] = { type: "Section" };
+      // create section
+      sections[name] = createSection();
+  
+      resolve();
+    }
 
     // add section to structure
-    structure.sections[name] = { type: "Section" };
-    // create section
-    sections[name] = createSection();
-
-    resolve();
   });
 
   return promise;
@@ -742,12 +671,14 @@ export function addRectangularSection( name, width, height ) {
     name = name.toString();
 
     // check if section's name already exits
-    if ( structure.sections.hasOwnProperty( name ) ) reject( new Error( "section's name '" + name + "' already exits" ) );
-    
-    // add section to structure
-    structure.sections[name] = { type: "RectangularSection", width: width, height: height };
-    // create rectangular section
-    sections[name] = createRectangularSection( width, height );
+    if ( structure.sections.hasOwnProperty( name ) ) {
+      reject( new Error( "section's name '" + name + "' already exits" ) );
+    } else {
+      // add section to structure
+      structure.sections[name] = { type: "RectangularSection", width: width, height: height };
+      // create rectangular section
+      sections[name] = createRectangularSection( width, height );
+    }
 
     resolve();
   });
@@ -796,12 +727,9 @@ export function addJoint( name, x, y, z ) {
       var parent = new THREE.Group();
       parent.name = name;
     
-      // create sphere
-      var joint = createJoint( config.joint.size );
+      // create joint
+      var joint = createJoint( config[ 'joint.size' ] );
       parent.add( joint );
-  
-      // set position
-      parent.position.set( x, y, z );
   
       // add label
       const label = document.createElement( 'div' );
@@ -809,16 +737,18 @@ export function addJoint( name, x, y, z ) {
       label.textContent = name;
       var jointLabel = new THREE.CSS2DObject( label );
       jointLabel.name = 'label';
-      jointLabel.visible = config.joint.label;
-      jointLabel.position.set( 2, 2, 2 );
+      jointLabel.visible = config[ 'joint.label' ];
+      jointLabel.position.set( 0.5, 0.5, 0.5 );
       joint.add( jointLabel );
-      // joint.label = label;
       
-      // add joint to scene
-      joints.add( parent );
-  
+      // set position
+      parent.position.set( x, y, z );
+
+      // add parent to scene
+      model.getObjectByName( 'joints' ).add( parent );
+
       resolve();
-    }    
+    }
   });
 
   return promise;
@@ -903,7 +833,7 @@ export function removeJoint( name ) {
       
       resolve();
     } else {
-      if ( joints_name.has( name ) ) {
+      if ( structure.joints.hasOwnProperty( name ) ) {
         reject( new Error("joint '" + name + "' is in use") );
       } else {
         reject( new Error("joint '" + name + "' does not exist") );
@@ -927,17 +857,13 @@ function deleteFrame( name ) {
   
   // remove frame of the scene
   frames.remove( frame );
-  
-  // remove frame's joints
-  let frame_joints = frame.joints;
-  frames_joints = frames_joints.filter( jk => !jointsEqual( jk, frame_joints ) );
 }
 
 function deleteJoint( name ) {
   // delete a joint
 
   // get the joint
-  let joint = joints.getObjectByName( name );
+  let joint = model.getObjectByName( 'joints' ).getObjectByName( name );
 
   // remove the label
   joint.remove( joint.getObjectByName( 'label' ) );
@@ -955,7 +881,7 @@ function createFoundation() {
   var foundationMaterial;
 
   // foundation material
-  switch ( config.model.axisUpwards )  {
+  switch ( config[ 'model.axisUpwards' ] )  {
     case 'x':
       foundationMaterial = xSupportMaterial;
       break;
@@ -985,7 +911,7 @@ function createFoundation() {
   foundation.quaternion.copy( quaternion );
 
   // set scale 
-  foundation.scale.set( config.support.foundation.size, config.support.foundation.size, config.support.foundation.depth );
+  foundation.scale.set( config[ 'support.foundation.size' ], config[ 'support.foundation.size' ], config[ 'support.foundation.depth' ] );
 
   return foundation;
 }
@@ -1011,10 +937,10 @@ function createPedestal() {
   quaternion.inverse();
 
   // set position
-  pedestal.position.setZ( -config.support.pedestal.size / 2 ).applyQuaternion( quaternion );
+  pedestal.position.setZ( -config[ 'support.pedestal.size' ] / 2 ).applyQuaternion( quaternion );
 
   // set scale
-  pedestal.scale.setScalar( config.support.pedestal.size );
+  pedestal.scale.setScalar( config[ 'support.pedestal.size' ] );
 
   return pedestal;
 }
@@ -1025,7 +951,7 @@ function createPin() {
   var color1;
   var color2;
 
-  switch ( config.model.axisUpwards ) {
+  switch ( config[ 'model.axisUpwards'] ) {
     case 'x':
       color1 = ySupportMaterial;
       color2 = zSupportMaterial;
@@ -1054,7 +980,7 @@ function createPin() {
   pin.add( pinEdges );
   
   // set scale
-  pin.scale.set( config.support.pin.radius, config.support.pin.radius, config.support.pin.height );
+  pin.scale.set( config[ 'support.pin.radius' ], config[ 'support.pin.radius' ], config[ 'support.pin.height' ] );
 
   // set quaternion
   var quaternion = new THREE.Quaternion().copy( model.quaternion ).inverse();
@@ -1113,19 +1039,23 @@ function createDisplacementSupport( axis ) {
 
 function createRotationSupport( axis ) {
   // create a rotational suppoort
+  
   var rotationSupport = new THREE.Group();
 
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var quaternion = new THREE.Quaternion();
 
+  // head arrow
   var coneGeometry = new THREE.ConeBufferGeometry();
   coneGeometry.translate( 0, 0.5, 0 );
   
+  // curve arrow
   var circumferenceCurve = new THREE.EllipseCurve( 0, 0, 1, 1, 0, 5 * Math.PI / 4 );
   var points = circumferenceCurve.getPoints( 32 );
   var circumferenceGeometry = new THREE.BufferGeometry().setFromPoints( points );
   circumferenceGeometry.rotateY( Math.PI / 2 );
 
+  // restrain symbol 
   var circleGeometry = new THREE.CircleBufferGeometry( 1, 32 );
   circleGeometry.rotateX( -Math.PI / 2 );
   circleGeometry.rotateZ( -Math.PI / 4 );
@@ -1184,6 +1114,7 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
 
   var support = new THREE.Group();
 
+  // create analytical support
   var analytical = new THREE.Group();
 
   if ( ux ) analytical.add( createDisplacementSupport( 'x' ) );
@@ -1192,6 +1123,20 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
   if ( rx ) analytical.add( createRotationSupport( 'x' ) );
   if ( ry ) analytical.add( createRotationSupport( 'y' ) );
   if ( rz ) analytical.add( createRotationSupport( 'z' ) );
+
+  // create space support
+  var space = new THREE.Group();
+
+  // fallback mode
+  if ( !ux || !uy || !uz ) {
+    // space.copy( analytical );
+    if ( ux ) space.add( createDisplacementSupport( 'x' ) );
+    if ( uy ) space.add( createDisplacementSupport( 'y' ) );
+    if ( uz ) space.add( createDisplacementSupport( 'z' ) );
+    if ( rx ) space.add( createRotationSupport( 'x' ) );
+    if ( ry ) space.add( createRotationSupport( 'y' ) );
+    if ( rz ) space.add( createRotationSupport( 'z' ) );
+  }
 
   // con las coordenadas identificar en que cara del cubo está el apoyo
   // aun no tengo un ejercicio el cual pueda usar para desarrollar esta herramienta
@@ -1208,22 +1153,18 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
   //   box.clampPoint( joint.position, vector );
   //   console.log( joint.name, vector );
   // }
-
-  // create analytical support
-  var space = new THREE.Group();
-
-  // fallback support
-  if ( ( !ux && rx ) || ( !uy && ry ) || ( !uz && ry )) space.copy( analytical );
   
+  var quaternion = model.quaternion.clone().inverse();
+
   // fixed
   if ( ux && uy && uz && rx && ry && rz ) {
     // create foundation
     var foundation = createFoundation();
     // set position
-    foundation.position.setZ( -( config.support.pedestal.size + config.support.foundation.depth / 2 ) ).applyQuaternion( new THREE.Quaternion().copy( model.quaternion ).inverse() );
+    foundation.position.setZ( -( config [ 'support.pedestal.size' ] ) ).applyQuaternion( quaternion );
     space.add( foundation );
 
-    // pedestal
+    // create pedestal
     var pedestal = createPedestal();
     space.add( pedestal );
   }
@@ -1232,81 +1173,25 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
   if ( ux && uy && uz && !rx && !ry && !rz ) {
     // create foundation
     var foundation = createFoundation();
-    foundation.position.setZ( -( config.support.pin.height + config.support.foundation.depth / 2 ) ).applyQuaternion( new THREE.Quaternion().copy( model.quaternion ).inverse() );
+    foundation.position.setZ( -( config[ 'support.pin.height' ] ) ).applyQuaternion( quaternion );
     space.add( foundation );
 
     // create pin
     var pin = createPin();
     space.add( pin );
   }
-  // if ( rx ) analytical.add( new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0, 0, 0 ), 1, xSupportMaterial.color.getHex() ) );
-  // if ( ry ) analytical.add( new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0, 0, 0 ), 1, xSupportMaterial.color.getHex() ) );
-  // if ( rz ) analytical.add( new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0, 0, 0 ), 1, xSupportMaterial.color.getHex() ) );
-
-  // if ( config.model.axisUpwards == 'x' ) axis = 0;
-  // if ( config.model.axisUpwards == 'y' ) axis = 1;
-  // if ( config.model.axisUpwards == 'z' ) axis = 2;
-
-  // var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
-  // var quaternion = new THREE.Quaternion();
-
-  // var mesh;
-  // var uScale = new THREE.Vector3( config.support.radius, config.support.length, config.support.radius );
-  // var rScale = new THREE.Vector3( config.support.rotation.thickness, 1, 1 );
-
-  // if ( ux ) {
-  //   mesh = new THREE.Mesh( uGeometry, uxMaterial );
-  //   mesh.quaternion.copy( quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 ) );
-  //   mesh.scale.copy( uScale );
-  //   u.add( mesh );
-  // }
-  // if ( uy ) {
-  //   mesh = new THREE.Mesh( uGeometry, uyMaterial );
-  //   mesh.scale.copy( uScale );
-  //   u.add( mesh );
-  // }
-  // if ( uz ) {
-  //   mesh = new THREE.Mesh( uGeometry, uzMaterial );
-  //   mesh.scale.copy( uScale );
-  //   mesh.quaternion.copy( quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 ) );
-  //   u.add( mesh );
-  // }
-  // if ( rx ) {
-  //   mesh = new THREE.Mesh( rGeometry, rxMaterial );
-  //   mesh.scale.copy( rScale )
-  //   mesh.quaternion.copy( quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 ) );
-  //   r.add( mesh );
-  // }
-  // if ( ry ) {
-  //   mesh = new THREE.Mesh( rGeometry, ryMaterial );
-  //   mesh.scale.copy( rScale )
-  //   mesh.quaternion.copy( quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 ) );
-  //   r.add( mesh );
-  // }
-  // if ( rz ) {
-  //   mesh = new THREE.Mesh( rGeometry, rzMaterial );
-  //   mesh.scale.copy( rScale )
-  //   r.add( mesh );
-  // }
 
   analytical.name = 'analytical';
   space.name = 'space';
 
-  space.visible = config.support.mode == 'space';
-  analytical.visible = config.support.mode == 'analytical';
+  space.visible = ( config[ 'support.mode' ] == 'space' );
+  analytical.visible = ( config[ 'support.mode' ] == 'analytical' );
 
   support.add( analytical );
   support.add( space );
 
   support.name = 'support';
-  support.visible = config.support.visible;
-  // u.name = 'u';
-  // r.name = 'r';
-
-  // r.scale.setScalar( config.support.rotation.size );
-
-  // support.add( u );
-  // support.add( r)
+  support.visible = config[ 'support.visible' ];
 
   return support;
 }
@@ -1315,64 +1200,58 @@ function createFrame( length, section ) {
   // create a frame
 
   var frame = new THREE.Group();
-  var extrudeSettings = { depth: length, bevelEnabled: false };  // curveSegments: 24, 
+  var extrudeSettings = { depth: length, bevelEnabled: false };  // curveSegments: 24,
 
-  // create wire frame
-  var wireFrameGeometry = new THREE.ExtrudeBufferGeometry( wireFrameShape, extrudeSettings );
-  var wireFrame = new THREE.Mesh( wireFrameGeometry, frameMaterial );
+  // create wireframe
+  // extrude wireFrameShape
+  var wireFrame = new THREE.Mesh( new THREE.ExtrudeBufferGeometry( wireFrameShape, extrudeSettings ), frameMaterial );
   wireFrame.name = 'wireFrame';
-  wireFrame.scale.set( config.frame.size, config.frame.size, 1 );
-
-  // add covers
-  var wireFrameCoverGeometry = new THREE.ShapeBufferGeometry( wireFrameShape );
-  var wireFrameCoverEdgesGeometry = new THREE.EdgesGeometry( wireFrameCoverGeometry );
-  var wireFrameCoverEdgesMaterial = new THREE.LineBasicMaterial( { color: config.frame.color } );
-  var wireFrameCoverTop = new THREE.LineSegments( wireFrameCoverEdgesGeometry, wireFrameCoverEdgesMaterial );
-  var wireFrameCoverBottom = wireFrameCoverTop.clone();
-  wireFrameCoverBottom.position.setZ( length );
-
+  wireFrame.scale.set( config[ 'frame.size' ], config[ 'frame.size' ], 1 );
+  // top cover
+  var wireFrameCoverTop = new THREE.LineSegments( new THREE.EdgesGeometry( new THREE.ShapeBufferGeometry( wireFrameShape ) ), new THREE.LineBasicMaterial( { color: config[ 'frame.color' ] } ) );
+  wireFrameCoverTop.name = 'top';
   wireFrame.add( wireFrameCoverTop );
+  // botom cover
+  var wireFrameCoverBottom = wireFrameCoverTop.clone();
+  wireFrameCoverBottom.name = 'bottom';
+  wireFrameCoverBottom.position.setZ( length );
   wireFrame.add( wireFrameCoverBottom );
-  
+
   // create extrude frame
-  var extrudeFrame;
-  
+  var extrudeFrame;  
   if ( structure.sections[section].type == 'Section' ) {
+    // fallback mode
     extrudeFrame = wireFrame.clone();
   } else {
+    // extrude cross section
     var extrudeFrameGeometry = new THREE.ExtrudeBufferGeometry( sections[section], extrudeSettings );
     extrudeFrame = new THREE.Mesh( extrudeFrameGeometry, frameMaterial );
-    
-    // create edges
-    var frameEdgesGeomtry = new THREE.EdgesGeometry( extrudeFrameGeometry );
-    var frameEdges = new THREE.LineSegments( frameEdgesGeomtry, new THREE.LineBasicMaterial( { color: config.frame.color } ) );
-    frameEdges.name = 'edges';
-    
     // add edges to frame
-    extrudeFrame.add( frameEdges );
+    var edgesExtrudeFrame = new THREE.LineSegments( new THREE.EdgesGeometry( extrudeFrameGeometry ), new THREE.LineBasicMaterial( { color: config[ 'frame.color'] } ) )
+    edgesExtrudeFrame.name = 'edges';
+    extrudeFrame.add( edgesExtrudeFrame );
   }
-
   extrudeFrame.name = 'extrudeFrame';
-
-  // wireFrame.castShadow = true;
-  // wireFrame.receiveShadow = true;
-
-  // extrudeFrame.castShadow = true;
-  // extrudeFrame.receiveShadow = true;
-
-  // set visibility
-  if ( config.frame.view == 'wireframe' ) extrudeFrame.visible = false;
-  if ( config.frame.view == 'extrude' ) wireFrame.visible = false;
 
   // x local along frame
   var quaternion = new THREE.Quaternion().setFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), 2 * Math.PI / 3 );
   extrudeFrame.quaternion.copy( quaternion );
   wireFrame.quaternion.copy( quaternion );
 
-  // middle's frame at origin
-  var position = new THREE.Vector3( -length / 2, 0, 0 )
+  // middle frame at origin
+  var position = new THREE.Vector3( -length / 2, 0, 0 );
   extrudeFrame.position.copy( position );
   wireFrame.position.copy( position );
+
+  // set visibility
+  if ( config[ 'frame.view' ] == 'wireframe' ) extrudeFrame.visible = false;
+  if ( config[ 'frame.view' ] == 'extrude' ) wireFrame.visible = false;
+
+  // wireFrame.castShadow = true;
+  // wireFrame.receiveShadow = true;
+
+  // extrudeFrame.castShadow = true;
+  // extrudeFrame.receiveShadow = true;
 
   // add wire frame and extrudeFrame
   frame.add( wireFrame );
@@ -1381,36 +1260,17 @@ function createFrame( length, section ) {
   return frame;
 }
 
-function createSection() {
-  // create a section
+function createSection() { return wireFrameShape };
 
-  return wireFrameShape;
-}
-
-function createRectangularSection( widht, height ) {
-  // create a rectangular section
-
-  var rectangularSection = new THREE.Shape()
-    .moveTo(  widht / 2, -height / 2 )
-    .lineTo(  widht / 2,  height / 2 )
-    .lineTo( -widht / 2,  height / 2 )
-    .lineTo( -widht / 2, -height / 2 );
-  
-  return rectangularSection;
-}
+function createRectangularSection( widht, height ) { return new THREE.Shape().moveTo(  widht / 2, -height / 2 ).lineTo(  widht / 2,  height / 2 ).lineTo( -widht / 2,  height / 2 ).lineTo( -widht / 2, -height / 2 ) };
 
 function createJoint( size ) {
   // create a joint
 
   var joint = new THREE.Mesh( jointGeometry, jointMaterial );
 
-  // set name
   joint.name = "joint";
-
-  // set visible
-  joint.visible = config.joint.visible;
-
-  // set scale
+  joint.visible = config[ 'joint.visible' ];
   joint.scale.setScalar( size );
   
   return joint;
@@ -1419,24 +1279,17 @@ function createJoint( size ) {
 function createGround( size, divisions, color, transparent, opacity, colorCenterLine, colorGrid ) {
   // create the ground
 
-  // create the ground
   var ground = new THREE.Group();
-  // set name
   ground.name = 'ground';
-  // set visible
-  ground.visible = config.ground.visible;
+  ground.visible = config[ 'ground.visible' ];
 
-  // add the grid to the parent
   var grid = createGrid( divisions, colorCenterLine, colorGrid );
   ground.add( grid );
   
-  // create colorCenterLine
   var planeGometry = new THREE.PlaneBufferGeometry();
   var planeMaterial = new THREE.MeshBasicMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } );
   var plane = new THREE.Mesh( planeGometry, planeMaterial );
   plane.name = 'plane';
-  
-  // add the plane to the ground
   ground.add( plane );
   
   // set size
@@ -1451,284 +1304,126 @@ function createGround( size, divisions, color, transparent, opacity, colorCenter
 function createGrid( divisions, colorCenterLine, colorGrid ) {
   // create a grid
 
-  // create the grid
   var grid = new THREE.GridHelper( 1, divisions, colorCenterLine, colorGrid );
-  // set the name
+  
   grid.name = 'grid';
-  // set visible
-  grid.visible = config.ground.grid.visible;
-  // set the rotation
-  grid.rotation.x = 0.5 * Math.PI;
+  grid.visible = config[ 'ground.grid.visible' ];
+  grid.rotation.x = Math.PI / 2;  // rotate grid to plane xy
 
   return grid;
 }
 
-function setGroundVisible( visible ) {
-  // set ground visible
+function setGroundVisible( visible ) { scene.getObjectByName( 'ground' ).visible = visible };
 
-  scene.getObjectByName( 'ground' ).visible = visible;
-}
+function setGroundSize( size ) { scene.getObjectByName( 'ground' ).scale.setScalar( size ) } ;
 
-function setGroundSize( size ) {
-  // set ground size
+function setPlaneVisible( visible ) { scene.getObjectByName( 'ground' ).getObjectByName( 'plane' ).visible = visible };
 
-  scene.getObjectByName( 'ground' ).scale.setScalar( size );
-}
+function setPlaneColor( color ) { scene.getObjectByName( 'ground' ).getObjectByName( 'plane' ).material.color = new THREE.Color( color ) };
 
-function setPlaneColor( color ) {
-  // set plane color
-  
-  var ground = scene.getObjectByName( 'ground' );
-  
-  ground.getObjectByName( 'plane' ).material.color = new THREE.Color( color );
-}
+function setPlaneTransparent( transparent ) { scene.getObjectByName( 'ground' ).getObjectByName( 'plane' ).material.transparent = transparent };
 
-function setPlaneTransparent( transparent ) {
-  // set plane transparent
-  
-  var ground = scene.getObjectByName( 'ground' );
-  
-  ground.getObjectByName( 'plane' ).material.transparent = transparent;
-}
+function setPlaneOpacity( opacity ) { scene.getObjectByName( 'ground' ).getObjectByName( 'plane' ).material.opacity = opacity }
 
-function setPlaneOpacity( opacity ) {
-  // set plane opacity
-  
-  var ground = scene.getObjectByName( 'ground' );
-  
-  ground.getObjectByName( 'plane' ).material.opacity = opacity;
-}
-
-function setGridVisible( visible ) {
-  // set grid visible
-  var ground = scene.getObjectByName( 'ground' );
-
-  ground.getObjectByName( 'grid' ).visible = visible;
-}
+function setGridVisible( visible ) { scene.getObjectByName( 'ground' ).getObjectByName( 'grid' ).visible = visible };
 
 function setGridDivisions( divisions ) {
   // set grid divisions
 
   var ground = scene.getObjectByName( 'ground' );
 
-  // remove actual grid
   ground.remove( ground.getObjectByName( 'grid' ) );
-  
-  // add new grid
-  var grid = createGrid( divisions, config.ground.grid.major, config.ground.grid.menor );
-  ground.add( grid );
+  ground.add( createGrid( divisions, config[ 'ground.grid.major' ], config[ 'ground.grid.menor' ] ) );
 }
 
-function setCenterLineColor( color ) {
-  // set grid center line color
+function setGridMajor( color ) {
+  // set grid major divisions color
 
   var ground = scene.getObjectByName( 'ground' );
 
-  // remove actual grid
   ground.remove( ground.getObjectByName( 'grid' ) );
-
-  // add new grid
-  var grid = createGrid( config.ground.grid.divisions, color, config.ground.grid.minor );
-  ground.add( grid ); 
+  ground.add( createGrid( config[ 'ground.grid.divisions' ], color, config[ 'ground.grid.minor' ] ) );
 }
 
-function setGridColor( color ) {
-  // set grid color
+function setGridMenor( color ) {
+  // set grid menor divisions color
 
   var ground = scene.getObjectByName( 'ground' );
 
-  // remove actual grid
   ground.remove( ground.getObjectByName( 'grid' ) );
-
-  // add new grid
-  var grid = createGrid( config.ground.grid.divisions, config.ground.grid.major, color );
-  ground.add( grid ); 
+  ground.add( createGrid( config[ 'ground.grid.divisions' ], config[ 'ground.grid.major' ], color ) );
 }
 
-function listsEqual( a, b ) {
-  // check if the a's elements are equals to b's elements
-  
-  for ( var i = 0; i < a.length; ++i ) {
-    if ( a[i] !== b[i] ) return false;
-  }
-  
-  return true;
-}
+function setFrameAxes( visible ) { model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'axes' ).visible = visible ) };
 
-function jointsEqual( a, b ) {
-  // check if frame 'a' is equal to frame 'b'
-  
-  return listsEqual( a, b );
-}
+function setFrameLabel( visible ) { model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'label' ).visible = visible ) };
 
-export function showFramesLabel() {
-  // hide joints' label
-
-  var promise = new Promise( ( resolve, reject ) =>  {
-    setFramesLabelDisplay( true );
-    
-    resolve()
-  });
-  
-  return promise;
-}
-
-export function hideFramesLabel() {
-  // hide joints' label
-
-  var promise = new Promise( ( resolve, reject ) =>  {
-    setFramesLabelDisplay( false );
-
-    resolve()
-  });
-  
-  return promise;
-}
-
-function setFramesAxesDisplay( visible ) {
-  // set joint's label display
-
-  for ( let frame of frames.children ) {
-    frame.getObjectByName( 'axes' ).visible = visible
-  }
-}
-
-function setFramesLabelDisplay( display ) {
-  // set joint's label display
-
-  for ( let frame of frames.children ) {
-    frame.children[0].visible = display;  // first child == label
-  }
-}
-
-export function showJointsLabel() {
-  // hide joints' label
-
-  var promise = new Promise( ( resolve, reject ) =>  {
-    setJointsLabelDisplay( true );
-    
-    resolve()
-  });
-  
-  return promise;
-}
-
-export function hideJointsLabel() {
-  // hide joints' label
-
-  var promise = new Promise( ( resolve, reject ) =>  {
-    setJointsLabelDisplay( false );
-
-    resolve()
-  });
-  
-  return promise;
-}
-
-function setJointsLabelDisplay( display ) {
-  // set joint's label display
-
-  for ( let joint of joints.children ) {
-    joint.children[0].visible = display; // first child == label
-  }
-}
-
-function setViewFrameLabel( visible ) {
-  // set view joint's label
-
-  var label;
-  
-  for ( let frame of frames.children ) {
-    label = frame.getObjectByName( "label" );
-
-    label.visible = visible;
-  }
-}
-
-function setViewJointLabel( visible ) {
-  // set view joint's label
-  
-  for ( let joint of joints.children ) {
-    var label = joint.getObjectByName( "label" );
-
-    label.visible = visible;
-  }
-}
+function setJointLabel( visible ) { model.getObjectByName( 'joints' ).children.forEach( joint => joint.getObjectByName( 'label' ).visible = visible ) };
 
 function setFrameColor( color ) {
-  // set frame's color
+  // set frame color
+  var wireframe, extrudeFrame;
+  var color = new THREE.Color( color );
 
-  frameMaterial.color = new THREE.Color( color );
+  frameMaterial.color = color;
+
+  for ( let frame of model.getObjectByName( 'frames' ).children ) {
+    wireframe = frame.getObjectByName( 'wireFrame' );
+    wireframe.getObjectByName( 'top' ).material.color = color;
+    wireframe.getObjectByName( 'bottom' ).material.color = color;
+
+    extrudeFrame = frame.getObjectByName( 'extrudeFrame' ).getObjectByName( 'edges' ).material.color = color;
+  }
 }
 
-function setFrameTransparent( transparent ) {
-  // set frame's transparent
+function setFrameTransparent( transparent ) { frameMaterial.transparent = transparent };
 
-  frameMaterial.transparent = transparent;
-}
+function setFrameOpacity( opacity ) { frameMaterial.opacity = opacity };
 
-function setFrameOpacity( opacity ) {
-  // set frame's opacity
+function setJointColor( color ) { jointMaterial.color = new THREE.Color( color ) };
 
-  frameMaterial.opacity = opacity;
-}
+function setJointTransparent( transparent ) { jointMaterial.transparent = transparent };
 
-function setJointColor( color ) {
-  // set joint's color
-
-  jointMaterial.color = new THREE.Color( color );
-}
-
-function setJointTransparent( transparent ) {
-  // set joint's transparent
-
-  jointMaterial.transparent = transparent;
-}
-
-function setJointOpacity( opacity ) {
-  // set joint's opacity
-
-  jointMaterial.opacity = opacity;
-}
+function setJointOpacity( opacity ) { jointMaterial.opacity = opacity };
 
 function setPinRadius( radius ) {
   // set pin radius
-  var pin;
-  var foundation;
 
-  for ( const joint in structure.supports ) {
-    pin = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'pin' );
-    foundation = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'foundation' );
+  var support, pin, foundation;
+
+  for ( const name in structure.supports ) {
+    support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
+    pin = support.getObjectByName( 'pin' );
+    foundation = support.getObjectByName( 'foundation' );
 
     if ( pin && foundation ) {
-      // set scale
-      pin.scale.set( radius, radius, config.support.pin.height );
+      // set radius
+      pin.scale.set( radius, radius, config[ 'support.pin.height' ] );
 
       // set position
-      var quaternion = new THREE.Quaternion().copy( model.quaternion ).inverse();
-      var position = new THREE.Vector3( 0, 0, -( config.support.pin.height + config.support.foundation.depth / 2 ) ).applyQuaternion( quaternion );
+      var quaternion = model.quaternion.clone().inverse();
+      var position = new THREE.Vector3( 0, 0, -( config[ 'support.pin.height' ] + config[ 'support.foundation.depth' ] / 2 ) ).applyQuaternion( quaternion );
       foundation.position.copy( position );
     }
   }
 }
 
 function setPinHeight( height ) {
-  // set pin size
-  var pin;
-  var foundation;
+  // set pin height
 
-  for ( const joint in structure.supports ) {
-    pin = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'pin' );
-    foundation = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'foundation' );
+  var support, pin, foundation;
+
+  for ( const name in structure.supports ) {
+    support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
+    pin = support.getObjectByName( 'pin' );
+    foundation = support.getObjectByName( 'foundation' );
 
     if ( pin && foundation ) {
       // set scale
-      pin.scale.set( config.support.pin.radius, config.support.pin.radius, height );
+      pin.scale.set( config[ 'support.pin.radius' ], config[ 'support.pin.radius' ], height );
 
       // set position
-      var quaternion = new THREE.Quaternion().copy( model.quaternion ).inverse();
-      var position = new THREE.Vector3( 0, 0, -( height + config.support.foundation.depth / 2 ) ).applyQuaternion( quaternion );
-      foundation.position.copy( position );
+      foundation.position.set( 0, 0, -height ).applyQuaternion( model.quaternion.clone().inverse() );
     }
   }
 }
@@ -1736,26 +1431,25 @@ function setPinHeight( height ) {
 function setPedestalSize( size ) {
   // set pedestal size
 
-  var pedestal;
-  var foundation;
+  var support, pedestal, foundation;
 
-  for ( const joint in structure.supports ) {
-    pedestal = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'pedestal' );
-    foundation = joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'foundation' );
+  for ( const name in structure.supports ) {
+    support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
+    pedestal = support.getObjectByName( 'pedestal' );
+    foundation = support.getObjectByName( 'foundation' );
 
     if ( pedestal && foundation ) {
       // set scale
       pedestal.scale.setScalar( size );
 
-
-      var quaternion = new THREE.Quaternion().copy( model.quaternion ).inverse();
+      var quaternion = model.quaternion.clone().inverse();
       var position = new THREE.Vector3( 0, 0, -size / 2 ).applyQuaternion( quaternion );
 
       // set pedestal  position
       pedestal.position.copy( position );
 
       // set foundation position
-      var position = new THREE.Vector3( 0, 0, -( size + config.support.foundation.depth / 2 ) ).applyQuaternion( quaternion );
+      position.set( 0, 0, -size ).applyQuaternion( quaternion );
       foundation.position.copy( position );
     }
   }
@@ -1764,34 +1458,35 @@ function setPedestalSize( size ) {
 function setFoundationSize( size ) {
   // set foundation size
 
-  for ( const joint in structure.supports ) {
-    joints.getObjectByName( joint ).getObjectByName( 'support' ).getObjectByName( 'foundation' ).scale.set( size, size, config.support.foundation.depth );
+  var foundation;
+
+  for ( const name in structure.supports ) {
+    foundation = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'foundation' );
+
+    if ( foundation ) foundation.scale.set( size, size, config[ 'support.foundation.depth' ] );
   }
 }
 
 function setSupportMode( mode ) {
   // set support mode
-  var support, analytical, space;
 
-  for ( const joint in structure.supports ) {
-    support = joints.getObjectByName( joint ).getObjectByName( 'support' );
+  var support;
 
-    analytical = support.getObjectByName( 'analytical' );
-    space = support.getObjectByName( 'space' );
+  for ( const name in structure.supports ) {
+    support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
 
-    analytical.visible = mode == 'analytical';
-    space.visible = mode == 'space';
+    support.getObjectByName( 'analytical' ).visible = ( mode == 'analytical' );
+    support.getObjectByName( 'space' ).visible = ( mode == 'space' );
   }
 }
 
 function setFrameSize( size ) {
-  // set frame's size
+  // set frame size
 
-  let scale = new THREE.Vector3( size, size, 1 );
-  let frame, wireFrame, extrudeFrame;
+  let frame, wireFrame, extrudeFrame, scale = new THREE.Vector3( size, size, 1 );
 
   for ( const name in structure.frames ) {
-    frame = frames.getObjectByName( name );
+    frame = model.getObjectByName( 'frames' ).getObjectByName( name );
     wireFrame = frame.getObjectByName( 'wireFrame' );
     extrudeFrame = frame.getObjectByName( 'extrudeFrame');
     
@@ -1800,73 +1495,44 @@ function setFrameSize( size ) {
   }
 }
 
-function setJointSize( size ) {
-  // set joint's size
+function setJointSize( size ) { model.getObjectByName( 'joints' ).children.forEach( joint => joint.getObjectByName( 'joint' ).scale.setScalar( size ) ) };
 
-  joints.children.forEach( joint => joint.getObjectByName( 'joint' ).scale.setScalar( size ) );
-}
+function setBackgroundColor( topColor, bottomColor ) { canvasWebGLRenderer.style.backgroundImage = "linear-gradient(" + topColor + ", " + bottomColor + ")" };
 
-function setBackgroundColor( topColor, bottomColor ) {
-  // set background color
+function setFramesVisible( visible ) { model.getObjectByName( 'frames' ).visible = visible };
 
-  canvasWebGLRenderer.style.backgroundColor = topColor;
-  canvasWebGLRenderer.style.backgroundImage = "linear-gradient(" + topColor + ", " + bottomColor + ")";
-}
+function setJointVisible( visible ) { model.getObjectByName( 'joints' ).children.forEach( joint => joint.getObjectByName( 'joint' ).visible = visible ) };
 
-function setFramesVisible ( visible ) {
-  // set frames's visible
-
-  frames.visible = visible;
-}
-
-function setJointsVisible ( visible ) {
-  // set joint's visible
-
-  joints.children.forEach( joint => joint.getObjectByName( 'joint' ).visible = visible );
-}
-
-function createstructure() {
-  // create structure
-
-  return { joints: {}, materials: {}, sections: {}, frames: {}, supports: {} };
-}
+function createStructure() { return { joints: {}, materials: {}, sections: {}, frames: {}, supports: {} } };
 
 function setCameraType( type ) {
   // set the camera type
 
-  // save the controls target
-  var target = controls.target.clone();
-  
-  // save previous camera quaternion
+  // set camera
   var quaternion = camera.quaternion.clone();
-    
-  // save previous camera position
   var position = camera.position.clone();
-
-  // save previous zoom
   var zoom = camera.zoom;
 
-  // set the camera
   camera = createCamera( type, position );
 
-  // set the controls
-  controls = createControls( config.controls.rotateSpeed, config.controls.zoomSpeed, config.controls.panSpeed, config.controls.screenPanning, config.controls.damping.enable, config.controls.damping.factor );
-  controls.target.copy( target );
-
-  // set rotation
   camera.quaternion.copy( quaternion );
 
-  // set position
   if ( type == 'perspective' ) {
-    // z local in globar coordinates
+    // move camera along z axis
     var worldDirection = new THREE.Vector3();
-    camera.getWorldDirection( worldDirection );
 
+    camera.getWorldDirection( worldDirection );
     worldDirection.multiplyScalar( position.length() - 1 / ( 2 * zoom * Math.tan( ( camera.fov / 2 ) * Math.PI / 180 ) ) );
+
     position.add( worldDirection );
   }
-
   camera.position.copy( position );
+
+  // set controls
+  var target = controls.target.clone();
+
+  controls = createControls( config[ 'controls.rotateSpeed' ], config[ 'controls.zoomSpeed' ], config[ 'controls.panSpeed' ], config[ 'controls.screenPanning' ], config[ 'controls.damping.enable' ], config[ 'controls.damping.factor' ] );
+  controls.target.copy( target );
 }
 
 function createModel() {
@@ -1874,23 +1540,18 @@ function createModel() {
 
   var model = new THREE.Group();
 
-  // create axes
   var axes = new THREE.AxesHelper();
   axes.name = 'axes';
-  axes.visible = config.model.axes.visible;
-  axes.scale.setScalar( config.model.axes.size );
-  
-  // set the joints
-  joints = new THREE.Group();
-  joints.name = 'joints';
-  
-  // set the frames
-  frames = new THREE.Group();
-  frames.name = 'frames';
-  
-  // add to model
+  axes.visible = config['model.axes.visible'];
+  axes.scale.setScalar( config['model.axes.size'] );
   model.add( axes );
+  
+  var joints = new THREE.Group();
+  joints.name = 'joints';
   model.add( joints );
+  
+  var frames = new THREE.Group();
+  frames.name = 'frames';
   model.add( frames );
 
   return model;
@@ -1901,28 +1562,21 @@ function createCamera( type, position ) {
 
   var camera;
 
-  var fov = 45;
-  var near = 0.01;
-  var far = 1000;
+  var fov = config[ 'camera.perspective.fov' ];
+  var near = config[ 'camera.perspective.near' ];
+  var far = config[ 'camera.perspective.far' ];
   var aspect = canvasWebGLRenderer.clientWidth / canvasWebGLRenderer.clientHeight;
 
-  // set the camera
   if ( type == 'perspective' ) {
     camera = new THREE.PerspectiveCamera( fov, aspect, near, far );
   } else if ( type == 'orthographic' ) {
     camera = new THREE.OrthographicCamera( -0.5 * aspect, 0.5 * aspect, 0.5, -0.5, near, far );
     camera.zoom = 1 / ( 2 * Math.tan( ( fov / 2 ) * Math.PI / 180 ) * position.length() );
   }
-  // set the up
+
   camera.up.set( 0, 0, 1 );
-
-  // set the camera position
   camera.position.copy( position );
-
-  // set the look at
   camera.lookAt( 0, 0, 0 );
-
-  // update camera
   camera.updateProjectionMatrix();
 
   return camera;
@@ -1931,27 +1585,20 @@ function createCamera( type, position ) {
 function render() {
   // render the scene
 
-  // call the render function
   requestAnimationFrame( render );
 
-  // update the statistics
   stats.update();
 
-  // update the scene
   webGLRenderer.render( scene, camera );
   CSS2DRenderer.render( scene, camera );
 
-  // update controls
-  if ( config.controls.damping ) controls.update();
+  if ( controls.enableDamping ) controls.update();
 }
 
 function initStats() {
   // init stats
   
-  // create stats
   var stats = new Stats();
-
-  // append stats
   document.getElementById( "Stats-output" ).appendChild( stats.domElement );
 
   return stats;
@@ -1959,30 +1606,22 @@ function initStats() {
 
 function loadJSON( json ) {
   // load json
-
-  var promise = fetch( json + "?nocache=" + new Date().getTime() )
-    .then(function ( response ) {
-      if ( response.status == 404 ) {
-        throw new Error( "404 File Not Found" );
-      }
-      
-      return response;
-    })
-    .then(function ( response ) {
+  
+  return fetch( json + "?nocache=" + new Date().getTime() )
+    .then( response => {
+      if ( !response.ok ) throw new Error( 'Network response was not ok' );
       return response.json();
     })
-    .catch(function ( e ) {
-      throw e;
-    })
-
-  return promise;
+    .catch( error => console.log( 'There has been a problem with your fetch operation:', error ) );
 }
 
 function onResize() {
-  camera.aspect = canvasWebGLRenderer.clientWidth / canvasWebGLRenderer.clientHeight;
+  // resize scene renderer
 
+  camera.aspect = canvasWebGLRenderer.clientWidth / canvasWebGLRenderer.clientHeight;
   camera.updateProjectionMatrix();
-  webGLRenderer.setSize(canvasWebGLRenderer.clientWidth, canvasWebGLRenderer.clientHeight);
+
+  webGLRenderer.setSize( canvasWebGLRenderer.clientWidth, canvasWebGLRenderer.clientHeight );
 }
 
-window.addEventListener("resize", onResize, false);
+window.addEventListener( "resize", onResize, false );
