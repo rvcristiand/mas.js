@@ -1177,13 +1177,12 @@ function createFrame( length, section ) {
   var frame = new THREE.Group();
   var extrudeSettings = { depth: length, bevelEnabled: false };  // curveSegments: 24,
 
-  // create wireframe
   // extrude wireFrameShape
   var wireFrame = new THREE.Mesh( new THREE.ExtrudeBufferGeometry( wireFrameShape, extrudeSettings ), frameMaterial );
   wireFrame.name = 'wireFrame';
   wireFrame.scale.set( config[ 'frame.size' ], config[ 'frame.size' ], 1 );
   // top cover
-  var wireFrameCoverTop = new THREE.LineSegments( new THREE.EdgesGeometry( new THREE.ShapeBufferGeometry( wireFrameShape ) ), new THREE.LineBasicMaterial( { color: config[ 'frame.color' ] } ) );
+  var wireFrameCoverTop = new THREE.LineSegments( new THREE.EdgesGeometry( new THREE.ShapeBufferGeometry( wireFrameShape ) ), frameEdgesMaterial );
   wireFrameCoverTop.name = 'top';
   wireFrame.add( wireFrameCoverTop );
   // botom cover
@@ -1202,7 +1201,7 @@ function createFrame( length, section ) {
     var extrudeFrameGeometry = new THREE.ExtrudeBufferGeometry( sections[section], extrudeSettings );
     extrudeFrame = new THREE.Mesh( extrudeFrameGeometry, frameMaterial );
     // add edges to frame
-    var edgesExtrudeFrame = new THREE.LineSegments( new THREE.EdgesGeometry( extrudeFrameGeometry ), new THREE.LineBasicMaterial( { color: config[ 'frame.color'] } ) )
+    var edgesExtrudeFrame = new THREE.LineSegments( new THREE.EdgesGeometry( extrudeFrameGeometry ), frameEdgesMaterial );
     edgesExtrudeFrame.name = 'edges';
     extrudeFrame.add( edgesExtrudeFrame );
   }
@@ -1335,21 +1334,7 @@ function setFrameLabel( visible ) { model.getObjectByName( 'frames' ).children.f
 
 function setJointLabel( visible ) { model.getObjectByName( 'joints' ).children.forEach( joint => joint.getObjectByName( 'label' ).visible = visible ) };
 
-function setFrameColor( color ) {
-  // set frame color
-  var wireframe, extrudeFrame;
-  var color = new THREE.Color( color );
-
-  frameMaterial.color = color;
-
-  for ( let frame of model.getObjectByName( 'frames' ).children ) {
-    wireframe = frame.getObjectByName( 'wireFrame' );
-    wireframe.getObjectByName( 'top' ).material.color = color;
-    wireframe.getObjectByName( 'bottom' ).material.color = color;
-
-    extrudeFrame = frame.getObjectByName( 'extrudeFrame' ).getObjectByName( 'edges' ).material.color = color;
-  }
-}
+function setFrameColor( color ) { frameMaterial.color = frameEdgesMaterial.color = new THREE.Color( color ) };
 
 function setFrameTransparent( transparent ) { frameMaterial.transparent = transparent };
 
