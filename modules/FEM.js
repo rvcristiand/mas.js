@@ -1,25 +1,38 @@
+// three.js
 var scene, camera, controls;
 var webGLRenderer, CSS2DRenderer;
 
+// html
 var canvasWebGLRenderer = document.getElementById( "canvas" );
 var canvasCSS2DRenderer = document.getElementById( "labels" );
 
-//
+// light
 // var ambientLight;
 // var hemisphereLight;
 // var directionalLight;
 
+// controls
 var stats, gui;
 
+// FEM.js
 var config = {
+  // background
   'background.topColor': '#000000',
-  'background.bottomColor': '#818181',
+  'background.bottomColor': '#282828',
 
+  // model
   'model.axisUpwards': 'y',
 
   'model.axes.visible': true,
   'model.axes.size': 1,
 
+  'model.axes.head.radius': 0.04,
+  'model.axes.head.height': 0.3,
+
+  'model.axes.shaft.length': 1,
+  'model.axes.shaft.radius': 0.01,
+
+  // camera
   'camera.type': 'perspective',
 
   'camera.position.x': 10,
@@ -30,6 +43,7 @@ var config = {
   'camera.perspective.near': 0.1,
   'camera.perspective.far': 1000,
 
+  // controls
   'controls.rotateSpeed': 1,
   'controls.zoomSpeed': 1.2,
   'controls.panSpeed': 0.3,
@@ -43,19 +57,26 @@ var config = {
   // 'lights.direction.color': 0xffffff,
   // 'lights.direction.intensity': 1,
 
-  'ground.visible': true,
-  'ground.size': 10,
+  // axes
+  'axes.x': '#ff0000',
+  'axes.y': '#00ff00',
+  'axes.z': '#0000ff',
 
-  'ground.plane.visible': true,
+  // ground
+  'ground.visible': true,
+  'ground.size': 20,
+
+  'ground.plane.visible': false,
   'ground.plane.color': 0x000000,
   'ground.plane.transparent': true,
   'ground.plane.opacity': 0.5,
   
   'ground.grid.visible': true,
-  'ground.grid.divisions': 10,
+  'ground.grid.divisions': 20,
   'ground.grid.major': 0xff0000,
-  'ground.grid.menor': 0x000000,
+  'ground.grid.menor': 0xffffff,
 
+  // joint
   'joint.visible': true,
   'joint.size': 0.03,
   'joint.color': 0xffff00,
@@ -63,6 +84,7 @@ var config = {
   'joint.opacity': 1,
   'joint.label': false,
 
+  // frame
   'frame.visible': true,
   'frame.view': 'extrude',
   'frame.size': 0.02,
@@ -70,10 +92,18 @@ var config = {
   'frame.transparent': true,
   'frame.opacity': 0.5,
   'frame.label': false,
-  'frame.axes': false,
 
+  'frame.axes.visible': true,
+  'frame.axes.size': 1,
+  
+  'frame.axes.head.radius': 0.04,
+  'frame.axes.head.height': 0.3,
+
+  'frame.axes.shaft.length': 1,
+  'frame.axes.shaft.radius': 0.01,
+  // support
   'support.visible': true,
-  'support.mode': 'analytical',
+  'support.mode': 'space',
 
   'support.foundation.size': 0.5,
   'support.foundation.depth': 0.05,
@@ -91,14 +121,13 @@ var model;
 var jointMaterial;
 var frameMaterial, frameEdgesMaterial;
 
-var jointGeometry, wireFrameShape;
+var jointGeometry, wireFrameShape, shaftGeometry, headGeometry;
 
-var xSupportMaterial, ySupportMaterial, zSupportMaterial;
+var xMaterial, yMaterial, zMaterial;
 var pedestalMaterial;
 
 var foundationGeometry, pedestalGeometry, pinGeometry;
 
-//
 var materials = {};
 var sections = {};
 
@@ -174,17 +203,6 @@ function init() {
   // create the controls
   controls = createControls( config[ 'controls.rotateSpeed' ], config[ 'controls.zoomSpeed' ], config[ 'controls.panSpeed' ], config[ 'controls.screenPanning' ], config[ 'controls.damping.enable' ], config[ 'controls.damping.factor' ] );
   
-  // create the model
-  model = createModel();
-
-  // set the upwards axis
-  setModelRotation( config[ 'model.axisUpwards' ] ); // TODO: tener en cuenta la direccion de la aceleracion de la gravedad
-  
-  // create the ground
-  var ground = createGround( config[ 'ground.size' ], config[ 'ground.grid.divisions' ], config[ 'ground.plane.color' ], config[ 'ground.plane.transparent' ], config[ 'ground.plane.opacity' ], config[ 'ground.grid.major' ], config[ 'ground.grid.minor' ] );
-  // ground.position.set( 0, 0, -0.01 );
-  scene.add( ground );
-
   // set the material
   jointMaterial = new THREE.MeshBasicMaterial( { color: config[ 'joint.color' ], transparent: config[ 'joint.transparent' ], opacity: config[ 'joint.opacity' ] } );
   frameMaterial = new THREE.MeshBasicMaterial( { color: config[ 'frame.color' ], transparent: config[ 'frame.transparent' ], opacity: config[ 'frame.opacity' ] } );
@@ -193,14 +211,20 @@ function init() {
   // set the geometry
   jointGeometry = new THREE.SphereBufferGeometry( 1, 32, 32 );
   wireFrameShape = new THREE.Shape().absarc();
+  shaftGeometry = new THREE.CylinderBufferGeometry();
+  shaftGeometry.rotateZ( Math.PI / 2 );
+  shaftGeometry.translate( 0.5, 0, 0 );
+  headGeometry = new THREE.ConeBufferGeometry();
+  headGeometry.rotateZ( 3 * Math.PI / 2 );
+  headGeometry.translate( 0.5, 0, 0 );
 
   // set the supports
   // material
-  xSupportMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, side: THREE.DoubleSide } );
-  ySupportMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00, side: THREE.DoubleSide } );
-  zSupportMaterial = new THREE.MeshBasicMaterial( { color: 0x0000ff, side: THREE.DoubleSide } );
+  xMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.x' ] } );
+  yMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.y' ] } );
+  zMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.z' ] } );
 
-  pedestalMaterial = [ xSupportMaterial, xSupportMaterial, ySupportMaterial, ySupportMaterial, zSupportMaterial, zSupportMaterial ];
+  pedestalMaterial = [ xMaterial, xMaterial, yMaterial, yMaterial, zMaterial, zMaterial ];
 
   // geometry
   foundationGeometry = new THREE.BoxBufferGeometry();
@@ -222,8 +246,22 @@ function init() {
   // translate
   pinGeometry.translate( 0, 0, -0.5 );
 
+  // create the model
+  model = createModel();
+
+  // set the upwards axis
+  setModelRotation( config[ 'model.axisUpwards' ] ); // TODO: tener en cuenta la direccion de la aceleracion de la gravedad
+  
+  // create the ground
+  var ground = createGround( config[ 'ground.size' ], config[ 'ground.grid.divisions' ], config[ 'ground.plane.color' ], config[ 'ground.plane.transparent' ], config[ 'ground.plane.opacity' ], config[ 'ground.grid.major' ], config[ 'ground.grid.menor' ] );
+  // ground.position.set( 0, 0, -0.01 );
+  scene.add( ground );
+
   // add model to scene
   scene.add( model );
+
+  // create the structure
+  structure = createStructure();
 
   // // casting
   // var projector = new THREE.Projector();
@@ -283,9 +321,17 @@ function init() {
   let modelFolder = gui.addFolder( "model" );
   modelFolder.add( config, 'model.axisUpwards' ).options( [ 'x', 'y', 'z' ] ).name( 'axisUpwards' ).onChange( axis => setUpwardsAxis( axis ) ); // .listen();
   // add axes folder
-  let axesFolder = modelFolder.addFolder( "axes" );
-  axesFolder.add( config, 'model.axes.visible' ).name( 'visible' ).onChange( visible => model.getObjectByName( 'axes' ).visible = visible );
-  axesFolder.add( config, 'model.axes.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => model.getObjectByName( 'axes' ).scale.setScalar( size ) );
+  let axesModelFolder = modelFolder.addFolder( "axes" );
+  axesModelFolder.add( config, 'model.axes.visible' ).name( 'visible' ).onChange( visible => model.getObjectByName( 'axes' ).visible = visible );
+  axesModelFolder.add( config, 'model.axes.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => model.getObjectByName( 'axes' ).scale.setScalar( size ) );
+  // add head folder
+  let headAxesModel = axesModelFolder.addFolder( "head" );
+  headAxesModel.add( config, 'model.axes.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( head => setAxesHeadHeight( model.getObjectByName( 'axes' ), head ) );
+  headAxesModel.add( config, 'model.axes.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAxesHeadRadius( model.getObjectByName( 'axes' ), radius ) );
+  // add shaft folder
+  let shaftAxesModel = axesModelFolder.addFolder( "shaft" );
+  shaftAxesModel.add( config, 'model.axes.shaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => setAxesShaftLength( model.getObjectByName( 'axes' ), length ) );
+  shaftAxesModel.add( config, 'model.axes.shaft.radius' ).name( 'radius' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => setAxesShaftRadius( model.getObjectByName( 'axes' ), radius ) );
 
   // add a light folder
   // let lightsFolder = gui.addFolder( "light");
@@ -330,6 +376,12 @@ function init() {
   gridFolder.addColor( config, 'ground.grid.major' ).name( 'major' ).onChange( color => setGridMajor( color ) );
   gridFolder.addColor( config, "ground.grid.menor" ).name( 'menor' ).onChange( color => setGridMenor( color ) );
 
+  // add axes folder
+  let axesFolder = gui.addFolder( "axes" );
+  axesFolder.addColor( config, 'axes.z' ).name( 'z' ).onChange( color => zMaterial.color = new THREE.Color( color ) );
+  axesFolder.addColor( config, 'axes.y' ).name( 'y' ).onChange( color => yMaterial.color = new THREE.Color( color ) );
+  axesFolder.addColor( config, 'axes.x' ).name( 'x' ).onChange( color => xMaterial.color = new THREE.Color( color ) );
+
   // add a joint folder
   let jointFolder = gui.addFolder( "joint" );
   jointFolder.add( config, 'joint.visible' ).name( 'visible' ).onChange( visible => setJointVisible( visible ) );
@@ -344,11 +396,22 @@ function init() {
   frameFolder.add( config, 'frame.visible' ).name( 'visible' ).onChange( visible => setFramesVisible( visible ));
   frameFolder.add( config, 'frame.view', [ 'wireframe', 'extrude' ] ).name( 'view' ).onChange( view  =>  setFrameView( view ) );
   frameFolder.add( config, 'frame.size' ).name( 'size' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( size => setFrameSize( size ) );
-  frameFolder.addColor( config, 'frame.color' ).name( 'color' ).onChange( color => setFrameColor( color ) );
-  frameFolder.add( config, 'frame.transparent' ).name( 'transparent' ).onChange( transparent => setFrameTransparent( transparent ) );
-  frameFolder.add( config, 'frame.opacity' ).name( 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( opacity => setFrameOpacity( opacity ) );
-  frameFolder.add( config, 'frame.label' ).name( 'label' ).onChange( visible => setFrameLabel( visible ) );
-  frameFolder.add( config, 'frame.axes' ).name( 'axes' ).onChange( visible => setFrameAxes( visible ) );
+  frameFolder.addColor( config, 'frame.color' ).name( 'color' ).onChange( color => frameMaterial.color = frameEdgesMaterial.color = new THREE.Color( color ) );
+  frameFolder.add( config, 'frame.transparent' ).name( 'transparent' ).onChange( transparent => frameMaterial.transparent = transparent );
+  frameFolder.add( config, 'frame.opacity' ).name( 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( opacity => frameMaterial.opacity = opacity );
+  frameFolder.add( config, 'frame.label' ).name( 'label' ).onChange( visible => model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'label' ).visible = visible ) );
+  // add axes folder
+  let axesFrameFolder = frameFolder.addFolder( "axes" );
+  axesFrameFolder.add( config, 'frame.axes.visible' ).name( 'visible' ).onChange( visible => model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'axes' ).visible = visible ) );
+  axesFrameFolder.add( config, 'frame.axes.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'axes' ).scale.setScalar( size ) ) );
+  // add head folder
+  let headAxesFrame = axesFrameFolder.addFolder( "head" );
+  headAxesFrame.add( config, 'frame.axes.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( head => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesHeadHeight( frame.getObjectByName( 'axes' ), head ) ) );
+  headAxesFrame.add( config, 'frame.axes.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesHeadRadius( frame.getObjectByName( 'axes' ), radius ) ) );
+  // add shaft folder
+  let shaftAxesFrame = axesFrameFolder.addFolder( "shaft" );
+  shaftAxesFrame.add( config, 'frame.axes.shaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesShaftLength( frame.getObjectByName( 'axes' ), length ) ) );
+  shaftAxesFrame.add( config, 'frame.axes.shaft.radius' ).name( 'radius' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesShaftRadius( frame.getObjectByName( 'axes' ), radius ) ) );
 
   // add support folder
   let supportFolder = gui.addFolder( "support" );
@@ -482,7 +545,7 @@ function createModel() {
   var model = new THREE.Group();
 
   // add axes
-  var axes = new THREE.AxesHelper();
+  var axes = createAxes( config[ 'model.axes.shaft.length'], config[ 'model.axes.shaft.radius'], config[ 'model.axes.head.height'], config[ 'model.axes.head.radius'] );
   axes.name = 'axes';
   axes.visible = config[ 'model.axes.visible' ];
   axes.scale.setScalar( config[ 'model.axes.size' ] );
@@ -605,8 +668,9 @@ function createGround( size, divisions, color, transparent, opacity, colorCenter
   // add plane
   var plane = new THREE.Mesh( new THREE.PlaneBufferGeometry(), new THREE.MeshBasicMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } ) );
   plane.name = 'plane';
-  ground.add( plane );
-  
+  plane.visible = config[ 'ground.plane.visible'];
+  ground.add( plane )
+
   // set size
   ground.scale.setScalar( size );
 
@@ -668,6 +732,70 @@ function setGridMenor( color ) {
   ground.remove( ground.getObjectByName( 'grid' ) );
   ground.add( createGrid( config[ 'ground.grid.divisions' ], config[ 'ground.grid.major' ], color ) );
 }
+
+// axes
+function createAxes( shaftLength, shaftRadius, headHeight, headRadius ) {
+  // create the axes
+
+  var axes = new THREE.Group();
+  var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
+
+  var arrow;
+
+  // axis x
+  arrow = createArrow( xMaterial, shaftLength, shaftRadius, headHeight, headRadius );
+  axes.add( arrow );
+
+  // axis y
+  arrow = createArrow( yMaterial, shaftLength, shaftRadius, headHeight, headRadius );
+  arrow.quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
+  axes.add( arrow );
+
+  // axis z
+  arrow = createArrow( zMaterial, shaftLength, shaftRadius, headHeight, headRadius );
+  arrow.quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
+  axes.add( arrow );
+
+  return axes;
+}
+
+function createArrow( material, shaftLength, shaftRadius, headHeight, headRadius ) {
+  // create an arrow
+  var arrow = new THREE.Group();
+
+  // shaft
+  var shaft = new THREE.Mesh( shaftGeometry, material );
+  shaft.name = 'shaft';
+  shaft.scale.set( shaftLength - headHeight, shaftRadius, shaftRadius );
+  arrow.add( shaft );
+
+  // head
+  var head = new THREE.Mesh( headGeometry, material );
+  head.name = 'head';
+  head.position.setX( shaftLength - headHeight );
+  head.scale.set( headHeight, headRadius, headRadius );
+  arrow.add( head );
+
+  return arrow;
+}
+
+function setAxesHeadHeight( axes, head ) { axes.children.forEach( arrow => arrow.getObjectByName( 'head' ).scale.setX( head ) ) };
+
+function setAxesHeadRadius( axes, radius) { axes.children.forEach( arrow => arrow.getObjectByName( 'head' ).scale.set( arrow.getObjectByName( 'head' ).scale.x, radius, radius ) ) };
+
+function setAxesShaftLength( axes, length ) { 
+  // set axes shaft length
+
+  var headHeight;
+
+  for ( const arrow of axes.children ) {
+    headHeight = arrow.getObjectByName( 'head' ).scale.x;
+    arrow.getObjectByName( 'shaft' ).scale.setX( length - headHeight );
+    arrow.getObjectByName( 'head' ).position.setX( length - headHeight);
+  }
+}
+
+function setAxesShaftRadius( axes, radius ) { axes.children.forEach( arrow => arrow.getObjectByName( 'shaft' ).scale.set( arrow.getObjectByName( 'shaft' ).scale.x, radius, radius ) ) };
 
 // joint
 function createJoint( size ) {
@@ -990,7 +1118,7 @@ export function addFrame( name, j, k, material, section ) {
         frame.name = name;
     
         // add axes
-        var axes = new THREE.AxesHelper();
+        var axes = createAxes( config[ 'frame.axes.shaft.length'], config[ 'frame.axes.shaft.radius'], config[ 'frame.axes.head.height'], config[ 'frame.axes.head.radius'] );
         axes.name = 'axes';
         axes.visible = config[ 'frame.axes' ];
         axes.position.set( 0, 0, length / 2 );
@@ -1123,16 +1251,6 @@ function setFrameSize( size ) {
   }
 }
 
-function setFrameLabel( visible ) { model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'label' ).visible = visible ) };
-
-function setFrameAxes( visible ) { model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'axes' ).visible = visible ) };
-
-function setFrameColor( color ) { frameMaterial.color = frameEdgesMaterial.color = new THREE.Color( color ) };
-
-function setFrameTransparent( transparent ) { frameMaterial.transparent = transparent };
-
-function setFrameOpacity( opacity ) { frameMaterial.opacity = opacity };
-
 // supports
 function createSupport( ux, uy, uz, rx, ry, rz ) {
   // create a support
@@ -1229,13 +1347,13 @@ function createFoundation() {
   // foundation material
   switch ( config[ 'model.axisUpwards' ] )  {
     case 'x':
-      foundationMaterial = xSupportMaterial;
+      foundationMaterial = xMaterial;
       break;
     case 'y':
-      foundationMaterial = ySupportMaterial;
+      foundationMaterial = yMaterial;
       break;
     case 'z':
-      foundationMaterial = zSupportMaterial;
+      foundationMaterial = zMaterial;
       break;
   }
 
@@ -1299,16 +1417,16 @@ function createPin() {
 
   switch ( config[ 'model.axisUpwards'] ) {
     case 'x':
-      color1 = ySupportMaterial;
-      color2 = zSupportMaterial;
+      color1 = yMaterial;
+      color2 = zMaterial;
       break;
     case 'y':
-      color1 = zSupportMaterial;
-      color2 = xSupportMaterial;
+      color1 = zMaterial;
+      color2 = xMaterial;
       break;
     case 'z':
-      color1 = xSupportMaterial;
-      color2 = ySupportMaterial;
+      color1 = xMaterial;
+      color2 = yMaterial;
       break;
   }
 
@@ -1352,18 +1470,18 @@ function createDisplacementSupport( axis ) {
   // create displacementSupport
   switch ( axis ) {
     case 'x': 
-      arrow = new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0,  0, 0 ), 1, xSupportMaterial.color.getHex() )
-      circle = new THREE.Mesh( circleGeometry, xSupportMaterial );
+      arrow = new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0,  0, 0 ), 1, xMaterial.color.getHex() )
+      circle = new THREE.Mesh( circleGeometry, xMaterial );
       break;
     case 'y':
-      arrow = new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0, 0, 0 ), 1, ySupportMaterial.color.getHex() );
+      arrow = new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0, 0, 0 ), 1, yMaterial.color.getHex() );
       quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
-      circle = new THREE.Mesh( circleGeometry, ySupportMaterial );
+      circle = new THREE.Mesh( circleGeometry, yMaterial );
       break;
     case 'z':
-      arrow = new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0,  0, 0 ), 1, zSupportMaterial.color.getHex() );
+      arrow = new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0,  0, 0 ), 1, zMaterial.color.getHex() );
       quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
-      circle = new THREE.Mesh( circleGeometry, zSupportMaterial );
+      circle = new THREE.Mesh( circleGeometry, zMaterial );
       break;
   }
   
@@ -1413,21 +1531,21 @@ function createRotationSupport( axis ) {
 
   switch ( axis ) {
     case'x':
-      circumferenceMaterial = new THREE.LineBasicMaterial( { color: xSupportMaterial.color } );
-      cone = new THREE.Mesh( coneGeometry, xSupportMaterial );
-      circle = new THREE.Mesh( circleGeometry, xSupportMaterial );
+      circumferenceMaterial = new THREE.LineBasicMaterial( { color: xMaterial.color } );
+      cone = new THREE.Mesh( coneGeometry, xMaterial );
+      circle = new THREE.Mesh( circleGeometry, xMaterial );
       break;
     case 'y':
       quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
-      circumferenceMaterial = new THREE.LineBasicMaterial( { color: ySupportMaterial.color } );
-      cone = new THREE.Mesh( coneGeometry, ySupportMaterial );
-      circle = new THREE.Mesh( circleGeometry, ySupportMaterial );
+      circumferenceMaterial = new THREE.LineBasicMaterial( { color: yMaterial.color } );
+      cone = new THREE.Mesh( coneGeometry, yMaterial );
+      circle = new THREE.Mesh( circleGeometry, yMaterial );
       break;
     case 'z':
       quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
-      circumferenceMaterial = new THREE.LineBasicMaterial( { color: zSupportMaterial.color } );
-      cone = new THREE.Mesh( coneGeometry, zSupportMaterial );
-      circle = new THREE.Mesh( circleGeometry, zSupportMaterial );
+      circumferenceMaterial = new THREE.LineBasicMaterial( { color: zMaterial.color } );
+      cone = new THREE.Mesh( coneGeometry, zMaterial );
+      circle = new THREE.Mesh( circleGeometry, zMaterial );
       break;
   }
 
