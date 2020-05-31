@@ -51,7 +51,7 @@ var config = {
 
   'controls.damping.enable': false,
   'controls.damping.factor': 0.05,
-
+ 
   // 'lights.ambient.color': 0x0c0c0c,
 
   // 'lights.direction.color': 0xffffff,
@@ -114,22 +114,12 @@ var config = {
   'support.pin.radius': 0.3,
 };
 
-var structure;
+var structure, model;
 
-var model;
+var jointMaterial, frameMaterial, frameEdgesMaterial, xMaterial, yMaterial, zMaterial, foundationMaterial, foundationEdgesMaterial, pedestalMaterial, pedestalEdgesMaterial;
+var jointGeometry, wireFrameShape, shaftGeometry, headGeometry, foundationGeometry, foundationEdgesGeometry, pedestalGeometry, pedestalEdgesGeometry, pinGeometry;
 
-var jointMaterial;
-var frameMaterial, frameEdgesMaterial;
-
-var jointGeometry, wireFrameShape, shaftGeometry, headGeometry;
-
-var xMaterial, yMaterial, zMaterial;
-var pedestalMaterial;
-
-var foundationGeometry, pedestalGeometry, pinGeometry;
-
-var materials = {};
-var sections = {};
+var materials = {}, sections = {};
 
 function init() {
   // refresh the config
@@ -178,7 +168,7 @@ function init() {
   // directionalLight.shadow.mapSize.height = 2048;
   
   // var d = 50;
-
+  
   // directionalLight.shadow.camera.left = -d;
   // directionalLight.shadow.camera.right = d;
   // directionalLight.shadow.camera.top = d;
@@ -203,58 +193,60 @@ function init() {
   // create the controls
   controls = createControls( config[ 'controls.rotateSpeed' ], config[ 'controls.zoomSpeed' ], config[ 'controls.panSpeed' ], config[ 'controls.screenPanning' ], config[ 'controls.damping.enable' ], config[ 'controls.damping.factor' ] );
   
-  // set the material
+  // set the materials
   jointMaterial = new THREE.MeshBasicMaterial( { color: config[ 'joint.color' ], transparent: config[ 'joint.transparent' ], opacity: config[ 'joint.opacity' ] } );
+
   frameMaterial = new THREE.MeshBasicMaterial( { color: config[ 'frame.color' ], transparent: config[ 'frame.transparent' ], opacity: config[ 'frame.opacity' ] } );
   frameEdgesMaterial = new THREE.LineBasicMaterial( { color: config[ 'frame.color' ] } ) ;
-  
-  // set the geometry
-  jointGeometry = new THREE.SphereBufferGeometry( 1, 32, 32 );
-  wireFrameShape = new THREE.Shape().absarc();
-  shaftGeometry = new THREE.CylinderBufferGeometry();
-  shaftGeometry.rotateZ( Math.PI / 2 );
-  shaftGeometry.translate( 0.5, 0, 0 );
-  headGeometry = new THREE.ConeBufferGeometry();
-  headGeometry.rotateZ( 3 * Math.PI / 2 );
-  headGeometry.translate( 0.5, 0, 0 );
 
-  // set the supports
-  // material
   xMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.x' ] } );
   yMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.y' ] } );
   zMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.z' ] } );
 
-  pedestalMaterial = [ xMaterial, xMaterial, yMaterial, yMaterial, zMaterial, zMaterial ];
+  foundationMaterial = { x: xMaterial, y: yMaterial, z:zMaterial };
+  foundationEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );  
 
-  // geometry
+  pedestalMaterial = [ xMaterial, xMaterial, yMaterial, yMaterial, zMaterial, zMaterial ];
+  pedestalEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
+
+  // set the geometries
+  jointGeometry = new THREE.SphereBufferGeometry( 1, 32, 32 );
+  
+  wireFrameShape = new THREE.Shape().absarc();
+
+  shaftGeometry = new THREE.CylinderBufferGeometry();
+  shaftGeometry.rotateZ( Math.PI / 2 );
+  shaftGeometry.translate( 0.5, 0, 0 );
+
+  headGeometry = new THREE.ConeBufferGeometry();
+  headGeometry.rotateZ( 3 * Math.PI / 2 );
+  headGeometry.translate( 0.5, 0, 0 );
+  
   foundationGeometry = new THREE.BoxBufferGeometry();
+  foundationGeometry.translate( 0, 0, -0.5 );
+  foundationEdgesGeometry = new THREE.EdgesGeometry( foundationGeometry );
+  
   pedestalGeometry = new THREE.BoxBufferGeometry();
+  pedestalEdgesGeometry = new THREE.EdgesGeometry( pedestalGeometry );
 
   pinGeometry = new THREE.ConeBufferGeometry( 1, 1, 4, 1, true );
-
-  // materials
   pinGeometry.groups = [ ];
   pinGeometry.addGroup(  0, 6, 0 );
   pinGeometry.addGroup(  6, 6, 1 );
   pinGeometry.addGroup( 12, 6, 2 );
   pinGeometry.addGroup( 18, 6, 3 );
-
-  // rotate
   pinGeometry.rotateX( Math.PI / 2 );
   pinGeometry.rotateZ( Math.PI / 4 );
-
-  // translate
   pinGeometry.translate( 0, 0, -0.5 );
 
   // create the model
   model = createModel();
 
   // set the upwards axis
-  setModelRotation( config[ 'model.axisUpwards' ] ); // TODO: tener en cuenta la direccion de la aceleracion de la gravedad
+  setModelRotation( config[ 'model.axisUpwards' ] );
   
   // create the ground
   var ground = createGround( config[ 'ground.size' ], config[ 'ground.grid.divisions' ], config[ 'ground.plane.color' ], config[ 'ground.plane.transparent' ], config[ 'ground.plane.opacity' ], config[ 'ground.grid.major' ], config[ 'ground.grid.menor' ] );
-  // ground.position.set( 0, 0, -0.01 );
   scene.add( ground );
 
   // add model to scene
@@ -309,7 +301,8 @@ function init() {
   // }
 
   // create the stats
-  stats = initStats();
+  stats = new Stats();
+  document.getElementById( "Stats-output" ).appendChild( stats.domElement );
 
   // create the dat gui
   gui = new dat.GUI();
@@ -344,7 +337,7 @@ function init() {
   backgroundFolder.addColor( config, 'background.topColor' ).name( 'top' ).onChange( color => setBackgroundColor( color, config[ 'background.bottomColor' ] ) );
   backgroundFolder.addColor( config, 'background.bottomColor' ).name( 'bottom' ).onChange( color => setBackgroundColor( config[ 'background.topColor' ], color ) );
 
-  // add a Camera folder
+  // add a camera folder
   let cameraFolder = gui.addFolder( "camera" );
   cameraFolder.add( config, 'camera.type' ).options( [ 'perspective', 'orthographic' ] ).name( 'type' ).onChange( type => setCameraType( type ) );
 
@@ -378,9 +371,9 @@ function init() {
 
   // add axes folder
   let axesFolder = gui.addFolder( "axes" );
-  axesFolder.addColor( config, 'axes.z' ).name( 'z' ).onChange( color => zMaterial.color = new THREE.Color( color ) );
-  axesFolder.addColor( config, 'axes.y' ).name( 'y' ).onChange( color => yMaterial.color = new THREE.Color( color ) );
   axesFolder.addColor( config, 'axes.x' ).name( 'x' ).onChange( color => xMaterial.color = new THREE.Color( color ) );
+  axesFolder.addColor( config, 'axes.y' ).name( 'y' ).onChange( color => yMaterial.color = new THREE.Color( color ) );
+  axesFolder.addColor( config, 'axes.z' ).name( 'z' ).onChange( color => zMaterial.color = new THREE.Color( color ) );
 
   // add a joint folder
   let jointFolder = gui.addFolder( "joint" );
@@ -505,15 +498,6 @@ function setCameraType( type ) {
   controls.target.copy( target );
 }
 
-function initStats() {
-  // init stats
-  
-  var stats = new Stats();
-  document.getElementById( "Stats-output" ).appendChild( stats.domElement );
-
-  return stats;
-}
-
 function render() {
   // render the scene
 
@@ -622,7 +606,7 @@ function loadJSON( json ) {
     .catch( error => console.log( 'There has been a problem with your fetch operation:', error ) );
 }
 
-function setBackgroundColor( topColor, bottomColor ) { canvasWebGLRenderer.style.backgroundImage = "linear-gradient(" + topColor + ", " + bottomColor + ")" };
+function setBackgroundColor( top, bottom ) { canvasWebGLRenderer.style.backgroundImage = "linear-gradient(" + top + ", " + bottom + ")" };
 
 // model 
 function setModelRotation( axis ) { model.setRotationFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), { x: 4 * Math.PI / 3, y: 2 * Math.PI / 3, z: 0 }[ axis ] ) };
@@ -1341,40 +1325,22 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
 
 function createFoundation() {
   // create a foundation
-
-  var foundationMaterial;
-
-  // foundation material
-  switch ( config[ 'model.axisUpwards' ] )  {
-    case 'x':
-      foundationMaterial = xMaterial;
-      break;
-    case 'y':
-      foundationMaterial = yMaterial;
-      break;
-    case 'z':
-      foundationMaterial = zMaterial;
-      break;
-  }
-
+  
   // create foundation
-  var foundation = new THREE.Mesh( foundationGeometry, foundationMaterial );
+  var foundation = new THREE.Mesh( foundationGeometry, foundationMaterial[ config[ 'model.axisUpwards' ] ] );
   foundation.name = 'foundation';
 
   // create edges
-  var foundationEdgesGeometry = new THREE.EdgesGeometry( foundationGeometry );
-  var foundationEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );  
   var foundationEdges = new THREE.LineSegments( foundationEdgesGeometry, foundationEdgesMaterial );
   foundationEdges.name = 'foundationEdges';
 
   // add edges
   foundation.add( foundationEdges );
 
-  // set rotation
-  var quaternion = new THREE.Quaternion().copy( model.quaternion ).inverse();
-  foundation.quaternion.copy( quaternion );
+  // keep vertical
+  foundation.quaternion.copy( model.quaternion.clone().inverse() );
 
-  // set scale 
+  // set size
   foundation.scale.set( config[ 'support.foundation.size' ], config[ 'support.foundation.size' ], config[ 'support.foundation.depth' ] );
 
   return foundation;
@@ -1388,22 +1354,16 @@ function createPedestal() {
   pedestal.name = 'pedestal';
 
   // create edges
-  var pedestalEdgesGeometry = new THREE.EdgesGeometry( pedestalGeometry );
-  var pedestalEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
   var pedestalEdges = new THREE.LineSegments( pedestalEdgesGeometry, pedestalEdgesMaterial );
   pedestalEdges.name = 'edges';
 
   // add edges
   pedestal.add( pedestalEdges );
-  
-  // set quaternion
-  var quaternion = new THREE.Quaternion().copy( model.quaternion );
-  quaternion.inverse();
 
-  // set position
-  pedestal.position.setZ( -config[ 'support.pedestal.size' ] / 2 ).applyQuaternion( quaternion );
+  // keep vertical
+  pedestal.position.setZ( -config[ 'support.pedestal.size' ] / 2 ).applyQuaternion( model.quaternion.clone().inverse() );
 
-  // set scale
+  // set size
   pedestal.scale.setScalar( config[ 'support.pedestal.size' ] );
 
   return pedestal;
