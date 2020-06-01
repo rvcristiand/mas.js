@@ -120,7 +120,7 @@ var structure, model;
 var jointMaterial, frameMaterial, frameEdgesMaterial, xMaterial, yMaterial, zMaterial, foundationMaterial, foundationEdgesMaterial, pedestalMaterial, pedestalEdgesMaterial;
 var jointGeometry, wireFrameShape, shaftGeometry, headGeometry, foundationGeometry, foundationEdgesGeometry, pedestalGeometry, pedestalEdgesGeometry, pinGeometry;
 
-var materials = {}, sections = {};
+var sections = {};
 
 function init() {
   // refresh the config
@@ -959,12 +959,10 @@ export function addSection( name ) {
     } else {
       structure.sections[name] = { type: "Section" };
       // create section
-      sections[name] = createSection();
+      sections[ name ] = createSection();
   
       resolve();
     }
-
-    // add section to structure
   });
 
   return promise;
