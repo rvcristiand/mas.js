@@ -980,9 +980,9 @@ export function addRectangularSection( name, width, height ) {
       reject( new Error( "section's name '" + name + "' already exits" ) );
     } else {
       // add section to structure
-      structure.sections[name] = { type: "RectangularSection", width: width, height: height };
+      structure.sections[ name ] = { type: "RectangularSection", width: width, height: height };
       // create rectangular section
-      sections[name] = createRectangularSection( width, height );
+      sections[ name ] = createRectangularSection( width, height );
     }
 
     resolve();
@@ -995,12 +995,17 @@ export function removeSection( name ) {
   // remove a section
 
   var promise = new Promise( ( resolve, reject ) => {
-    if ( sections.hasOwnProperty( name ) ) {
+    if ( structure.sections.hasOwnProperty( name ) && Object.values( structure.frames ).every( frame => frame.section != name ) ) {
       delete sections[name];
+      delete structure.sections[ name ]
 
       resolve();
     } else {
-      reject( new Error( "section '" + name + "' does not exist" ) );
+      if ( structure.section.hasOwnProperty( name ) ) {
+        reject( new Error( "section '" + name + "' is in use" ) );
+      } else {
+        reject( new Error( "section '" + name + "' does not exist" ) );
+      }
     }
   });
 

@@ -23,12 +23,18 @@ terminal.add_function('addFrame', {
 });
 
 // add section
-terminal.add_function( 'addRectangleSection', {
-  func: FEM.addRectangleSection,
+// terminal.add_function( 'addSection', { func: FEM.addSection, successful: name => "section '" + name + "' was added" } );
+
+// add rectangular section
+terminal.add_function( 'addRectangularSection', {
+  func: FEM.addRectangularSection,
   successful: function( name, width, height ) {
     return "rectangle section " + name + " was added";
   }
 });
+
+// remove section
+terminal.add_function( 'removeSection', { func: FEM.removeSection, successful: name => "section '" + name + "' was removed" } );
 
 // add material
 terminal.add_function( 'addMaterial', {
