@@ -908,10 +908,12 @@ export function addMaterial( name, e, g ) {
     name = name.toString();
 
     // check if material's name already exits
-    if ( materials.hasOwnProperty( name ) ) reject( new Error( "material's name '" + name + "' already exist" ) );
-
-    // add material to structure
-    structure.materials[name] = { "E": e, "G": g };
+    if ( structure.materials.hasOwnProperty( name ) ) {
+      reject( new Error( "material's name '" + name + "' already exist" ) );
+    } else {
+      // add material to structure
+      structure.materials[name] = { "E": e, "G": g };
+    }
 
     resolve();
   });
@@ -923,12 +925,16 @@ export function removeMaterial( name ) {
   // remove a material
 
   var promise = new Promise( ( resolve, reject ) => {
-    if ( materials.hasOwnProperty( name ) ) {
-      delete materials[name];
+    if ( structure.materials.hasOwnProperty( name ) && Object.values( structure.frames ).every( frame => frame.material != name ) ) {
+      delete structure.materials[ name ];
 
       resolve();
     } else {
-      reject( new Error( "section '" + name + "' does not exist" ) );
+      if ( structure.materials.hasOwnProperty( name ) ) {
+        reject( new Error( "material '" + name + "' is in use" ) );
+      } else {
+        reject( new Error( "material '" + name + "' does not exist" ) );
+      }
     }
   });
 

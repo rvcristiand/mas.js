@@ -34,9 +34,12 @@ terminal.add_function( 'addRectangleSection', {
 terminal.add_function( 'addMaterial', {
   func: FEM.addMaterial, 
   successful: function( name, e, g) {
-    return "material " + name + " was added";
+    return "material '" + name + "' was added";
   }
 });
+
+// removeMaterial
+terminal.add_function( 'removeMaterial', { func: FEM.removeMaterial, successful: name => "material '" + name + "' was removed" } );
 
 // addJoint
 terminal.add_function('addJoint', {
