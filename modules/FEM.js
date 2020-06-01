@@ -101,6 +101,7 @@ var config = {
 
   'frame.axes.shaft.length': 1,
   'frame.axes.shaft.radius': 0.01,
+
   // support
   'support.visible': true,
   'support.mode': 'space',
@@ -125,7 +126,7 @@ function init() {
   // refresh the config
   var json = JSON.parse( localStorage.getItem( window.location.href + '.gui' ) );
   if ( json ) {
-    var preset = json.remembered[ json.preset ]['0'];
+    var preset = json.remembered[ json.preset ][ '0' ];
     for ( let [ key, value ] of Object.entries( preset ) ) config[ key ] = value;
   }
   
@@ -408,10 +409,12 @@ function init() {
 
   // add support folder
   let supportFolder = gui.addFolder( "support" );
+  supportFolder.add( config, 'support.visible' ).name( 'visible' ).onChange( visible => model.getObjectByName( 'joints' ).children.filter( joint => joint.getObjectByName( 'support' ) ).forEach( joint => joint.getObjectByName( 'support' ).visible = visible ) );
   supportFolder.add( config, 'support.mode' ).options( [ "space", "analytical" ]).name( 'mode' ).onChange( mode => setSupportMode( mode ) );
   // add foundation folder
   let foundationFolder = supportFolder.addFolder( "foundation" );
   foundationFolder.add( config, 'support.foundation.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setFoundationSize( size ) );
+  foundationFolder.add( config, 'support.foundation.depth' ).name( 'depth' ).min( 0.01 ).max( 0.1 ).step( 0.01 ).onChange( depth => setFoundationDepth( depth ) );
   // add pedestal folder
   let pedestalFolder = supportFolder.addFolder( "pedestal" );
   pedestalFolder.add( config, 'support.pedestal.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setPedestalSize( size ) );
@@ -419,7 +422,6 @@ function init() {
   let pinFolder = supportFolder.addFolder( "pin" );
   pinFolder.add( config, 'support.pin.height' ).name( 'height' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setPinHeight( size ) );
   pinFolder.add( config, 'support.pin.radius' ).name( 'radius' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( radius => setPinRadius( radius ) );
-  // supportFolder.add( config, 'radius' ).min( 0.01 ).max( 0.1 ).step( 0.001 ).onChange( ( radius ) => setSupportRadius( radius ) );
 
   render();
 }
@@ -767,7 +769,7 @@ function setAxesHeadHeight( axes, head ) { axes.children.forEach( arrow => arrow
 
 function setAxesHeadRadius( axes, radius) { axes.children.forEach( arrow => arrow.getObjectByName( 'head' ).scale.set( arrow.getObjectByName( 'head' ).scale.x, radius, radius ) ) };
 
-function setAxesShaftLength( axes, length ) { 
+function setAxesShaftLength( axes, length ) {
   // set axes shaft length
 
   var headHeight;
@@ -1587,6 +1589,18 @@ function setFoundationSize( size ) {
     foundation = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'foundation' );
 
     if ( foundation ) foundation.scale.set( size, size, config[ 'support.foundation.depth' ] );
+  }
+}
+
+function setFoundationDepth( depth ) {
+  // set foundation size
+
+  var foundation;
+
+  for ( const name in structure.supports ) {
+    foundation = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'foundation' );
+
+    if ( foundation ) foundation.scale.set( config[ 'support.foundation.size'], config[ 'support.foundation.size'], depth );
   }
 }
 
