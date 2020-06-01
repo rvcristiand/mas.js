@@ -635,15 +635,18 @@ export function open( filename ) {
   return promise;
 }
 
-function loadJSON( json ) {
+async function loadJSON( json ) {
   // load json
   
-  return fetch( json + "?nocache=" + new Date().getTime() )
-    .then( response => {
-      if ( !response.ok ) throw new Error( 'Network response was not ok' );
-      return response.json();
-    })
-    .catch( error => console.log( 'There has been a problem with your fetch operation:', error ) );
+  try {
+    const response = await fetch(json + "?nocache=" + new Date().getTime());
+    if (!response.ok)
+      throw new Error('Network response was not ok');
+    return response.json();
+  }
+  catch (error) {
+    return console.log('There has been a problem with your fetch operation:', error);
+  }
 }
 
 function setBackgroundColor( top, bottom ) { canvasWebGLRenderer.style.backgroundImage = "linear-gradient(" + top + ", " + bottom + ")" };
