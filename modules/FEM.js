@@ -848,23 +848,11 @@ export function addJoint( name, x, y, z ) {
   return promise;
 }
 
-function isJointInUse( name ) {
-  // check if joint is in use
-  let count = 0;
-  
-  for ( let frame of structure.frames ) {
-    if ( frame.J == name ) count += 1;
-    if ( frame.k == name ) count += 1;
-  }
-  
-  return count;
-}
-
 export function removeJoint( name ) {
   // remove a joint
   
   var promise = new Promise( ( resolve, reject ) => {
-    if ( structure.joints.hasOwnProperty( name ) && (isJointInUse( name ) > 1) ) {
+    if ( structure.joints.hasOwnProperty( name ) && ( Object.values( structure.frames ).some( frame => frame.j != name && frame.k != name ) ) ) {
       deleteJoint( name );
       
       resolve();
@@ -1155,31 +1143,31 @@ export function addFrame( name, j, k, material, section ) {
   return promise;
 }
 
-export function removeFrame( name ) {
-  // remove a frame
+// export function removeFrame( name ) {
+//   // remove a frame
 
-  var promise = new Promise( ( resolve, reject ) => {
-    if ( frames_name.has( name ) ) {
-      let frame = frames.getObjectByName( name );
+//   var promise = new Promise( ( resolve, reject ) => {
+//     if ( frames_name.has( name ) ) {
+//       let frame = frames.getObjectByName( name );
 
-      // delete frame
-      deleteFrame( name );
+//       // delete frame
+//       deleteFrame( name );
 
-      // delete joint
-      for (let joint of frame.joints) {
-        if ( isJointInUse( joint ) == 0) {
-          deleteJoint( joint );
-        }
-      }
+//       // delete joint
+//       for (let joint of frame.joints) {
+//         if ( isJointInUse( joint ) == 0) {
+//           deleteJoint( joint );
+//         }
+//       }
 
-      resolve();
-    } else {
-      reject( new Error("frame " + name + " does not exits") );
-    }
-  });
+//       resolve();
+//     } else {
+//       reject( new Error("frame " + name + " does not exits") );
+//     }
+//   });
   
-  return promise;
-}
+//   return promise;
+// }
 
 function deleteFrame( name ) {
   // delete a frame
