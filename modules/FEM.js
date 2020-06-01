@@ -638,15 +638,9 @@ export function open( filename ) {
 async function loadJSON( json ) {
   // load json
   
-  try {
-    const response = await fetch(json + "?nocache=" + new Date().getTime());
-    if (!response.ok)
-      throw new Error('Network response was not ok');
-    return response.json();
-  }
-  catch (error) {
-    return console.log('There has been a problem with your fetch operation:', error);
-  }
+  const response = await fetch( json + "?nocache=" + new Date().getTime() );
+  if ( !response.ok ) throw new Error( 'Network response was not ok' );
+  return response.json();
 }
 
 function setBackgroundColor( top, bottom ) { canvasWebGLRenderer.style.backgroundImage = "linear-gradient(" + top + ", " + bottom + ")" };
