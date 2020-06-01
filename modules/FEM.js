@@ -627,20 +627,20 @@ export function open( filename ) {
 
       // add suports
       for ( let [ name, support ] of Object.entries( json.supports ) ) addSupport( name, support.ux, support.uy, support.uz, support.rx, support.ry, support.rz );
-    })
-    .catch(function ( e ) {
-      console.log( e ); // throw e;
-    })
+    });
 
   return promise;
 }
 
-async function loadJSON( json ) {
+function loadJSON( json ) {
   // load json
-  
-  const response = await fetch( json + "?nocache=" + new Date().getTime() );
-  if ( !response.ok ) throw new Error( 'Network response was not ok' );
-  return response.json();
+  var promise = fetch( json + "?nocache=" + new Date().getTime() )
+    .then( response => { 
+      if ( !response.ok ) throw new Error( 'Network response was not ok' );
+      return response.json();
+    })
+
+  return promise;
 }
 
 function setBackgroundColor( top, bottom ) { canvasWebGLRenderer.style.backgroundImage = "linear-gradient(" + top + ", " + bottom + ")" };
