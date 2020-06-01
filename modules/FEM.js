@@ -852,7 +852,7 @@ export function removeJoint( name ) {
   // remove a joint
   
   var promise = new Promise( ( resolve, reject ) => {
-    if ( structure.joints.hasOwnProperty( name ) && ( Object.values( structure.frames ).some( frame => frame.j != name && frame.k != name ) ) ) {
+    if ( structure.joints.hasOwnProperty( name ) && ( Object.values( structure.frames ).every( frame => frame.j != name && frame.k != name ) ) ) {
       deleteJoint( name );
       
       resolve();
@@ -871,14 +871,17 @@ export function removeJoint( name ) {
 function deleteJoint( name ) {
   // delete a joint
 
+  // only strings accepted as name
+  name = name.toString();
+
   // get the joint
   let joint = model.getObjectByName( 'joints' ).getObjectByName( name );
 
   // remove the label
-  joint.remove( joint.getObjectByName( 'label' ) );
+  joint.getObjectByName( 'joint' ).remove( joint.getObjectByName( 'joint' ).getObjectByName( 'label' ) );
 
   // remove joint of the scene
-  joints.remove( joint );
+  model.getObjectByName( 'joints' ).remove( joint );
   
   // remove joint from structure
   delete structure.joints[name];

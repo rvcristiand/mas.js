@@ -46,6 +46,9 @@ terminal.add_function('addJoint', {
   }
 });
 
+// removeJoint
+terminal.add_function( 'removeJoint', { func: FEM.removeJoint, successful: name => "joint " + name + " was removed" } );
+
 // setViewType
 terminal.add_function('setViewType', {
   func: FEM.setViewType,
