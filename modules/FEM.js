@@ -552,6 +552,44 @@ function createModel() {
   return model;
 }
 
+function createGround( size, divisions, color, transparent, opacity, colorCenterLine, colorGrid ) {
+  // create the ground
+  
+  var ground = new THREE.Group();
+  ground.name = 'ground';
+  ground.visible = config[ 'ground.visible' ];
+  
+  // add grid
+  var grid = createGrid( divisions, colorCenterLine, colorGrid );
+  ground.add( grid );
+  
+  // add plane
+  var plane = new THREE.Mesh( new THREE.PlaneBufferGeometry(), new THREE.MeshBasicMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } ) );
+  plane.name = 'plane';
+  plane.visible = config[ 'ground.plane.visible'];
+  ground.add( plane )
+  
+  // set size
+  ground.scale.setScalar( size );
+  
+  // receive shadow
+  // parent.receiveShadow = true;
+  
+  return ground;
+}
+
+function createGrid( divisions, colorCenterLine, colorGrid ) {
+  // create a grid
+
+  var grid = new THREE.GridHelper( 1, divisions, colorCenterLine, colorGrid );
+  
+  grid.name = 'grid';
+  grid.visible = config[ 'ground.grid.visible' ];
+  grid.rotation.x = Math.PI / 2;  // rotate grid to plane xy
+
+  return grid;
+}
+
 export function open( filename ) {
   // open a file
 
@@ -610,74 +648,6 @@ function loadJSON( json ) {
 
 function setBackgroundColor( top, bottom ) { canvasWebGLRenderer.style.backgroundImage = "linear-gradient(" + top + ", " + bottom + ")" };
 
-// model 
-function setModelRotation( axis ) { model.setRotationFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), { x: 4 * Math.PI / 3, y: 2 * Math.PI / 3, z: 0 }[ axis ] ) };
-
-export function setUpwardsAxis( axis ) {
-  // set the upwards axis
-  
-  var promise = new Promise( ( resolve, reject ) => {
-    if ( axis =='x' || axis == 'y' || axis == 'z' ) {
-      // set model rotation
-      setModelRotation( axis );
-      
-      // redraw the supports
-      for ( let [ joint, support ] of Object.entries( structure.supports ) ) {
-        joint = model.getObjectByName( 'joints' ).getObjectByName( joint );
-        joint.remove( joint.getObjectByName( 'support' ) );
-        joint.add( createSupport( support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) );
-      }
-      
-      // save the value
-      config[ 'model.axisUpwards' ] = axis;
-
-      resolve();
-    } else {
-      reject( new Error( "'" + axis + "' axis does not exist" ) );
-    }
-  });
-
-  return promise;
-}
-
-function createGround( size, divisions, color, transparent, opacity, colorCenterLine, colorGrid ) {
-  // create the ground
-
-  var ground = new THREE.Group();
-  ground.name = 'ground';
-  ground.visible = config[ 'ground.visible' ];
-
-  // add grid
-  var grid = createGrid( divisions, colorCenterLine, colorGrid );
-  ground.add( grid );
-  
-  // add plane
-  var plane = new THREE.Mesh( new THREE.PlaneBufferGeometry(), new THREE.MeshBasicMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } ) );
-  plane.name = 'plane';
-  plane.visible = config[ 'ground.plane.visible'];
-  ground.add( plane )
-
-  // set size
-  ground.scale.setScalar( size );
-
-  // receive shadow
-  // parent.receiveShadow = true;
-  
-  return ground;
-}
-
-function createGrid( divisions, colorCenterLine, colorGrid ) {
-  // create a grid
-
-  var grid = new THREE.GridHelper( 1, divisions, colorCenterLine, colorGrid );
-  
-  grid.name = 'grid';
-  grid.visible = config[ 'ground.grid.visible' ];
-  grid.rotation.x = Math.PI / 2;  // rotate grid to plane xy
-
-  return grid;
-}
-
 function setGroundVisible( visible ) { scene.getObjectByName( 'ground' ).visible = visible };
 
 function setGroundSize( size ) { scene.getObjectByName( 'ground' ).scale.setScalar( size ) } ;
@@ -717,6 +687,36 @@ function setGridMenor( color ) {
 
   ground.remove( ground.getObjectByName( 'grid' ) );
   ground.add( createGrid( config[ 'ground.grid.divisions' ], config[ 'ground.grid.major' ], color ) );
+}
+
+// model 
+function setModelRotation( axis ) { model.setRotationFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), { x: 4 * Math.PI / 3, y: 2 * Math.PI / 3, z: 0 }[ axis ] ) };
+
+export function setUpwardsAxis( axis ) {
+  // set the upwards axis
+  
+  var promise = new Promise( ( resolve, reject ) => {
+    if ( axis =='x' || axis == 'y' || axis == 'z' ) {
+      // set model rotation
+      setModelRotation( axis );
+      
+      // redraw the supports
+      for ( let [ joint, support ] of Object.entries( structure.supports ) ) {
+        joint = model.getObjectByName( 'joints' ).getObjectByName( joint );
+        joint.remove( joint.getObjectByName( 'support' ) );
+        joint.add( createSupport( support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) );
+      }
+      
+      // save the value
+      config[ 'model.axisUpwards' ] = axis;
+
+      resolve();
+    } else {
+      reject( new Error( "'" + axis + "' axis does not exist" ) );
+    }
+  });
+
+  return promise;
 }
 
 // axes
