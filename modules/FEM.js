@@ -957,11 +957,11 @@ export function addSection( name ) {
     if ( structure.sections.hasOwnProperty( name ) ) {
       reject( new Error( "Section's name '" + name + "' already exits" ) );
     } else {
-      structure.sections[name] = { type: "Section" };
+      structure.sections[ name ] = { type: "Section" };
       // create section
       sections[ name ] = createSection();
   
-      resolve();
+      resolve( "section '" + name + "' was added" );
     }
   });
 

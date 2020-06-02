@@ -23,7 +23,7 @@ terminal.add_function('addFrame', {
 });
 
 // add section
-// terminal.add_function( 'addSection', { func: FEM.addSection, successful: name => "section '" + name + "' was added" } );
+terminal.add_function( 'addSection', { func: FEM.addSection, successful: name => "section '" + name + "' was added" } );
 
 // add rectangular section
 terminal.add_function( 'addRectangularSection', {
