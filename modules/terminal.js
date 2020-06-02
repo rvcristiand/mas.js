@@ -30,10 +30,10 @@ export function run_command(event) {
 
         // run function
         functions[f]['func'].apply(null, params)
-          .then(function () {
+          .then( message => {
             // command is valid
             log.classList.add("message-successful");
-            log.textContent = functions[f]['successful'].apply(null, params);
+            log.textContent = message;
           })
           .catch(function (e) {
             // command is no valid 
