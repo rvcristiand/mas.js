@@ -996,12 +996,12 @@ export function removeSection( name ) {
 
   var promise = new Promise( ( resolve, reject ) => {
     if ( structure.sections.hasOwnProperty( name ) && Object.values( structure.frames ).every( frame => frame.section != name ) ) {
-      delete sections[name];
+      delete sections[ name ];
       delete structure.sections[ name ]
 
-      resolve();
+      resolve( "section '" + name + "' was removed" );
     } else {
-      if ( structure.section.hasOwnProperty( name ) ) {
+      if ( structure.sections.hasOwnProperty( name ) ) {
         reject( new Error( "section '" + name + "' is in use" ) );
       } else {
         reject( new Error( "section '" + name + "' does not exist" ) );
