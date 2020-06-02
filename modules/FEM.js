@@ -774,11 +774,11 @@ function setAxesShaftLength( axes, length ) {
 
   var headHeight;
 
-  for ( const arrow of axes.children ) {
+  axes.children.forEach( arrow => { 
     headHeight = arrow.getObjectByName( 'head' ).scale.x;
     arrow.getObjectByName( 'shaft' ).scale.setX( length - headHeight );
     arrow.getObjectByName( 'head' ).position.setX( length - headHeight);
-  }
+  })
 }
 
 function setAxesShaftRadius( axes, radius ) { axes.children.forEach( arrow => arrow.getObjectByName( 'shaft' ).scale.set( arrow.getObjectByName( 'shaft' ).scale.x, radius, radius ) ) };
