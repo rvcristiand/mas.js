@@ -985,7 +985,7 @@ export function addRectangularSection( name, width, height ) {
       sections[ name ] = createRectangularSection( width, height );
     }
 
-    resolve();
+    resolve( "rectangular section '" + name + "' was added" );
   });
 
   return promise;
