@@ -912,10 +912,10 @@ export function addMaterial( name, e, g ) {
       reject( new Error( "material's name '" + name + "' already exist" ) );
     } else {
       // add material to structure
-      structure.materials[name] = { "E": e, "G": g };
+      structure.materials[ name ] = { "E": e, "G": g };
     }
 
-    resolve();
+    resolve( "material '" + name + "' was added" );
   });
 
   return promise;
