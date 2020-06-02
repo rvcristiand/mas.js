@@ -812,7 +812,7 @@ export function addJoint( name, x, y, z ) {
       }
     } else {
       // add joint to structure
-      structure.joints[name] = { x: x, y: y, z: z };
+      structure.joints[ name ] = { x: x, y: y, z: z };
 
       // create parent
       var parent = new THREE.Group();
@@ -852,12 +852,12 @@ export function removeJoint( name ) {
     if ( structure.joints.hasOwnProperty( name ) && ( Object.values( structure.frames ).every( frame => frame.j != name && frame.k != name ) ) ) {
       deleteJoint( name );
       
-      resolve();
+      resolve( "joint '" + name + "' was removed" );
     } else {
       if ( structure.joints.hasOwnProperty( name ) ) {
-        reject( new Error("joint '" + name + "' is in use") );
+        reject( new Error( "joint '" + name + "' is in use" ) );
       } else {
-        reject( new Error("joint '" + name + "' does not exist") );
+        reject( new Error( "joint '" + name + "' does not exist" ) );
       }
     }
   });
@@ -881,7 +881,10 @@ function deleteJoint( name ) {
   model.getObjectByName( 'joints' ).remove( joint );
   
   // remove joint from structure
-  delete structure.joints[name];
+  delete structure.joints[ name ];
+
+  // remove possible joint's support
+  delete structure.supports[ name ]
 }
 
 function setJointVisible( visible ) { model.getObjectByName( 'joints' ).children.forEach( joint => joint.getObjectByName( 'joint' ).visible = visible ) };
