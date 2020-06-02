@@ -778,7 +778,7 @@ function setAxesShaftLength( axes, length ) {
     headHeight = arrow.getObjectByName( 'head' ).scale.x;
     arrow.getObjectByName( 'shaft' ).scale.setX( length - headHeight );
     arrow.getObjectByName( 'head' ).position.setX( length - headHeight);
-  })
+  });
 }
 
 function setAxesShaftRadius( axes, radius ) { axes.children.forEach( arrow => arrow.getObjectByName( 'shaft' ).scale.set( arrow.getObjectByName( 'shaft' ).scale.x, radius, radius ) ) };
@@ -838,7 +838,7 @@ export function addJoint( name, x, y, z ) {
       // add parent to scene
       model.getObjectByName( 'joints' ).add( parent );
 
-      resolve();
+      resolve( "joint '" + name + "' was added" );
     }
   });
 
