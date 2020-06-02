@@ -928,7 +928,7 @@ export function removeMaterial( name ) {
     if ( structure.materials.hasOwnProperty( name ) && Object.values( structure.frames ).every( frame => frame.material != name ) ) {
       delete structure.materials[ name ];
 
-      resolve();
+      resolve( "material '" + name + "' was removed" );
     } else {
       if ( structure.materials.hasOwnProperty( name ) ) {
         reject( new Error( "material '" + name + "' is in use" ) );
