@@ -596,8 +596,8 @@ export function open( filename ) {
   var promise = loadJSON( filename )
     .then( json => {
       // delete labels
-      for ( const joint of model.getObjectByName( 'joints' ).children ) joint.getObjectByName( 'joint' ).remove( joint.getObjectByName( 'joint' ).getObjectByName( 'label') );
-      for ( const frame of model.getObjectByName( 'frames' ).children ) frame.remove( frame.getObjectByName( 'label' ) );
+      model.getObjectByName( 'joints' ).children.forEach( joint => joint.getObjectByName( 'joint' ).remove( joint.getObjectByName( 'joint' ).getObjectByName( 'label' ) ) );
+      model.getObjectByName( 'frames' ).children.forEach( frame => frame.remove( frame.getObjectByName( 'label' ) ) );
 
       // delete objects
       model.getObjectByName( 'joints' ).children = [];
@@ -607,11 +607,11 @@ export function open( filename ) {
       structure = createStructure();
       
       // add objects
-      for ( let [ name, joint ] of Object.entries( json.joints ) ) addJoint( name, joint.x, joint.y, joint.z );
-      for ( let [ name, material ] of Object.entries( json.materials ) ) addMaterial( name, material.E, material.G );
+      Object.entries( json.joints ).forEach( ( [ name, joint ] ) => { addJoint( name, joint.x, joint.y, joint.z ) } );
+      Object.entries( json.materials ).forEach( ( [ name, material ] ) => { addMaterial( name, material.E, material.G ) } );
       
       // add sections
-      for ( let [ name, section ] of Object.entries( json.sections ) ) {
+      Object.entries( json.sections ).forEach( ( [ name, section ] ) => {
         switch ( section.type ) {
           case "Section":
             addSection( name );
@@ -620,13 +620,15 @@ export function open( filename ) {
             addRectangularSection( name, section.width, section.height );
             break;
         }
-      }
-      
+      });
+
       // add frames
-      for ( let [ name, frame ] of Object.entries( json.frames ) ) addFrame( name, frame.j, frame.k, frame.material, frame.section );
+      Object.entries( json.frames ).forEach( ( [ name, frame ] ) => { addFrame( name, frame.j, frame.k, frame.material, frame.section ) } );
 
       // add suports
-      for ( let [ name, support ] of Object.entries( json.supports ) ) addSupport( name, support.ux, support.uy, support.uz, support.rx, support.ry, support.rz );
+      Object.entries( json.supports ).forEach( ( [ name, support ] ) => { addSupport( name, support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) } );
+
+      return "the '" + filename + "' has been loaded"
     });
 
   return promise;
