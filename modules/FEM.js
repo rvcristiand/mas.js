@@ -700,16 +700,17 @@ export function setUpwardsAxis( axis ) {
       setModelRotation( axis );
       
       // redraw the supports
-      for ( let [ joint, support ] of Object.entries( structure.supports ) ) {
+      Object.entries( structure.supports ).forEach( ( [ joint, support ] ) => {
         joint = model.getObjectByName( 'joints' ).getObjectByName( joint );
         joint.remove( joint.getObjectByName( 'support' ) );
         joint.add( createSupport( support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) );
-      }
+
+      });
       
       // save the value
       config[ 'model.axisUpwards' ] = axis;
 
-      resolve();
+      resolve( "upwards axis set to '" + axis + "' axis" );
     } else {
       reject( new Error( "'" + axis + "' axis does not exist" ) );
     }
