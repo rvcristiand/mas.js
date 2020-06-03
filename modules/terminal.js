@@ -177,7 +177,7 @@ function get_param_function(command) {
   var params = command.match(pattern)[1].split(',');
   
   for ( var i = 0; i < params.length; i++ ) {
-    let param = params[i].match(/^["']?([\w\s.,]*)["']?$/i)[1];
+    let param = params[i].match(/^\s*["']?([\w\s.,]*)["']?\s*$/i)[1];
     let paramNum = Number(param);
 
     params[i] = isNaN(param) ? param : paramNum;
