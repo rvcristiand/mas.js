@@ -1143,45 +1143,47 @@ export function addFrame( name, j, k, material, section ) {
   return promise;
 }
 
-// export function removeFrame( name ) {
-//   // remove a frame
+export function removeFrame( name ) {
+  // remove a frame
 
-//   var promise = new Promise( ( resolve, reject ) => {
-//     if ( frames_name.has( name ) ) {
-//       let frame = frames.getObjectByName( name );
+  var promise = new Promise( ( resolve, reject ) => {
+    if ( structure.frames.hasOwnProperty( name ) ) {
+      // get frame's joints
+      var j = structure.frames[ name ].j;
+      var k = structure.frames[ name ].k;
 
-//       // delete frame
-//       deleteFrame( name );
+      // delete frame
+      deleteFrame( name );
 
-//       // delete joint
-//       for (let joint of frame.joints) {
-//         if ( isJointInUse( joint ) == 0) {
-//           deleteJoint( joint );
-//         }
-//       }
+      if ( Object.values( structure.frames ).every( frame => frame.j != j && frame.k != j ) ) deleteJoint( j );
+      if ( Object.values( structure.frames ).every( frame => frame.j != k && frame.k != k ) ) deleteJoint( k );
 
-//       resolve();
-//     } else {
-//       reject( new Error("frame " + name + " does not exits") );
-//     }
-//   });
+      resolve( "frame '" + name + "' was removed" );
+    } else {
+      reject( new Error( "frame '" + name + "' does not exits" ) );
+    }
+  });
   
-//   return promise;
-// }
+  return promise;
+}
 
 function deleteFrame( name ) {
   // delete a frame
 
+  // only strings accepted as name
+  name = name.toString();
+
   // get the frame
-  let frame = frames.getObjectByName( name );
+  let frame = model.getObjectByName( 'frames' ).getObjectByName( name );
 
   // remove the label
-  for ( let child of frame.children ) {
-    frame.remove( child );
-  }
+  frame.remove( frame.getObjectByName( 'label' ) );
   
   // remove frame of the scene
-  frames.remove( frame );
+  model.getObjectByName( 'frames' ).remove( frame );
+
+  // remove frame from structure
+  delete structure.frames[ name ];
 }
 
 export function setFrameView( view ) {

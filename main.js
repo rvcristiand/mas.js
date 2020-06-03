@@ -22,6 +22,14 @@ terminal.add_function('addFrame', {
   }
 });
 
+// removeFrame
+terminal.add_function( 'removeFrame', {
+  func: FEM.removeFrame,
+  successful: name => {
+    return "frame '" + name + "' was removed";
+  }
+});
+
 // add section
 terminal.add_function( 'addSection', { func: FEM.addSection, successful: name => "section '" + name + "' was added" } );
 
