@@ -1026,12 +1026,12 @@ function createFrame( length, section ) {
 
   // create extrude frame
   var extrudeFrame;  
-  if ( structure.sections[section].type == 'Section' ) {
+  if ( structure.sections[ section ].type == 'Section' ) {
     // fallback mode
     extrudeFrame = wireFrame.clone();
   } else {
     // extrude cross section
-    var extrudeFrameGeometry = new THREE.ExtrudeBufferGeometry( sections[section], extrudeSettings );
+    var extrudeFrameGeometry = new THREE.ExtrudeBufferGeometry( sections[ section ], extrudeSettings );
     extrudeFrame = new THREE.Mesh( extrudeFrameGeometry, frameMaterial );
     // add edges to frame
     var edgesExtrudeFrame = new THREE.LineSegments( new THREE.EdgesGeometry( extrudeFrameGeometry ), frameEdgesMaterial );
@@ -1085,13 +1085,13 @@ export function addFrame( name, j, k, material, section ) {
       if ( structure.frames.hasOwnProperty( name ) ) { 
         reject( new Error( "frame's name '" + name + "' already exits" ) );
       } else {
-        reject( new Error( "frame's joints [" + j + ", " + k + "] already taked") );
+        reject( new Error( "frame's joints [" + j + ", " + k + "] already taked" ) );
       }
     } else {
-      // check if joints exits
-      if ( structure.joints.hasOwnProperty( j ) || structure.joints.hasOwnProperty( k ) ) {
+      // check if joints, material and section exits
+      if ( structure.joints.hasOwnProperty( j ) && structure.joints.hasOwnProperty( k ) && structure.materials.hasOwnProperty( material ) && structure.sections.hasOwnProperty( section ) ) {
         // add frame to structure
-        structure.frames[name] = { j: j, k: k, material: material, section: section };
+        structure.frames[ name ] = { j: j, k: k, material: material, section: section };
     
         // get frame's joints
         j = model.getObjectByName( 'joints' ).getObjectByName( j );
@@ -1101,7 +1101,7 @@ export function addFrame( name, j, k, material, section ) {
         var x_local =  k.position.clone().sub( j.position );
     
         // create frame
-        var frame = createFrame( x_local.length(), structure.frames[name].section );
+        var frame = createFrame( x_local.length(), structure.frames[ name ].section );
     
         // set name
         frame.name = name;
@@ -1126,28 +1126,16 @@ export function addFrame( name, j, k, material, section ) {
         frameLabel.name = 'label';
         frameLabel.visible = config[ 'frame.label' ];
         frame.add( frameLabel );
-    
-        // add frame's joints info
-        // frame.j = j;
-        // frame.k = k;
-        // frame.joints = [j, k];
         
         // add frame to scene
         model.getObjectByName( 'frames' ).add( frame );
-    
-        // track frame's name
-        // frames_name.add(name);
-        
-        // track frame's joints
-        // frames_joints.push( [j, k] );
       
-        resolve();
+        resolve( "frame '" + name + "' was added" );
       } else {
-        if ( !structure.joints.hasOwnProperty( j ) ) {
-          reject( new Error("joint's '" + j + "' does not exits") );
-        } else {
-          reject( new Error("joint's '" + k + "' does not exits") );
-        }
+        if ( !structure.joints.hasOwnProperty( j ) ) reject( new Error("joint '" + j + "' does not exits" ) );
+        if ( !structure.joints.hasOwnProperty( k ) ) reject( new Error("joint '" + k + "' does not exits" ) );
+        if ( !structure.materials.hasOwnProperty( material ) ) reject( new Error( "material '" + material + "' does not exits" ) );
+        if ( !structure.sections.hasOwnProperty( section ) ) reject( new Error( "section '" + section + "' does not exits" ) );
       }
     }
   });
