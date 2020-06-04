@@ -421,6 +421,8 @@ function init() {
   supportFolder.add( config, 'support.mode' ).options( [ "space", "analytical" ]).name( 'mode' ).onChange( mode => setSupportMode( mode ) );
   // add analytical folder
   let analyticalSupportFolder = supportFolder.addFolder( "analytical" );
+  // add displacement folder
+  let displacementAnalyticalSupportFolder = analyticalSupportFolder.addFolder( "displacement" );
   
   // add space folder
   let spaceSupportFolder = supportFolder.addFolder( "space" );
