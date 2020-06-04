@@ -29,7 +29,7 @@ var config = {
   'model.axes.head.radius': 0.04,
   'model.axes.head.height': 0.3,
 
-  'model.axes.shaft.length': 1, 
+  'model.axes.shaft.length': 0.7, 
   'model.axes.shaft.radius': 0.01,
 
   // camera
@@ -99,7 +99,7 @@ var config = {
   'frame.axes.head.radius': 0.04,
   'frame.axes.head.height': 0.3,
 
-  'frame.axes.shaft.length': 1,
+  'frame.axes.shaft.length': 0.7,
   'frame.axes.shaft.radius': 0.01,
 
   // support
@@ -767,13 +767,13 @@ function createArrow( material, shaftLength, shaftRadius, headHeight, headRadius
   // shaft
   var shaft = new THREE.Mesh( shaftGeometry, material );
   shaft.name = 'shaft';
-  shaft.scale.set( shaftLength - headHeight, shaftRadius, shaftRadius );
+  shaft.scale.set( shaftLength, shaftRadius, shaftRadius );
   arrow.add( shaft );
 
   // head
   var head = new THREE.Mesh( headGeometry, material );
   head.name = 'head';
-  head.position.setX( shaftLength - headHeight );
+  head.position.setX( shaftLength );
   head.scale.set( headHeight, headRadius, headRadius );
   arrow.add( head );
 
@@ -791,8 +791,8 @@ function setAxesShaftLength( axes, length ) {
 
   axes.children.forEach( arrow => { 
     headHeight = arrow.getObjectByName( 'head' ).scale.x;
-    arrow.getObjectByName( 'shaft' ).scale.setX( length - headHeight );
-    arrow.getObjectByName( 'head' ).position.setX( length - headHeight);
+    arrow.getObjectByName( 'shaft' ).scale.setX( length );
+    arrow.getObjectByName( 'head' ).position.setX( length );
   });
 }
 
