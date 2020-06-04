@@ -1196,7 +1196,7 @@ export function setFrameView( view ) {
     if ( wireframeView || extrudeView ) {
       let wireFrame, extrudeFrame;
 
-      for (const frame of model.getObjectByName( 'frames' ).children ) {
+      for ( const frame of model.getObjectByName( 'frames' ).children ) {
         wireFrame = frame.getObjectByName( 'wireFrame' );
         extrudeFrame = frame.getObjectByName( 'extrudeFrame' );
 
@@ -1204,7 +1204,7 @@ export function setFrameView( view ) {
         extrudeFrame.visible = extrudeView;
       }
       
-      resolve();
+      resolve( view + " setted" );
     } else {
       reject( new Error( viewType + " does not exits" ) );
     }
