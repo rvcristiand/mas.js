@@ -408,7 +408,7 @@ function init() {
   axesFrameFolder.add( config, 'frame.axes.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'axes' ).scale.setScalar( size ) ) );
   // add head folder
   let headAxesFrame = axesFrameFolder.addFolder( "head" );
-  headAxesFrame.add( config, 'frame.axes.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( head => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesHeadHeight( frame.getObjectByName( 'axes' ), head ) ) );
+  headAxesFrame.add( config, 'frame.axes.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesHeadHeight( frame.getObjectByName( 'axes' ), height ) ) );
   headAxesFrame.add( config, 'frame.axes.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesHeadRadius( frame.getObjectByName( 'axes' ), radius ) ) );
   // add shaft folder
   let shaftAxesFrame = axesFrameFolder.addFolder( "shaft" );
@@ -418,11 +418,19 @@ function init() {
   // add support folder
   let supportFolder = gui.addFolder( "support" );
   supportFolder.add( config, 'support.visible' ).name( 'visible' ).onChange( visible => model.getObjectByName( 'joints' ).children.filter( joint => joint.getObjectByName( 'support' ) ).forEach( joint => joint.getObjectByName( 'support' ).visible = visible ) );
-  supportFolder.add( config, 'support.mode' ).options( [ "space", "analytical" ]).name( 'mode' ).onChange( mode => setSupportMode( mode ) );
+  supportFolder.add( config, 'support.mode' ).options( [ 'space', 'analytical' ] ).name( 'mode' ).onChange( mode => setSupportMode( mode ) );
   // add analytical folder
   let analyticalSupportFolder = supportFolder.addFolder( "analytical" );
   // add displacement folder
   let displacementAnalyticalSupportFolder = analyticalSupportFolder.addFolder( "displacement" );
+  // add head folder
+  let headAxesSupportFolder = displacementAnalyticalSupportFolder.addFolder( "head" );
+  headAxesSupportFolder.add( config, 'support.analytical.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setAnalyticalDisplacementHeadHeight( height ));
+  // headAxesSupportFolder.add( config, 'support.analytical.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesHeadRadius( frame.getObjectByName( 'axes' ), radius ) ) );
+  // add shaft folder
+  // let shaftAxesFrame = axesFrameFolder.addFolder( "shaft" );
+  // shaftAxesFrame.add( config, 'frame.axes.shaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesShaftLength( frame.getObjectByName( 'axes' ), length ) ) );
+  // shaftAxesFrame.add( config, 'frame.axes.shaft.radius' ).name( 'radius' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesShaftRadius( frame.getObjectByName( 'axes' ), radius ) ) );
   
   // add space folder
   let spaceSupportFolder = supportFolder.addFolder( "space" );
@@ -1254,12 +1262,19 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
   // create analytical support
   var analytical = new THREE.Group();
 
-  if ( ux ) analytical.add( createDisplacementSupport( 'x', config[ 'support.analytical.shaft.length' ], config[ 'support.analytical.shaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
-  if ( uy ) analytical.add( createDisplacementSupport( 'y', config[ 'support.analytical.shaft.length' ], config[ 'support.analytical.shaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
-  if ( uz ) analytical.add( createDisplacementSupport( 'z', config[ 'support.analytical.shaft.length' ], config[ 'support.analytical.shaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
-  if ( rx ) analytical.add( createRotationSupport( 'x' ) );
-  if ( ry ) analytical.add( createRotationSupport( 'y' ) );
-  if ( rz ) analytical.add( createRotationSupport( 'z' ) );
+  // create displacements supports
+  var displacements = new THREE.Group();
+
+  if ( ux ) displacements.add( createDisplacementSupport( 'x', config[ 'support.analytical.shaft.length' ], config[ 'support.analytical.shaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
+  if ( uy ) displacements.add( createDisplacementSupport( 'y', config[ 'support.analytical.shaft.length' ], config[ 'support.analytical.shaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
+  if ( uz ) displacements.add( createDisplacementSupport( 'z', config[ 'support.analytical.shaft.length' ], config[ 'support.analytical.shaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
+
+  // create rotational supports
+  var rotations = new THREE.Group();
+
+  if ( rx ) rotations.add( createRotationSupport( 'x' ) );
+  if ( ry ) rotations.add( createRotationSupport( 'y' ) );
+  if ( rz ) rotations.add( createRotationSupport( 'z' ) );
 
   // create space support
   var space = new THREE.Group();
@@ -1319,7 +1334,12 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
   }
 
   analytical.name = 'analytical';
+  displacements.name = 'displacements';
+  rotations.name = 'rotations';
   space.name = 'space';
+
+  analytical.add( displacements );
+  analytical.add( rotations );
 
   space.visible = ( config[ 'support.mode' ] == 'space' );
   analytical.visible = ( config[ 'support.mode' ] == 'analytical' );
@@ -1436,7 +1456,7 @@ function createDisplacementSupport( axis, shaftLength, shaftRadius, headHeight, 
   var circleGeometry = new THREE.CircleBufferGeometry( 1, 32 );
   circleGeometry.rotateX( -Math.PI / 2 );
   circleGeometry.rotateZ( -Math.PI / 4 );
-  circleGeometry.scale( 0.1, 0.1, 0.1 ); 
+  circleGeometry.scale( 0.1, 0.1, 0.1 );
 
   // create displacementSupport
   switch ( axis ) {
@@ -1458,13 +1478,14 @@ function createDisplacementSupport( axis, shaftLength, shaftRadius, headHeight, 
   
   arrow.name = 'arrow';
   circle.name = 'circle';
+  displacementSupport.name = axis;
   
   circle.position.set( 0.5, 0, 0 );
-
+ 
   arrow.add( circle );
 
   arrow.applyQuaternion( quaternion );
-  arrow.position.set( -1, 0, 0 ).applyQuaternion( quaternion );
+  arrow.position.set( -( shaftLength + headHeight ), 0, 0 ).applyQuaternion( quaternion );
 
   displacementSupport.add( arrow );
   // set size
@@ -1680,6 +1701,22 @@ function setPinRadius( radius ) {
       foundation.position.copy( position );
     }
   }
+}
+
+function setAnalyticalDisplacementHeadHeight( height ) {
+  // set analytical displacement head height
+  
+  var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
+  var position = new THREE.Vector3( -( config[ 'support.analytical.shaft.length' ] + height ), 0, 0 );
+  var quaternion = new THREE.Quaternion();
+
+  var positions = { 'x': position.clone().applyQuaternion( quaternion ), 'y': position.clone().applyQuaternion( quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 ) ), 'z': position.clone().applyQuaternion( quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 ) ) };
+
+  Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => {
+      displacement.getObjectByName( 'arrow' ).position.copy( positions[ displacement.name ] );
+      displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height );
+    }
+  )});
 }
 
 window.addEventListener( "resize", onResize, false );
