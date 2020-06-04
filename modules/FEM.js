@@ -419,15 +419,17 @@ function init() {
   let supportFolder = gui.addFolder( "support" );
   supportFolder.add( config, 'support.visible' ).name( 'visible' ).onChange( visible => model.getObjectByName( 'joints' ).children.filter( joint => joint.getObjectByName( 'support' ) ).forEach( joint => joint.getObjectByName( 'support' ).visible = visible ) );
   supportFolder.add( config, 'support.mode' ).options( [ "space", "analytical" ]).name( 'mode' ).onChange( mode => setSupportMode( mode ) );
+  // add space folder
+  let spaceSupportFolder = supportFolder.addFolder( 'space' );
   // add foundation folder
-  let foundationFolder = supportFolder.addFolder( "foundation" );
+  let foundationFolder = spaceSupportFolder.addFolder( "foundation" );
   foundationFolder.add( config, 'support.foundation.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setFoundationSize( size ) );
   foundationFolder.add( config, 'support.foundation.depth' ).name( 'depth' ).min( 0.01 ).max( 0.1 ).step( 0.01 ).onChange( depth => setFoundationDepth( depth ) );
   // add pedestal folder
-  let pedestalFolder = supportFolder.addFolder( "pedestal" );
+  let pedestalFolder = spaceSupportFolder.addFolder( "pedestal" );
   pedestalFolder.add( config, 'support.pedestal.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setPedestalSize( size ) );
   // add pin folder
-  let pinFolder = supportFolder.addFolder( "pin" );
+  let pinFolder = spaceSupportFolder.addFolder( "pin" );
   pinFolder.add( config, 'support.pin.height' ).name( 'height' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setPinHeight( size ) );
   pinFolder.add( config, 'support.pin.radius' ).name( 'radius' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( radius => setPinRadius( radius ) );
 
