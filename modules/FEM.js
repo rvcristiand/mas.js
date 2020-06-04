@@ -419,8 +419,11 @@ function init() {
   let supportFolder = gui.addFolder( "support" );
   supportFolder.add( config, 'support.visible' ).name( 'visible' ).onChange( visible => model.getObjectByName( 'joints' ).children.filter( joint => joint.getObjectByName( 'support' ) ).forEach( joint => joint.getObjectByName( 'support' ).visible = visible ) );
   supportFolder.add( config, 'support.mode' ).options( [ "space", "analytical" ]).name( 'mode' ).onChange( mode => setSupportMode( mode ) );
+  // add analytical folder
+  let analyticalSupportFolder = supportFolder.addFolder( "analytical" );
+  
   // add space folder
-  let spaceSupportFolder = supportFolder.addFolder( 'space' );
+  let spaceSupportFolder = supportFolder.addFolder( "space" );
   // add foundation folder
   let foundationFolder = spaceSupportFolder.addFolder( "foundation" );
   foundationFolder.add( config, 'support.foundation.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setFoundationSize( size ) );
