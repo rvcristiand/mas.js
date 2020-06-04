@@ -29,7 +29,7 @@ var config = {
   'model.axes.head.radius': 0.04,
   'model.axes.head.height': 0.3,
 
-  'model.axes.shaft.length': 1,
+  'model.axes.shaft.length': 1, 
   'model.axes.shaft.radius': 0.01,
 
   // camera
@@ -105,6 +105,14 @@ var config = {
   // support
   'support.visible': true,
   'support.mode': 'space',
+
+  'support.analytical.size': 1,
+  
+  'support.analytical.head.radius': 0.04,
+  'support.analytical.head.height': 0.3,
+
+  'support.analytical.shaft.length': 1,
+  'support.analytical.shaft.radius': 0.01,
 
   'support.foundation.size': 0.5,
   'support.foundation.depth': 0.05,
@@ -1226,7 +1234,7 @@ function setFrameSize( size ) {
     extrudeFrame = frame.getObjectByName( 'extrudeFrame');
     
     wireFrame.scale.copy( scale );
-    if ( structure.sections[structure.frames[name].section].type == 'Section') extrudeFrame.scale.copy( scale );
+    if ( structure.sections[ structure.frames[ name ].section ].type == 'Section' ) extrudeFrame.scale.copy( scale );
   }
 }
 
@@ -1239,9 +1247,9 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
   // create analytical support
   var analytical = new THREE.Group();
 
-  if ( ux ) analytical.add( createDisplacementSupport( 'x' ) );
-  if ( uy ) analytical.add( createDisplacementSupport( 'y' ) );
-  if ( uz ) analytical.add( createDisplacementSupport( 'z' ) );
+  if ( ux ) analytical.add( createDisplacementSupport( 'x', config[ 'support.analytical.shaft.length' ], config[ 'support.analytical.shaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
+  if ( uy ) analytical.add( createDisplacementSupport( 'y', config[ 'support.analytical.shaft.length' ], config[ 'support.analytical.shaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
+  if ( uz ) analytical.add( createDisplacementSupport( 'z', config[ 'support.analytical.shaft.length' ], config[ 'support.analytical.shaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
   if ( rx ) analytical.add( createRotationSupport( 'x' ) );
   if ( ry ) analytical.add( createRotationSupport( 'y' ) );
   if ( rz ) analytical.add( createRotationSupport( 'z' ) );
@@ -1408,8 +1416,9 @@ function createPin() {
   return pin;
 }
 
-function createDisplacementSupport( axis ) {
+function createDisplacementSupport( axis, shaftLength, shaftRadius, headHeight, headRadius ) {
   // create a displacement support
+
   var displacementSupport = new THREE.Group();
 
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
@@ -1425,30 +1434,30 @@ function createDisplacementSupport( axis ) {
   // create displacementSupport
   switch ( axis ) {
     case 'x': 
-      arrow = new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0,  0, 0 ), 1, xMaterial.color.getHex() )
+      arrow = createArrow( xMaterial, shaftLength, shaftRadius, headHeight, headRadius );
       circle = new THREE.Mesh( circleGeometry, xMaterial );
       break;
     case 'y':
-      arrow = new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0, 0, 0 ), 1, yMaterial.color.getHex() );
+      arrow = createArrow( yMaterial, shaftLength, shaftRadius, headHeight, headRadius );
       quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
       circle = new THREE.Mesh( circleGeometry, yMaterial );
       break;
     case 'z':
-      arrow = new THREE.ArrowHelper( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( 0,  0, 0 ), 1, zMaterial.color.getHex() );
+      arrow = createArrow( zMaterial, shaftLength, shaftRadius, headHeight, headRadius );
       quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
       circle = new THREE.Mesh( circleGeometry, zMaterial );
       break;
   }
   
-  circle.position.set( 0, 0.5, 0 );
+  arrow.name = 'arrow';
+  circle.name = 'circle';
+  
+  circle.position.set( 0.5, 0, 0 );
 
   arrow.add( circle );
 
   arrow.applyQuaternion( quaternion );
   arrow.position.set( -1, 0, 0 ).applyQuaternion( quaternion );
-
-  arrow.name = 'arrow';
-  circle.name = 'circle';
 
   displacementSupport.add( arrow );
   // set size
