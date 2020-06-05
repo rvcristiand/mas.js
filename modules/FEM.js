@@ -425,8 +425,8 @@ function init() {
   let displacementAnalyticalSupportFolder = analyticalSupportFolder.addFolder( "displacement" );
   // add head folder
   let headAxesSupportFolder = displacementAnalyticalSupportFolder.addFolder( "head" );
-  headAxesSupportFolder.add( config, 'support.analytical.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setAnalyticalDisplacementHeadHeight( height ));
-  // headAxesSupportFolder.add( config, 'support.analytical.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesHeadRadius( frame.getObjectByName( 'axes' ), radius ) ) );
+  headAxesSupportFolder.add( config, 'support.analytical.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setAnalyticalDisplacementHeadHeight( height ) );
+  headAxesSupportFolder.add( config, 'support.analytical.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalDisplacementHeadRadius( radius ) );
   // add shaft folder
   // let shaftAxesFrame = axesFrameFolder.addFolder( "shaft" );
   // shaftAxesFrame.add( config, 'frame.axes.shaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesShaftLength( frame.getObjectByName( 'axes' ), length ) ) );
@@ -1718,5 +1718,7 @@ function setAnalyticalDisplacementHeadHeight( height ) {
     }
   )});
 }
+
+function setAnalyticalDisplacementHeadRadius( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) } ) } ) }
 
 window.addEventListener( "resize", onResize, false );
