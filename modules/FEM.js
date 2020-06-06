@@ -793,10 +793,7 @@ function setAxesHeadRadius( axes, radius) { axes.children.forEach( arrow => arro
 function setAxesShaftLength( axes, length ) {
   // set axes shaft length
 
-  var headHeight;
-
   axes.children.forEach( arrow => { 
-    headHeight = arrow.getObjectByName( 'head' ).scale.x;
     arrow.getObjectByName( 'shaft' ).scale.setX( length );
     arrow.getObjectByName( 'head' ).position.setX( length );
   });
