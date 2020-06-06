@@ -1483,7 +1483,6 @@ function createDisplacementSupport( axis, shaftLength, shaftRadius, headHeight, 
   arrow.position.set( -( shaftLength + headHeight ), 0, 0 ).applyQuaternion( quaternion );
 
   displacementSupport.add( arrow );
-  // set size
 
   return displacementSupport;
 }
