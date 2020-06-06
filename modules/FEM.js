@@ -427,7 +427,7 @@ function init() {
   headArrowSupportFolder.add( config, 'support.analytical.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalHeadRadiusSupport( radius ) );
   // add shaft folder
   let shaftArrowSupportFolder = analyticalSupportFolder.addFolder( "shaft" );
-  // shaftAxesFrame.add( config, 'frame.axes.shaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesShaftLength( frame.getObjectByName( 'axes' ), length ) ) );
+  shaftArrowSupportFolder.add( config, 'support.analytical.shaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => setAnalyticalShaftLengthSupport( length ) );
   // shaftAxesFrame.add( config, 'frame.axes.shaft.radius' ).name( 'radius' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesShaftRadius( frame.getObjectByName( 'axes' ), radius ) ) );
   
   // add space folder
@@ -1714,5 +1714,26 @@ function setAnalyticalHeadHeightSupport( height ) {
 }
 
 function setAnalyticalHeadRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) } ) } ) }
+
+function setAnalyticalShaftLengthSupport( length ) {
+  // set analyutical displacement length shaft
+
+  var arrow, vector = new THREE.Vector3( 1, 1, 1 ).normalize();
+  var position = new THREE.Vector3( -( length + config[ 'support.analytical.head.height' ] ), 0, 0 );
+  var quaternion = new THREE.Quaternion();
+
+  var positions = { 'x': position.clone().applyQuaternion( quaternion ), 'y': position.clone().applyQuaternion( quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 ) ), 'z': position.clone().applyQuaternion( quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 ) ) };
+
+  Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { 
+    arrow = displacement.getObjectByName( 'arrow' );
+
+    arrow.getObjectByName( 'shaft' ).scale.setX( length );
+    arrow.getObjectByName( 'head' ).position.setX( length );
+
+    arrow.getObjectByName( 'circle' ).position.set( length / 2, 0, 0 );
+
+    arrow.position.copy( positions [ displacement.name ] );
+  })});
+}
 
 window.addEventListener( "resize", onResize, false );
