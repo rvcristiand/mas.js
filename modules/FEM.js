@@ -129,7 +129,7 @@ var config = {
 var structure, model;
 
 var jointMaterial, frameMaterial, frameEdgesMaterial, xMaterial, yMaterial, zMaterial, foundationMaterial, foundationEdgesMaterial, pedestalMaterial, pedestalEdgesMaterial;
-var jointGeometry, wireFrameShape, shaftGeometry, headGeometry, restrainGeometry, foundationGeometry, foundationEdgesGeometry, pedestalGeometry, pedestalEdgesGeometry, pinGeometry;
+var jointGeometry, wireFrameShape, straightShaftGeometry, headGeometry, restrainGeometry, foundationGeometry, foundationEdgesGeometry, pedestalGeometry, pedestalEdgesGeometry, pinGeometry;
 
 var sections = {};
 
@@ -226,9 +226,9 @@ function init() {
   
   wireFrameShape = new THREE.Shape().absarc();
 
-  shaftGeometry = new THREE.CylinderBufferGeometry();
-  shaftGeometry.rotateZ( Math.PI / 2 );
-  shaftGeometry.translate( 0.5, 0, 0 );
+  straightShaftGeometry = new THREE.CylinderBufferGeometry();
+  straightShaftGeometry.rotateZ( Math.PI / 2 );
+  straightShaftGeometry.translate( 0.5, 0, 0 );
 
   headGeometry = new THREE.ConeBufferGeometry();
   headGeometry.rotateZ( 3 * Math.PI / 2 );
@@ -781,7 +781,7 @@ function createArrow( material, shaftLength, shaftRadius, headHeight, headRadius
   var arrow = new THREE.Group();
 
   // shaft
-  var shaft = new THREE.Mesh( shaftGeometry, material );
+  var shaft = new THREE.Mesh( straightShaftGeometry, material );
   shaft.name = 'shaft';
   shaft.scale.set( shaftLength, shaftRadius, shaftRadius );
   arrow.add( shaft );
