@@ -1475,7 +1475,7 @@ function createDisplacementSupport( axis, shaftLength, shaftRadius, headHeight, 
   circle.name = 'circle';
   displacementSupport.name = axis;
   
-  circle.position.set( 0.5, 0, 0 );
+  circle.position.set( shaftLength / 2, 0, 0 );
  
   arrow.add( circle );
 
