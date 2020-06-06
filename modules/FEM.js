@@ -421,10 +421,8 @@ function init() {
   supportFolder.add( config, 'support.mode' ).options( [ 'space', 'analytical' ] ).name( 'mode' ).onChange( mode => setSupportMode( mode ) );
   // add analytical folder
   let analyticalSupportFolder = supportFolder.addFolder( "analytical" );
-  // add displacement folder
-  let displacementAnalyticalSupportFolder = analyticalSupportFolder.addFolder( "displacement" );
   // add head folder
-  let headAxesSupportFolder = displacementAnalyticalSupportFolder.addFolder( "head" );
+  let headAxesSupportFolder = analyticalSupportFolder.addFolder( "head" );
   headAxesSupportFolder.add( config, 'support.analytical.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setAnalyticalDisplacementHeadHeight( height ) );
   headAxesSupportFolder.add( config, 'support.analytical.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalDisplacementHeadRadius( radius ) );
   // add shaft folder
