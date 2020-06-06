@@ -423,8 +423,8 @@ function init() {
   let analyticalSupportFolder = supportFolder.addFolder( "analytical" );
   // add head folder
   let headArrowSupportFolder = analyticalSupportFolder.addFolder( "head" );
-  headArrowSupportFolder.add( config, 'support.analytical.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setAnalyticalDisplacementHeadHeight( height ) );
-  headArrowSupportFolder.add( config, 'support.analytical.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalDisplacementHeadRadius( radius ) );
+  headArrowSupportFolder.add( config, 'support.analytical.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setAnalyticalHeadHeightSupport( height ) );
+  headArrowSupportFolder.add( config, 'support.analytical.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalHeadRadiusSupport( radius ) );
   // add shaft folder
   // let shaftAxesFrame = axesFrameFolder.addFolder( "shaft" );
   // shaftAxesFrame.add( config, 'frame.axes.shaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesShaftLength( frame.getObjectByName( 'axes' ), length ) ) );
@@ -1701,7 +1701,7 @@ function setPinRadius( radius ) {
   }
 }
 
-function setAnalyticalDisplacementHeadHeight( height ) {
+function setAnalyticalHeadHeightSupport( height ) {
   // set analytical displacement head height
   
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
@@ -1717,6 +1717,6 @@ function setAnalyticalDisplacementHeadHeight( height ) {
   )});
 }
 
-function setAnalyticalDisplacementHeadRadius( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) } ) } ) }
+function setAnalyticalHeadRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) } ) } ) }
 
 window.addEventListener( "resize", onResize, false );
