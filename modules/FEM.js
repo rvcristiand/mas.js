@@ -1736,7 +1736,7 @@ function setAnalyticalShaftLengthSupport( length ) {
     arrow.getObjectByName( 'shaft' ).scale.setX( length );
     arrow.getObjectByName( 'head' ).position.setX( length );
 
-    arrow.getObjectByName( 'circle' ).position.set( length / 2, 0, 0 );
+    arrow.getObjectByName( 'restrain' ).position.set( length / 2, 0, 0 );
 
     arrow.position.copy( positions [ displacement.name ] );
   })});
