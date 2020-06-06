@@ -422,9 +422,9 @@ function init() {
   // add analytical folder
   let analyticalSupportFolder = supportFolder.addFolder( "analytical" );
   // add head folder
-  let headAxesSupportFolder = analyticalSupportFolder.addFolder( "head" );
-  headAxesSupportFolder.add( config, 'support.analytical.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setAnalyticalDisplacementHeadHeight( height ) );
-  headAxesSupportFolder.add( config, 'support.analytical.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalDisplacementHeadRadius( radius ) );
+  let headArrowSupportFolder = analyticalSupportFolder.addFolder( "head" );
+  headArrowSupportFolder.add( config, 'support.analytical.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setAnalyticalDisplacementHeadHeight( height ) );
+  headArrowSupportFolder.add( config, 'support.analytical.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalDisplacementHeadRadius( radius ) );
   // add shaft folder
   // let shaftAxesFrame = axesFrameFolder.addFolder( "shaft" );
   // shaftAxesFrame.add( config, 'frame.axes.shaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesShaftLength( frame.getObjectByName( 'axes' ), length ) ) );
