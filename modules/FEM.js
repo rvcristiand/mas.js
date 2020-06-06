@@ -114,6 +114,9 @@ var config = {
   'support.analytical.shaft.length': 1,
   'support.analytical.shaft.radius': 0.01,
 
+  'support.analytical.restrain.radius': 0.1,
+  'support.analytical.restrain.thickness': 0.01,
+
   'support.foundation.size': 0.5,
   'support.foundation.depth': 0.05,
 
@@ -126,7 +129,7 @@ var config = {
 var structure, model;
 
 var jointMaterial, frameMaterial, frameEdgesMaterial, xMaterial, yMaterial, zMaterial, foundationMaterial, foundationEdgesMaterial, pedestalMaterial, pedestalEdgesMaterial;
-var jointGeometry, wireFrameShape, shaftGeometry, headGeometry, foundationGeometry, foundationEdgesGeometry, pedestalGeometry, pedestalEdgesGeometry, pinGeometry;
+var jointGeometry, wireFrameShape, shaftGeometry, headGeometry, restrainGeometry, foundationGeometry, foundationEdgesGeometry, pedestalGeometry, pedestalEdgesGeometry, pinGeometry;
 
 var sections = {};
 
@@ -230,6 +233,9 @@ function init() {
   headGeometry = new THREE.ConeBufferGeometry();
   headGeometry.rotateZ( 3 * Math.PI / 2 );
   headGeometry.translate( 0.5, 0, 0 );
+
+  restrainGeometry = new THREE.CylinderBufferGeometry();
+  restrainGeometry.rotateZ( Math.PI / 2 );
   
   foundationGeometry = new THREE.BoxBufferGeometry();
   foundationGeometry.translate( 0, 0, -0.5 );
@@ -1446,38 +1452,36 @@ function createDisplacementSupport( axis, shaftLength, shaftRadius, headHeight, 
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var quaternion = new THREE.Quaternion();
 
-  var arrow, circle;
-
-  var circleGeometry = new THREE.CircleBufferGeometry( 1, 32 );
-  circleGeometry.rotateX( -Math.PI / 2 );
-  circleGeometry.rotateZ( -Math.PI / 4 );
-  circleGeometry.scale( 0.1, 0.1, 0.1 );
+  var arrow, restrain;
 
   // create displacementSupport
   switch ( axis ) {
     case 'x': 
       arrow = createArrow( xMaterial, shaftLength, shaftRadius, headHeight, headRadius );
-      circle = new THREE.Mesh( circleGeometry, xMaterial );
+      restrain = new THREE.Mesh( restrainGeometry, xMaterial );
       break;
     case 'y':
       arrow = createArrow( yMaterial, shaftLength, shaftRadius, headHeight, headRadius );
       quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
-      circle = new THREE.Mesh( circleGeometry, yMaterial );
+      restrain = new THREE.Mesh( restrainGeometry, yMaterial );
       break;
     case 'z':
       arrow = createArrow( zMaterial, shaftLength, shaftRadius, headHeight, headRadius );
       quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
-      circle = new THREE.Mesh( circleGeometry, zMaterial );
+      restrain = new THREE.Mesh( restrainGeometry, zMaterial );
       break;
   }
+
+  restrain.scale.set( config[ 'support.analytical.restrain.thickness' ], config[ 'support.analytical.restrain.radius' ], config[ 'support.analytical.restrain.radius' ] );
+  restrain.rotateZ( Math.PI / 4 );
   
   arrow.name = 'arrow';
-  circle.name = 'circle';
+  restrain.name = 'restrain';
   displacementSupport.name = axis;
   
-  circle.position.set( shaftLength / 2, 0, 0 );
+  restrain.position.set( shaftLength / 2, 0, 0 );
  
-  arrow.add( circle );
+  arrow.add( restrain );
 
   arrow.applyQuaternion( quaternion );
   arrow.position.set( -( shaftLength + headHeight ), 0, 0 ).applyQuaternion( quaternion );
