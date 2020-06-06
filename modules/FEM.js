@@ -428,7 +428,7 @@ function init() {
   // add shaft folder
   let shaftArrowSupportFolder = analyticalSupportFolder.addFolder( "shaft" );
   shaftArrowSupportFolder.add( config, 'support.analytical.shaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => setAnalyticalShaftLengthSupport( length ) );
-  // shaftAxesFrame.add( config, 'frame.axes.shaft.radius' ).name( 'radius' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => model.getObjectByName( 'frames' ).children.forEach( frame => setAxesShaftRadius( frame.getObjectByName( 'axes' ), radius ) ) );
+  shaftArrowSupportFolder.add( config, 'support.analytical.shaft.radius' ).name( 'radius' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => setAnalyticalShaftRadiusSupport( radius ) );
   
   // add space folder
   let spaceSupportFolder = supportFolder.addFolder( "space" );
@@ -1713,7 +1713,7 @@ function setAnalyticalHeadHeightSupport( height ) {
   )});
 }
 
-function setAnalyticalHeadRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) } ) } ) }
+function setAnalyticalHeadRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) } ) } ) };
 
 function setAnalyticalShaftLengthSupport( length ) {
   // set analyutical displacement length shaft
@@ -1735,5 +1735,7 @@ function setAnalyticalShaftLengthSupport( length ) {
     arrow.position.copy( positions [ displacement.name ] );
   })});
 }
+
+function setAnalyticalShaftRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( config[ 'support.analytical.shaft.length'], radius, radius ) } ) } ) };
 
 window.addEventListener( "resize", onResize, false );
