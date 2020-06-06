@@ -111,8 +111,8 @@ var config = {
   'support.analytical.head.radius': 0.04,
   'support.analytical.head.height': 0.3,
 
-  'support.analytical.shaft.length': 1,
-  'support.analytical.shaft.radius': 0.01,
+  'support.analytical.straightShaft.length': 1,
+  'support.analytical.straightShaft.radius': 0.01,
 
   'support.analytical.restrain.radius': 0.1,
   'support.analytical.restrain.thickness': 0.01,
@@ -433,8 +433,8 @@ function init() {
   headArrowSupportFolder.add( config, 'support.analytical.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalHeadRadiusSupport( radius ) );
   // add shaft folder
   let shaftArrowSupportFolder = analyticalSupportFolder.addFolder( "shaft" );
-  shaftArrowSupportFolder.add( config, 'support.analytical.shaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => setAnalyticalShaftLengthSupport( length ) );
-  shaftArrowSupportFolder.add( config, 'support.analytical.shaft.radius' ).name( 'radius' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => setAnalyticalShaftRadiusSupport( radius ) );
+  shaftArrowSupportFolder.add( config, 'support.analytical.straightShaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => setAnalyticalShaftLengthSupport( length ) );
+  shaftArrowSupportFolder.add( config, 'support.analytical.straightShaft.radius' ).name( 'radius' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => setAnalyticalShaftRadiusSupport( radius ) );
   // add restrain folder
   let restrainArrowSupportFolder = analyticalSupportFolder.addFolder( "restrain" );
   restrainArrowSupportFolder.add( config, 'support.analytical.restrain.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalRestrainRadiusSupport( radius ) );
@@ -1270,9 +1270,9 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
   // create displacements supports
   var displacements = new THREE.Group();
 
-  if ( ux ) displacements.add( createDisplacementSupport( 'x', config[ 'support.analytical.shaft.length' ], config[ 'support.analytical.shaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
-  if ( uy ) displacements.add( createDisplacementSupport( 'y', config[ 'support.analytical.shaft.length' ], config[ 'support.analytical.shaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
-  if ( uz ) displacements.add( createDisplacementSupport( 'z', config[ 'support.analytical.shaft.length' ], config[ 'support.analytical.shaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
+  if ( ux ) displacements.add( createDisplacementSupport( 'x', config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.straightShaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
+  if ( uy ) displacements.add( createDisplacementSupport( 'y', config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.straightShaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
+  if ( uz ) displacements.add( createDisplacementSupport( 'z', config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.straightShaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
 
   // create rotational supports
   var rotations = new THREE.Group();
@@ -1709,7 +1709,7 @@ function setAnalyticalHeadHeightSupport( height ) {
   // set analytical displacement head height
   
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
-  var position = new THREE.Vector3( -( config[ 'support.analytical.shaft.length' ] + height ), 0, 0 );
+  var position = new THREE.Vector3( -( config[ 'support.analytical.straightShaft.length' ] + height ), 0, 0 );
   var quaternion = new THREE.Quaternion();
 
   var positions = { 'x': position.clone().applyQuaternion( quaternion ), 'y': position.clone().applyQuaternion( quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 ) ), 'z': position.clone().applyQuaternion( quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 ) ) };
@@ -1744,7 +1744,7 @@ function setAnalyticalShaftLengthSupport( length ) {
   })});
 }
 
-function setAnalyticalShaftRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( config[ 'support.analytical.shaft.length'], radius, radius ) } ) } ) };
+function setAnalyticalShaftRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( config[ 'support.analytical.straightShaft.length'], radius, radius ) } ) } ) };
 
 function setAnalyticalRestrainRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'restrain' ).scale.set( config[ 'support.analytical.restrain.thickness' ], radius, radius ) } ) } ) };
 
