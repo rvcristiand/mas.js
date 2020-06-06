@@ -437,6 +437,7 @@ function init() {
   shaftArrowSupportFolder.add( config, 'support.analytical.shaft.radius' ).name( 'radius' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => setAnalyticalShaftRadiusSupport( radius ) );
   // add restrain folder
   let restrainArrowSupportFolder = analyticalSupportFolder.addFolder( "restrain" );
+  restrainArrowSupportFolder.add( config, 'support.analytical.restrain.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalRestrainRadiusSupport( radius ) );
   
   // add space folder
   let spaceSupportFolder = supportFolder.addFolder( "space" );
@@ -1743,5 +1744,7 @@ function setAnalyticalShaftLengthSupport( length ) {
 }
 
 function setAnalyticalShaftRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( config[ 'support.analytical.shaft.length'], radius, radius ) } ) } ) };
+
+function setAnalyticalRestrainRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'restrain' ).scale.set( config[ 'support.analytical.restrain.thickness' ], radius, radius ) } ) } ) };
 
 window.addEventListener( "resize", onResize, false );
