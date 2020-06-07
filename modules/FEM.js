@@ -114,6 +114,9 @@ var config = {
   'support.analytical.straightShaft.length': 1,
   'support.analytical.straightShaft.radius': 0.01,
 
+  'support.analytical.curveShaft.radius': 1,
+  'support.analytical.curveShaft.tube': 0.04,
+
   'support.analytical.restrain.radius': 0.1,
   'support.analytical.restrain.thickness': 0.01,
 
@@ -1503,64 +1506,54 @@ function createRotationSupport( axis ) {
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var quaternion = new THREE.Quaternion();
 
-  // head arrow
-  var coneGeometry = new THREE.ConeBufferGeometry();
-  coneGeometry.translate( 0, 0.5, 0 );
+  // curve shaft geometry
+  var curveShaftGeometry = new THREE.TorusGeometry( config[ 'support.analytical.curveShaft.radius' ], config[ 'support.analytical.curveShaft.tube' ], 8, 6, 3 * Math.PI / 2 );
+  curveShaftGeometry.rotateY( Math.PI / 2 );
   
-  // curve arrow
-  var circumferenceCurve = new THREE.EllipseCurve( 0, 0, 1, 1, 0, 5 * Math.PI / 4 );
-  var points = circumferenceCurve.getPoints( 32 );
-  var circumferenceGeometry = new THREE.BufferGeometry().setFromPoints( points );
-  circumferenceGeometry.rotateY( Math.PI / 2 );
-
-  // restrain symbol 
-  var circleGeometry = new THREE.CircleBufferGeometry( 1, 32 );
-  circleGeometry.rotateX( -Math.PI / 2 );
-  circleGeometry.rotateZ( -Math.PI / 4 );
-  circleGeometry.scale( 0.1, 0.1, 0.1 );
-  
-  var circumferenceMaterial;
-  var cone;
-  var circle;
+  var head;
+  var curveShaft;
+  var restrain;
 
   switch ( axis ) {
     case'x':
-      circumferenceMaterial = new THREE.LineBasicMaterial( { color: xMaterial.color } );
-      cone = new THREE.Mesh( coneGeometry, xMaterial );
-      circle = new THREE.Mesh( circleGeometry, xMaterial );
+      head = new THREE.Mesh( headGeometry, xMaterial );
+      curveShaft = new THREE.Mesh( curveShaftGeometry, xMaterial );
+      restrain = new THREE.Mesh( restrainGeometry, xMaterial );
       break;
     case 'y':
       quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
-      circumferenceMaterial = new THREE.LineBasicMaterial( { color: yMaterial.color } );
-      cone = new THREE.Mesh( coneGeometry, yMaterial );
-      circle = new THREE.Mesh( circleGeometry, yMaterial );
+
+      head = new THREE.Mesh( headGeometry, yMaterial );
+      curveShaft = new THREE.Mesh( curveShaftGeometry, yMaterial );
+      restrain = new THREE.Mesh( restrainGeometry, yMaterial );
       break;
     case 'z':
       quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
-      circumferenceMaterial = new THREE.LineBasicMaterial( { color: zMaterial.color } );
-      cone = new THREE.Mesh( coneGeometry, zMaterial );
-      circle = new THREE.Mesh( circleGeometry, zMaterial );
+
+      head = new THREE.Mesh( headGeometry, zMaterial );
+      curveShaft = new THREE.Mesh( curveShaftGeometry, zMaterial );
+      restrain = new THREE.Mesh( restrainGeometry, zMaterial );
       break;
   }
 
-  var circumference = new THREE.Line( circumferenceGeometry, circumferenceMaterial );
-  circumference.position.set( -0.5, 0, 0 );
-  circumference.scale.setScalar( 0.5 );
+  curveShaft.position.set( -( config[ 'support.analytical.head.height' ] + config[ 'support.analytical.straightShaft.length' ] / 2 ), 0, 0 );
   
-  cone.position.set( 0, points[ points.length - 1 ].x, -points[ points.length - 1 ].x );
-  cone.rotateX( 5 * Math.PI / 4 );
-  cone.scale.set( 0.05, 0.5, 0.05 );
+  head.position.set( 0, -config[ 'support.analytical.curveShaft.radius' ], 0 );
+  head.rotateY( Math.PI / 2 );
+  head.scale.set( config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ], config[ 'support.analytical.head.radius' ] );
+    
+  restrain.position.set( 0, config[ 'support.analytical.curveShaft.radius' ], 0 );
+  restrain.rotateX( -Math.PI / 2 );
+  restrain.rotateZ( -Math.PI / 4 );
+  restrain.scale.set( config[ 'support.analytical.restrain.thickness' ], config[ 'support.analytical.restrain.radius' ], config[ 'support.analytical.restrain.radius' ] );
 
-  circle.position.set( 0, 1, 0 );
-
-  circumference.name = 'circumference';
-  cone.name = 'cone';
-  circle.name = 'circle';
+  head.name = 'head';
+  curveShaft.name = 'curveShaft';
+  restrain.name = 'restrain';
   
-  circumference.add( cone );
-  circumference.add( circle );
-
-  rotationSupport.add( circumference );
+  curveShaft.add( head );
+  curveShaft.add( restrain );
+  rotationSupport.add( curveShaft );
 
   rotationSupport.quaternion.copy( quaternion );
 
