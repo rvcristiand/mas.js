@@ -131,8 +131,8 @@ var config = {
 
 var structure, model;
 
-var jointMaterial, frameMaterial, frameEdgesMaterial, xMaterial, yMaterial, zMaterial, foundationMaterial, foundationEdgesMaterial, pedestalMaterial, pedestalEdgesMaterial;
-var jointGeometry, wireFrameShape, straightShaftGeometry, headGeometry, restrainGeometry, foundationGeometry, foundationEdgesGeometry, pedestalGeometry, pedestalEdgesGeometry, pinGeometry;
+var jointMaterial, frameMaterial, frameEdgesMaterial, xMaterial, yMaterial, zMaterial, foundationMaterial, foundationEdgesMaterial, pedestalMaterial, pedestalEdgesMaterial, pinEdgesMaterial;
+var jointGeometry, wireFrameShape, straightShaftGeometry, headGeometry, restrainGeometry, foundationGeometry, foundationEdgesGeometry, pedestalGeometry, pedestalEdgesGeometry, pinGeometry, pinEdgesGeometry;
 
 var sections = {};
 
@@ -224,6 +224,8 @@ function init() {
   pedestalMaterial = [ xMaterial, xMaterial, yMaterial, yMaterial, zMaterial, zMaterial ];
   pedestalEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
 
+  pinEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
+
   // set the geometries
   jointGeometry = new THREE.SphereBufferGeometry( 1, 32, 32 );
   
@@ -256,6 +258,8 @@ function init() {
   pinGeometry.rotateX( Math.PI / 2 );
   pinGeometry.rotateZ( Math.PI / 4 );
   pinGeometry.translate( 0, 0, -0.5 );
+
+  pinEdgesGeometry = new THREE.EdgesGeometry( pinGeometry );
 
   // create the model
   model = createModel();
@@ -1433,8 +1437,6 @@ function createPin() {
   pin.name = 'pin';
 
   // create edges
-  var pinEdgesGeometry = new THREE.EdgesGeometry( pinGeometry );
-  var pinEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
   var pinEdges = new THREE.LineSegments( pinEdgesGeometry, pinEdgesMaterial );
   pinEdges.name = 'edges';
 
