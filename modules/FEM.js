@@ -205,8 +205,6 @@ function init() {
   // create the CSS2D renderer
   CSS2DRenderer = new THREE.CSS2DRenderer();
   CSS2DRenderer.setSize( canvasCSS2DRenderer.clientWidth, canvasCSS2DRenderer.clientHeight );
-  CSS2DRenderer.domElement.style.position = 'absolute';
-  CSS2DRenderer.domElement.style.top = 0;
   canvasCSS2DRenderer.appendChild( CSS2DRenderer.domElement );
   
   // create the controls
