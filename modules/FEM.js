@@ -263,17 +263,13 @@ function init() {
 
   pinEdgesGeometry = new THREE.EdgesGeometry( pinGeometry );
 
-  // create the model
-  model = createModel();
-
-  // set the upwards axis
-  setModelRotation( config[ 'model.axisUpwards' ] );
-  
   // create the ground
   var ground = createGround( config[ 'ground.size' ], config[ 'ground.grid.divisions' ], config[ 'ground.plane.color' ], config[ 'ground.plane.transparent' ], config[ 'ground.plane.opacity' ], config[ 'ground.grid.major' ], config[ 'ground.grid.menor' ] );
   scene.add( ground );
 
-  // add model to scene
+  // create the model
+  model = createModel();
+  setModelRotation( config[ 'model.axisUpwards' ] );
   scene.add( model );
 
   // create the structure
@@ -413,10 +409,10 @@ function init() {
   frameFolder.add( config, 'frame.visible' ).name( 'visible' ).onChange( visible => setFrameVisible( visible ));
   frameFolder.add( config, 'frame.view', [ 'wireframe', 'extrude' ] ).name( 'view' ).onChange( view  =>  setFrameView( view ) );
   frameFolder.add( config, 'frame.size' ).name( 'size' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( size => setFrameSize( size ) );
+  frameFolder.add( config, 'frame.label' ).name( 'label' ).onChange( visible => model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'label' ).visible = ( visible && config[ 'frame.visible' ] ) ) );
   frameFolder.addColor( config, 'frame.color' ).name( 'color' ).onChange( color => frameMaterial.color = frameEdgesMaterial.color = new THREE.Color( color ) );
   frameFolder.add( config, 'frame.transparent' ).name( 'transparent' ).onChange( transparent => frameMaterial.transparent = transparent );
   frameFolder.add( config, 'frame.opacity' ).name( 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( opacity => frameMaterial.opacity = opacity );
-  frameFolder.add( config, 'frame.label' ).name( 'label' ).onChange( visible => model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'label' ).visible = ( visible && config[ 'frame.visible' ] ) ) );
   // add axes folder
   let axesFrameFolder = frameFolder.addFolder( "axes" );
   axesFrameFolder.add( config, 'frame.axes.visible' ).name( 'visible' ).onChange( visible => model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'axes' ).visible = visible ) );
@@ -572,7 +568,7 @@ function createModel() {
   var model = new THREE.Group();
 
   // add axes
-  var axes = createAxes( config[ 'model.axes.shaft.length'], config[ 'model.axes.shaft.radius'], config[ 'model.axes.head.height'], config[ 'model.axes.head.radius'] );
+  var axes = createAxes( config[ 'model.axes.shaft.length' ], config[ 'model.axes.shaft.radius'], config[ 'model.axes.head.height'], config[ 'model.axes.head.radius'] );
   axes.name = 'axes';
   axes.visible = config[ 'model.axes.visible' ];
   axes.scale.setScalar( config[ 'model.axes.size' ] );
@@ -587,7 +583,6 @@ function createModel() {
   var frames = new THREE.Group();
   frames.name = 'frames';
   frames.visible = config[ 'frame.visible' ];
-  
   model.add( frames );
 
   return model;
@@ -745,7 +740,6 @@ export function setUpwardsAxis( axis ) {
         joint = model.getObjectByName( 'joints' ).getObjectByName( joint );
         joint.remove( joint.getObjectByName( 'support' ) );
         joint.add( createSupport( support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) );
-
       });
       
       // save the value
@@ -1147,7 +1141,7 @@ export function addFrame( name, j, k, material, section ) {
         // add axes
         var axes = createAxes( config[ 'frame.axes.shaft.length'], config[ 'frame.axes.shaft.radius'], config[ 'frame.axes.head.height'], config[ 'frame.axes.head.radius'] );
         axes.name = 'axes';
-        axes.visible = config[ 'frame.axes' ];
+        axes.visible = config[ 'frame.axes.visible' ];
         axes.position.set( 0, 0, length / 2 );
         frame.add( axes );
     
