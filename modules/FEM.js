@@ -34,14 +34,18 @@ var config = {
 
   // camera
   'camera.type': 'perspective',
+  
+  'camera.perspective.fov': 45,
+  'camera.perspective.near': 0.1,
+  'camera.perspective.far': 1000,
 
   'camera.position.x': 10,
   'camera.position.y': 10,
   'camera.position.z': 10,
 
-  'camera.perspective.fov': 45,
-  'camera.perspective.near': 0.1,
-  'camera.perspective.far': 1000,
+  'camera.target.x': 0, 
+  'camera.target.y': 0,
+  'camera.target.z': 0,
 
   // controls
   'controls.rotateSpeed': 1,
@@ -151,7 +155,7 @@ function init() {
   scene = new THREE.Scene();
   
   // create the camera
-  camera = createCamera( config[ 'camera.type' ], new THREE.Vector3( config[ 'camera.position.x' ], config[ 'camera.position.y' ], config[ 'camera.position.z' ] ) );
+  camera = createCamera( config[ 'camera.type' ], new THREE.Vector3( config[ 'camera.position.x' ], config[ 'camera.position.y' ], config[ 'camera.position.z' ] ), new THREE.Vector3( config[ 'camera.target.x' ], config[ 'camera.target.y' ], config[ 'camera.target.z' ] ) );
   
   // background
   // scene.background = new THREE.Color( 'white' ); // .setHSL( 0.6, 0, 1 )
@@ -467,7 +471,7 @@ function init() {
 window.onload = init;
 
 // three.js
-function createCamera( type, position ) {
+function createCamera( type, position, target ) {
   // create the camera
 
   var camera;
@@ -481,12 +485,12 @@ function createCamera( type, position ) {
     camera = new THREE.PerspectiveCamera( fov, aspect, near, far );
   } else if ( type == 'orthographic' ) {
     camera = new THREE.OrthographicCamera( -0.5 * aspect, 0.5 * aspect, 0.5, -0.5, near, far );
-    camera.zoom = 1 / ( 2 * Math.tan( ( fov / 2 ) * Math.PI / 180 ) * position.length() );
+    camera.zoom = 1 / ( 2 * Math.tan( ( fov / 2 ) * Math.PI / 180 ) * position.clone().sub( target ).length() );
   }
 
   camera.up.set( 0, 0, 1 );
   camera.position.copy( position );
-  camera.lookAt( 0, 0, 0 );
+  camera.lookAt( target );
   camera.updateProjectionMatrix();
 
   return camera;
@@ -515,27 +519,29 @@ function setCameraType( type ) {
   var quaternion = camera.quaternion.clone();
   var position = camera.position.clone();
   var zoom = camera.zoom;
+  var target = controls.target.clone();
 
-  camera = createCamera( type, position );
+  camera = createCamera( type, position, target );
 
   camera.quaternion.copy( quaternion );
 
   if ( type == 'perspective' ) {
     // move camera along z axis
     var worldDirection = new THREE.Vector3();
-
+  
     camera.getWorldDirection( worldDirection );
-    worldDirection.multiplyScalar( position.length() - 1 / ( 2 * zoom * Math.tan( ( camera.fov / 2 ) * Math.PI / 180 ) ) );
+    worldDirection.multiplyScalar( -1 / ( 2 * zoom * Math.tan( ( camera.fov / 2 ) * Math.PI / 180 ) ) );
 
-    position.add( worldDirection );
+    position.copy( target.clone().add( worldDirection ) );
+  } else {
+    position.sub( target ).multiplyScalar( 10 ); // TODO: get scene radius
   }
   camera.position.copy( position );
 
   // set controls
-  var target = controls.target.clone();
-
   controls = createControls( config[ 'controls.rotateSpeed' ], config[ 'controls.zoomSpeed' ], config[ 'controls.panSpeed' ], config[ 'controls.screenPanning' ], config[ 'controls.damping.enable' ], config[ 'controls.damping.factor' ] );
   controls.target.copy( target );
+  controls.update();
 }
 
 function render() {
