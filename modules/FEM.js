@@ -231,7 +231,7 @@ function init() {
   // set the geometries
   jointGeometry = new THREE.SphereBufferGeometry( 1, 32, 32 );
   
-  wireFrameShape = new THREE.Shape().absarc();
+  wireFrameShape = new THREE.Shape().arc();
 
   straightShaftGeometry = new THREE.CylinderBufferGeometry();
   straightShaftGeometry.rotateZ( Math.PI / 2 );
@@ -252,7 +252,7 @@ function init() {
   pedestalEdgesGeometry = new THREE.EdgesGeometry( pedestalGeometry );
 
   pinGeometry = new THREE.ConeBufferGeometry( 1, 1, 4, 1, true );
-  pinGeometry.groups = [ ];
+  pinGeometry.groups = [];
   pinGeometry.addGroup(  0, 6, 0 );
   pinGeometry.addGroup(  6, 6, 1 );
   pinGeometry.addGroup( 12, 6, 2 );
@@ -410,13 +410,13 @@ function init() {
 
   // add a frame folder
   let frameFolder = gui.addFolder( "frame" );
-  frameFolder.add( config, 'frame.visible' ).name( 'visible' ).onChange( visible => setFramesVisible( visible ));
+  frameFolder.add( config, 'frame.visible' ).name( 'visible' ).onChange( visible => setFrameVisible( visible ));
   frameFolder.add( config, 'frame.view', [ 'wireframe', 'extrude' ] ).name( 'view' ).onChange( view  =>  setFrameView( view ) );
   frameFolder.add( config, 'frame.size' ).name( 'size' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( size => setFrameSize( size ) );
   frameFolder.addColor( config, 'frame.color' ).name( 'color' ).onChange( color => frameMaterial.color = frameEdgesMaterial.color = new THREE.Color( color ) );
   frameFolder.add( config, 'frame.transparent' ).name( 'transparent' ).onChange( transparent => frameMaterial.transparent = transparent );
   frameFolder.add( config, 'frame.opacity' ).name( 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( opacity => frameMaterial.opacity = opacity );
-  frameFolder.add( config, 'frame.label' ).name( 'label' ).onChange( visible => model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'label' ).visible = visible ) );
+  frameFolder.add( config, 'frame.label' ).name( 'label' ).onChange( visible => model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'label' ).visible = ( visible && config[ 'frame.visible' ] ) ) );
   // add axes folder
   let axesFrameFolder = frameFolder.addFolder( "axes" );
   axesFrameFolder.add( config, 'frame.axes.visible' ).name( 'visible' ).onChange( visible => model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'axes' ).visible = visible ) );
@@ -499,7 +499,6 @@ function createControls( rotateSpeed, zoomSpeed, panSpeed, screenSpacePanning, e
 
   var controls = new THREE.OrbitControls( camera, CSS2DRenderer.domElement );
 
-  // set the properties
   controls.rotateSpeed = rotateSpeed;
   controls.zoomSpeed = zoomSpeed;
   controls.panSpeed = panSpeed;
@@ -1252,7 +1251,13 @@ export function setFrameView( view ) {
   return promise; 
 }
 
-function setFramesVisible( visible ) { model.getObjectByName( 'frames' ).visible = visible };
+function setFrameVisible( visible ) {
+  // set frame visible
+
+  model.getObjectByName( 'frames' ).visible = visible;
+  visible = visible && config[ 'frame.label' ];
+  model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'label' ).visible = visible );
+};
 
 function setFrameSize( size ) {
   // set frame size
