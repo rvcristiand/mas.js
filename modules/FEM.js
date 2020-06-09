@@ -509,27 +509,25 @@ function setCameraType( type ) {
   // set the camera type
 
   // set camera
-  var quaternion = camera.quaternion.clone();
   var position = camera.position.clone();
+  var quaternion = camera.quaternion.clone();
   var zoom = camera.zoom;
   var target = controls.target.clone();
-
+  
   camera = createCamera( type, position, target );
-
   camera.quaternion.copy( quaternion );
 
+  // set position
   if ( type == 'perspective' ) {
     // move camera along z axis
     var worldDirection = new THREE.Vector3();
-  
-    camera.getWorldDirection( worldDirection );
-    worldDirection.multiplyScalar( -1 / ( 2 * zoom * Math.tan( ( camera.fov / 2 ) * Math.PI / 180 ) ) );
 
-    position.copy( target.clone().add( worldDirection ) );
+    camera.getWorldDirection( worldDirection );
+    worldDirection.multiplyScalar( -1 / ( 2 * zoom * Math.tan( ( config[ 'camera.perspective.fov' ] / 2 ) * Math.PI / 180 ) ) );
+    camera.position.copy( target.clone().add( worldDirection ) );
   } else {
-    position.sub( target ).multiplyScalar( 10 ); // TODO: get scene radius
+    camera.position.add( position.clone().sub( target ).multiplyScalar( 10 ) ); // TODO: proyect camera in the scene's boundaty sphere
   }
-  camera.position.copy( position );
 
   // set controls
   controls = createControls( config[ 'controls.rotateSpeed' ], config[ 'controls.zoomSpeed' ], config[ 'controls.panSpeed' ], config[ 'controls.screenPanning' ], config[ 'controls.damping.enable' ], config[ 'controls.damping.factor' ] );
