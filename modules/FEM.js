@@ -1449,12 +1449,11 @@ function createDisplacementSupport( axis, shaftLength, shaftRadius, headHeight, 
 
   var displacementSupport = new THREE.Group();
 
+  var arrow, restrain;
+
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var quaternion = new THREE.Quaternion();
 
-  var arrow, restrain;
-
-  // create displacementSupport
   switch ( axis ) {
     case 'x': 
       arrow = createArrow( xMaterial, shaftLength, shaftRadius, headHeight, headRadius );
@@ -1462,31 +1461,28 @@ function createDisplacementSupport( axis, shaftLength, shaftRadius, headHeight, 
       break;
     case 'y':
       arrow = createArrow( yMaterial, shaftLength, shaftRadius, headHeight, headRadius );
-      quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
       restrain = new THREE.Mesh( restrainGeometry, yMaterial );
+      quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
       break;
     case 'z':
       arrow = createArrow( zMaterial, shaftLength, shaftRadius, headHeight, headRadius );
-      quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
       restrain = new THREE.Mesh( restrainGeometry, zMaterial );
+      quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
       break;
   }
 
+  restrain.name = 'restrain';
   restrain.scale.set( config[ 'support.analytical.restrain.thickness' ], config[ 'support.analytical.restrain.radius' ], config[ 'support.analytical.restrain.radius' ] );
+  restrain.position.set( shaftLength / 2, 0, 0 );
   restrain.rotateZ( Math.PI / 4 );
+  arrow.add( restrain );
   
   arrow.name = 'arrow';
-  restrain.name = 'restrain';
-  displacementSupport.name = axis;
+  arrow.position.set( -( shaftLength + headHeight ), 0, 0 );
   
-  restrain.position.set( shaftLength / 2, 0, 0 );
- 
-  arrow.add( restrain );
-
-  arrow.applyQuaternion( quaternion );
-  arrow.position.set( -( shaftLength + headHeight ), 0, 0 ).applyQuaternion( quaternion );
-
+  displacementSupport.name = axis;
   displacementSupport.add( arrow );
+  displacementSupport.quaternion.copy( quaternion );
 
   return displacementSupport;
 }
