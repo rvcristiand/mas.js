@@ -1220,27 +1220,21 @@ export function setFrameView( view ) {
   // set frame view
   
   var promise = new Promise( ( resolve, reject ) => {
-    let wireframeView = view == 'wireframe';
-    let extrudeView = view == 'extrude';
+    let wireframeView = view == 'wireframe', extrudeView = view == 'extrude';
 
     if ( wireframeView || extrudeView ) {
-      let wireFrame, extrudeFrame;
-
-      for ( const frame of model.getObjectByName( 'frames' ).children ) {
-        wireFrame = frame.getObjectByName( 'wireFrame' );
-        extrudeFrame = frame.getObjectByName( 'extrudeFrame' );
-
-        wireFrame.visible = wireframeView;
-        extrudeFrame.visible = extrudeView;
-      }
+      model.getObjectByName( 'frames' ).children.forEach( frame => {
+        frame.getObjectByName( 'wireFrame' ).visible = wireframeView;
+        frame.getObjectByName( 'extrudeFrame' ).visible = extrudeView;
+      });
       
-      resolve( view + " setted" );
+      resolve( "'" + view + "' view setted" );
     } else {
-      reject( new Error( viewType + " does not exits" ) );
+      reject( new Error( "'" + view + "' does not exits" ) );
     }
   });
 
-  return promise; 
+  return promise;
 }
 
 function setFrameVisible( visible ) {
