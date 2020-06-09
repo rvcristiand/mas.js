@@ -1479,9 +1479,9 @@ function createDisplacementSupport( axis, shaftLength, shaftRadius, headHeight, 
   
   arrow.name = 'arrow';
   arrow.position.set( -( shaftLength + headHeight ), 0, 0 );
+  displacementSupport.add( arrow );
   
   displacementSupport.name = axis;
-  displacementSupport.add( arrow );
   displacementSupport.quaternion.copy( quaternion );
 
   return displacementSupport;
@@ -1492,17 +1492,14 @@ function createRotationSupport( axis ) {
   
   var rotationSupport = new THREE.Group();
 
+  var head, curveShaft, restrain;
+
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var quaternion = new THREE.Quaternion();
 
-  // curve shaft geometry
   var curveShaftGeometry = new THREE.TorusGeometry( config[ 'support.analytical.curveShaft.radius' ], config[ 'support.analytical.curveShaft.tube' ], 8, 6, 3 * Math.PI / 2 );
   curveShaftGeometry.rotateY( Math.PI / 2 );
   
-  var head;
-  var curveShaft;
-  var restrain;
-
   switch ( axis ) {
     case'x':
       head = new THREE.Mesh( headGeometry, xMaterial );
@@ -1510,40 +1507,37 @@ function createRotationSupport( axis ) {
       restrain = new THREE.Mesh( restrainGeometry, xMaterial );
       break;
     case 'y':
-      quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
-
       head = new THREE.Mesh( headGeometry, yMaterial );
       curveShaft = new THREE.Mesh( curveShaftGeometry, yMaterial );
       restrain = new THREE.Mesh( restrainGeometry, yMaterial );
+      quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
       break;
     case 'z':
-      quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
-
       head = new THREE.Mesh( headGeometry, zMaterial );
       curveShaft = new THREE.Mesh( curveShaftGeometry, zMaterial );
       restrain = new THREE.Mesh( restrainGeometry, zMaterial );
+      quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
       break;
   }
-
-  curveShaft.position.set( -( config[ 'support.analytical.head.height' ] + config[ 'support.analytical.straightShaft.length' ] / 2 ), 0, 0 );
   
-  head.position.set( 0, -config[ 'support.analytical.curveShaft.radius' ], 0 );
-  head.rotateY( Math.PI / 2 );
-  head.scale.set( config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ], config[ 'support.analytical.head.radius' ] );
-    
+  restrain.name = 'restrain';
+  restrain.scale.set( config[ 'support.analytical.restrain.thickness' ], config[ 'support.analytical.restrain.radius' ], config[ 'support.analytical.restrain.radius' ] );
   restrain.position.set( 0, config[ 'support.analytical.curveShaft.radius' ], 0 );
   restrain.rotateX( -Math.PI / 2 );
   restrain.rotateZ( -Math.PI / 4 );
-  restrain.scale.set( config[ 'support.analytical.restrain.thickness' ], config[ 'support.analytical.restrain.radius' ], config[ 'support.analytical.restrain.radius' ] );
-
-  head.name = 'head';
-  curveShaft.name = 'curveShaft';
-  restrain.name = 'restrain';
-  
-  curveShaft.add( head );
   curveShaft.add( restrain );
+  
+  head.name = 'head';
+  head.scale.set( config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ], config[ 'support.analytical.head.radius' ] );
+  head.position.set( 0, -config[ 'support.analytical.curveShaft.radius' ], 0 );
+  head.rotateY( Math.PI / 2 );
+  curveShaft.add( head );
+  
+  curveShaft.name = 'curveShaft';
+  curveShaft.position.set( -( config[ 'support.analytical.head.height' ] + config[ 'support.analytical.straightShaft.length' ] / 2 ), 0, 0 );
   rotationSupport.add( curveShaft );
 
+  rotationSupport.name = axis;
   rotationSupport.quaternion.copy( quaternion );
 
   return rotationSupport;
