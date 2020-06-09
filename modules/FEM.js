@@ -683,7 +683,7 @@ function setBackgroundColor( top, bottom ) { canvasWebGLRenderer.style.backgroun
 
 function setGroundVisible( visible ) { scene.getObjectByName( 'ground' ).visible = visible };
 
-function setGroundSize( size ) { scene.getObjectByName( 'ground' ).scale.setScalar( size ) } ;
+function setGroundSize( size ) { scene.getObjectByName( 'ground' ).scale.setScalar( size ) };
 
 function setPlaneVisible( visible ) { scene.getObjectByName( 'ground' ).getObjectByName( 'plane' ).visible = visible };
 
@@ -691,7 +691,7 @@ function setPlaneColor( color ) { scene.getObjectByName( 'ground' ).getObjectByN
 
 function setPlaneTransparent( transparent ) { scene.getObjectByName( 'ground' ).getObjectByName( 'plane' ).material.transparent = transparent };
 
-function setPlaneOpacity( opacity ) { scene.getObjectByName( 'ground' ).getObjectByName( 'plane' ).material.opacity = opacity }
+function setPlaneOpacity( opacity ) { scene.getObjectByName( 'ground' ).getObjectByName( 'plane' ).material.opacity = opacity };
 
 function setGridVisible( visible ) { scene.getObjectByName( 'ground' ).getObjectByName( 'grid' ).visible = visible };
 
@@ -1254,16 +1254,12 @@ function setFrameVisible( visible ) {
 function setFrameSize( size ) {
   // set frame size
 
-  let frame, wireFrame, extrudeFrame, scale = new THREE.Vector3( size, size, 1 );
+  let scale = new THREE.Vector3( size, size, 1 );
 
-  for ( const name in structure.frames ) {
-    frame = model.getObjectByName( 'frames' ).getObjectByName( name );
-    wireFrame = frame.getObjectByName( 'wireFrame' );
-    extrudeFrame = frame.getObjectByName( 'extrudeFrame');
-    
-    wireFrame.scale.copy( scale );
-    if ( structure.sections[ structure.frames[ name ].section ].type == 'Section' ) extrudeFrame.scale.copy( scale );
-  }
+  model.getObjectByName( 'frames' ).children.forEach( frame => { 
+    frame.getObjectByName( 'wireFrame' ).scale.copy( scale );
+    if ( structure.sections[ structure.frames[ frame.name ].section ].type == 'Section' ) frame.getObjectByName( 'extrudeFrame').scale.copy( scale );
+  });
 }
 
 // supports
