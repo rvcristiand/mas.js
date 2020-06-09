@@ -428,7 +428,7 @@ function init() {
 
   // add support folder
   let supportFolder = gui.addFolder( "support" );
-  supportFolder.add( config, 'support.visible' ).name( 'visible' ).onChange( visible => model.getObjectByName( 'joints' ).children.filter( joint => joint.getObjectByName( 'support' ) ).forEach( joint => joint.getObjectByName( 'support' ).visible = visible ) );
+  supportFolder.add( config, 'support.visible' ).name( 'visible' ).onChange( visible => Object.keys( structure.supports ).forEach( name => model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).visible = visible ) );
   supportFolder.add( config, 'support.mode' ).options( [ 'space', 'analytical' ] ).name( 'mode' ).onChange( mode => setSupportMode( mode ) );
   // add analytical folder
   let analyticalSupportFolder = supportFolder.addFolder( "analytical" );
