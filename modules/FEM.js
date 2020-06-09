@@ -1681,7 +1681,7 @@ function setPinRadius( radius ) {
 }
 
 function setAnalyticalHeadHeightSupport( height ) {
-  // set analytical displacement head height
+  // set analytical support's head height
   
   var position = new THREE.Vector3( -( config[ 'support.analytical.straightShaft.length' ] + height ), 0, 0 );
 
@@ -1694,7 +1694,16 @@ function setAnalyticalHeadHeightSupport( height ) {
   });
 }
 
-function setAnalyticalHeadRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) } ) } ) };
+function setAnalyticalHeadRadiusSupport( radius ) {
+  // set analytical support's head radius
+  var analytical;
+
+  Object.keys( structure.supports ).forEach( name => { 
+    analytical = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' );
+    analytical.getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) );
+    analytical.getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => { rotation.getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) } );
+  });
+}
 
 function setAnalyticalShaftLengthSupport( length ) {
   // set analyutical displacement length shaft
