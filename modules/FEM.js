@@ -1737,7 +1737,14 @@ function setAnalyticalShaftRadiusSupport( radius ) {
   });
 }
 
-function setAnalyticalRestrainRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'restrain' ).scale.set( config[ 'support.analytical.restrain.thickness' ], radius, radius ) } ) } ) };
+function setAnalyticalRestrainRadiusSupport( radius ) {
+  // set analytical support's restrain radius
+  
+  Object.keys( structure.supports ).forEach( name => {
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => displacement.getObjectByName( 'arrow' ).getObjectByName( 'restrain' ).scale.set( config[ 'support.analytical.restrain.thickness' ], radius, radius ) );
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => rotation.getObjectByName( 'curveShaft' ).getObjectByName( 'restrain' ).scale.set( config[ 'support.analytical.restrain.thickness' ], radius, radius ) );
+  });
+}
 
 function setAnalyticalRestrainThicknessSupport( thickness ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'restrain' ).scale.setX( thickness ) } ) } ) };
 
