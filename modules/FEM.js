@@ -1683,17 +1683,15 @@ function setPinRadius( radius ) {
 function setAnalyticalHeadHeightSupport( height ) {
   // set analytical displacement head height
   
-  var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var position = new THREE.Vector3( -( config[ 'support.analytical.straightShaft.length' ] + height ), 0, 0 );
-  var quaternion = new THREE.Quaternion();
 
-  var positions = { 'x': position.clone().applyQuaternion( quaternion ), 'y': position.clone().applyQuaternion( quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 ) ), 'z': position.clone().applyQuaternion( quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 ) ) };
-
-  Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => {
-      displacement.getObjectByName( 'arrow' ).position.copy( positions[ displacement.name ] );
+  Object.keys( structure.supports ).forEach( name => { 
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => {
+      displacement.getObjectByName( 'arrow' ).position.copy( position );
       displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height );
-    }
-  )});
+    })
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => rotation.getObjectByName( 'head' ).scale.setX( height ) );
+  });
 }
 
 function setAnalyticalHeadRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) } ) } ) };
