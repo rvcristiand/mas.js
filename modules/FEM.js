@@ -1682,7 +1682,7 @@ function setPinRadius( radius ) {
 
 function setAnalyticalHeadHeightSupport( height ) {
   // set analytical support's head height
-  
+
   var position = new THREE.Vector3( -( config[ 'support.analytical.straightShaft.length' ] + height ), 0, 0 );
 
   Object.keys( structure.supports ).forEach( name => { 
@@ -1696,6 +1696,7 @@ function setAnalyticalHeadHeightSupport( height ) {
 
 function setAnalyticalHeadRadiusSupport( radius ) {
   // set analytical support's head radius
+
   var analytical;
 
   Object.keys( structure.supports ).forEach( name => { 
@@ -1721,7 +1722,20 @@ function setAnalyticalShaftLengthSupport( length ) {
   });
 }
 
-function setAnalyticalShaftRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( config[ 'support.analytical.straightShaft.length'], radius, radius ) } ) } ) };
+function setAnalyticalShaftRadiusSupport( radius ) {
+  // set analytical support's shaft radius
+
+  var curveShaftGeometry = new THREE.TorusGeometry( config[ 'support.analytical.curveShaft.radius' ], radius, 8, 6, 3 * Math.PI / 2 );
+  curveShaftGeometry.rotateY( Math.PI / 2 );
+
+  Object.keys( structure.supports ).forEach( name => {
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => displacement.getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( config[ 'support.analytical.straightShaft.length'], radius, radius ) );
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => {
+      rotation.getObjectByName( 'curveShaft' ).geometry.dispose();
+      rotation.getObjectByName( 'curveShaft' ).geometry = curveShaftGeometry;
+    });
+  });
+}
 
 function setAnalyticalRestrainRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'restrain' ).scale.set( config[ 'support.analytical.restrain.thickness' ], radius, radius ) } ) } ) };
 
