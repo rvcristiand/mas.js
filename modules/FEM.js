@@ -1590,12 +1590,11 @@ function setSupportMode( mode ) {
 
   var support;
 
-  for ( const name in structure.supports ) {
+  Object.keys( structure.supports ).forEach( name => {
     support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
-
     support.getObjectByName( 'analytical' ).visible = ( mode == 'analytical' );
     support.getObjectByName( 'space' ).visible = ( mode == 'space' );
-  }
+  });
 }
 
 function setFoundationSize( size ) {
