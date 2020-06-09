@@ -1689,7 +1689,7 @@ function setAnalyticalHeadHeightSupport( height ) {
     model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => {
       displacement.getObjectByName( 'arrow' ).position.copy( position );
       displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height );
-    })
+    });
     model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => rotation.getObjectByName( 'head' ).scale.setX( height ) );
   });
 }
@@ -1706,24 +1706,19 @@ function setAnalyticalHeadRadiusSupport( radius ) {
 }
 
 function setAnalyticalShaftLengthSupport( length ) {
-  // set analyutical displacement length shaft
+  // set analytical displacement length shaft
 
-  var arrow, vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var position = new THREE.Vector3( -( length + config[ 'support.analytical.head.height' ] ), 0, 0 );
-  var quaternion = new THREE.Quaternion();
 
-  var positions = { 'x': position.clone().applyQuaternion( quaternion ), 'y': position.clone().applyQuaternion( quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 ) ), 'z': position.clone().applyQuaternion( quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 ) ) };
-
-  Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { 
-    arrow = displacement.getObjectByName( 'arrow' );
-
-    arrow.getObjectByName( 'shaft' ).scale.setX( length );
-    arrow.getObjectByName( 'head' ).position.setX( length );
-
-    arrow.getObjectByName( 'restrain' ).position.set( length / 2, 0, 0 );
-
-    arrow.position.copy( positions [ displacement.name ] );
-  })});
+  Object.keys( structure.supports ).forEach( name => {
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { 
+      displacement.getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.setX( length );
+      displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).position.setX( length );
+      displacement.getObjectByName( 'arrow' ).getObjectByName( 'restrain' ).position.set( length / 2, 0, 0 );
+      displacement.getObjectByName( 'arrow' ).position.copy( position );
+    });
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => rotation.getObjectByName( 'curveShaft' ).position.set( -( config[ 'support.analytical.head.height' ] + length / 2 ), 0, 0 ) );
+  });
 }
 
 function setAnalyticalShaftRadiusSupport( radius ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( config[ 'support.analytical.straightShaft.length'], radius, radius ) } ) } ) };
