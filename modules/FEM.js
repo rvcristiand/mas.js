@@ -1588,17 +1588,7 @@ function setSupportMode( mode ) {
 
 function setFoundationSize( size ) { Object.entries( structure.supports ).filter( ( [ , support ] ) => support[ 'u' + config[ 'model.axisUpwards' ] ] == true ).forEach( ( [ name, ] ) => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'foundation' ).scale.set( size, size, config[ 'support.foundation.depth' ] ) } ) };
 
-function setFoundationDepth( depth ) {
-  // set foundation size
-
-  var foundation;
-
-  for ( const name in structure.supports ) {
-    foundation = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'foundation' );
-
-    if ( foundation ) foundation.scale.set( config[ 'support.foundation.size'], config[ 'support.foundation.size'], depth );
-  }
-}
+function setFoundationDepth( depth ) { Object.entries( structure.supports ).filter( ( [ , support ] ) => support[ 'u' + config[ 'model.axisUpwards' ] ] == true ).forEach( ( [ name, ] ) => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'foundation' ).scale.setZ( depth ) } ) };
 
 function setPedestalSize( size ) {
   // set pedestal size
