@@ -438,7 +438,7 @@ function init() {
   let shaftArrowSupportFolder = analyticalSupportFolder.addFolder( "shaft" );
   shaftArrowSupportFolder.add( config, 'support.analytical.straightShaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => setAnalyticalShaftLengthSupport( length ) );
   shaftArrowSupportFolder.add( config, 'support.analytical.curveShaft.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalShaftRadiusSupport( radius ) );
-  shaftArrowSupportFolder.add( config, 'support.analytical.shaft.tube' ).name( 'tube' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => setAnalyticalShaftTubeSupport( radius ) );
+  shaftArrowSupportFolder.add( config, 'support.analytical.shaft.tube' ).name( 'tube' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( tube => setAnalyticalShaftTubeSupport( tube ) );
   // add restrain folder
   let restrainArrowSupportFolder = analyticalSupportFolder.addFolder( "restrain" );
   restrainArrowSupportFolder.add( config, 'support.analytical.restrain.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalRestrainRadiusSupport( radius ) );
