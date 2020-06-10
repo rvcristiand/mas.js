@@ -1624,23 +1624,16 @@ function setPinHeight( height ) {
 function setPinRadius( radius ) {
   // set pin radius
 
-  var support, pin, foundation;
+  var support, pin, foundation, quaternion = model.quaternion.clone().inverse();
 
-  for ( const name in structure.supports ) {
+  Object.entries( structure.supports ).filter( ( [ , support ] ) => support.ux == support.uy == support.uz == true ).forEach( ( [ name, ] ) => {
     support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
     pin = support.getObjectByName( 'pin' );
     foundation = support.getObjectByName( 'foundation' );
-
-    if ( pin && foundation ) {
-      // set radius
-      pin.scale.set( radius, radius, config[ 'support.pin.height' ] );
-
-      // set position
-      var quaternion = model.quaternion.clone().inverse();
-      var position = new THREE.Vector3( 0, 0, -( config[ 'support.pin.height' ] + config[ 'support.foundation.depth' ] / 2 ) ).applyQuaternion( quaternion );
-      foundation.position.copy( position );
-    }
-  }
+    
+    pin.scale.set( radius, radius, config[ 'support.pin.height' ] );
+    foundation.position.setZ( -( config[ 'support.pin.height' ] + config[ 'support.foundation.depth' ] / 2 ) ).applyQuaternion( quaternion );
+  });
 }
 
 function setAnalyticalHeadHeightSupport( height ) {
