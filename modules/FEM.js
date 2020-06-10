@@ -661,7 +661,7 @@ export function open( filename ) {
       // add suports
       Object.entries( json.supports ).forEach( ( [ name, support ] ) => { addSupport( name, support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) } );
 
-      return "the '" + filename + "' has been loaded"
+      return "the '" + filename + "' model has been loaded"
     });
 
   return promise;
