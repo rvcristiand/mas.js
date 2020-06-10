@@ -1611,7 +1611,7 @@ function setPinHeight( height ) {
 
   var support, pin, foundation, quaternion = model.quaternion.clone().inverse();
 
-  Object.entries( structure.supports ).filter( ( [ , support ] ) => support.ux == support.uy == support.uz == true ).forEach( ( [ name, ] ) => { 
+  Object.entries( structure.supports ).filter( ( [ , support ] ) => ( support.ux == support.uy == support.uz == true ) && ( support.rx == support.ry == support.rz == false ) ).forEach( ( [ name, ] ) => { 
     support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
     pin = support.getObjectByName( 'pin' );
     foundation = support.getObjectByName( 'foundation' );
@@ -1626,7 +1626,7 @@ function setPinRadius( radius ) {
 
   var support, pin, foundation;
 
-  Object.entries( structure.supports ).filter( ( [ , support ] ) => support.ux == support.uy == support.uz == true ).forEach( ( [ name, ] ) => {
+  Object.entries( structure.supports ).filter( ( [ , support ] ) => ( support.ux == support.uy == support.uz == true ) && ( support.rx == support.ry == support.rz == false ) ).forEach( ( [ name, ] ) => {
     support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
     pin = support.getObjectByName( 'pin' );
     foundation = support.getObjectByName( 'foundation' );
