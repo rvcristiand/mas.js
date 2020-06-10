@@ -1593,28 +1593,17 @@ function setFoundationDepth( depth ) { Object.entries( structure.supports ).filt
 function setPedestalSize( size ) {
   // set pedestal size
 
-  var support, pedestal, foundation;
+  var support, pedestal, foundation, quaternion = model.quaternion.clone().inverse();
 
-  for ( const name in structure.supports ) {
+  Object.entries( structure.supports ).filter( ( [ , support ] ) => support.ux == support.uy == support.uz == true ).forEach( ( [ name, ] ) => {
     support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
     pedestal = support.getObjectByName( 'pedestal' );
     foundation = support.getObjectByName( 'foundation' );
 
-    if ( pedestal && foundation ) {
-      // set scale
-      pedestal.scale.setScalar( size );
-
-      var quaternion = model.quaternion.clone().inverse();
-      var position = new THREE.Vector3( 0, 0, -size / 2 ).applyQuaternion( quaternion );
-
-      // set pedestal  position
-      pedestal.position.copy( position );
-
-      // set foundation position
-      position.set( 0, 0, -size ).applyQuaternion( quaternion );
-      foundation.position.copy( position );
-    }
-  }
+    pedestal.scale.setScalar( size );
+    pedestal.position.copy( new THREE.Vector3( 0, 0, -size / 2 ).applyQuaternion( quaternion ) );
+    foundation.position.copy( new THREE.Vector3( 0, 0, -size ).applyQuaternion( quaternion ) );
+  });
 }
 
 function setPinHeight( height ) {
