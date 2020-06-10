@@ -1586,17 +1586,7 @@ function setSupportMode( mode ) {
   });
 }
 
-function setFoundationSize( size ) {
-  // set foundation size
-
-  var foundation;
-
-  for ( const name in structure.supports ) {
-    foundation = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'foundation' );
-
-    if ( foundation ) foundation.scale.set( size, size, config[ 'support.foundation.depth' ] );
-  }
-}
+function setFoundationSize( size ) { Object.entries( structure.supports ).filter( ( [ , support ] ) => support[ 'u' + config[ 'model.axisUpwards' ] ] == true ).forEach( ( [ name, ] ) => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'foundation' ).scale.set( size, size, config[ 'support.foundation.depth' ] ) } ) };
 
 function setFoundationDepth( depth ) {
   // set foundation size
