@@ -439,7 +439,7 @@ function init() {
   // add shaft folder
   let shaftArrowSupportFolder = analyticalSupportFolder.addFolder( "shaft" );
   shaftArrowSupportFolder.add( config, 'support.analytical.straightShaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => setAnalyticalShaftLengthSupport( length ) );
-  shaftArrowSupportFolder.add( config, 'support.analytical.straightShaft.radius' ).name( 'tube' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => setAnalyticalShaftRadiusSupport( radius ) );
+  shaftArrowSupportFolder.add( config, 'support.analytical.straightShaft.radius' ).name( 'tube' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => setAnalyticalShaftTubeSupport( radius ) );
   // add restrain folder
   let restrainArrowSupportFolder = analyticalSupportFolder.addFolder( "restrain" );
   restrainArrowSupportFolder.add( config, 'support.analytical.restrain.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalRestrainRadiusSupport( radius ) );
@@ -1725,7 +1725,7 @@ function setAnalyticalShaftLengthSupport( length ) {
   });
 }
 
-function setAnalyticalShaftRadiusSupport( radius ) {
+function setAnalyticalShaftTubeSupport( radius ) {
   // set analytical support's shaft radius
 
   var curveShaftGeometry = new THREE.TorusGeometry( config[ 'support.analytical.curveShaft.radius' ], radius, 8, 6, 3 * Math.PI / 2 );
