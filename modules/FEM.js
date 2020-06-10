@@ -669,11 +669,12 @@ export function open( filename ) {
 
 function loadJSON( json ) {
   // load json
+
   var promise = fetch( json + "?nocache=" + new Date().getTime() )
     .then( response => { 
       if ( !response.ok ) throw new Error( 'Network response was not ok' );
       return response.json();
-    })
+    });
 
   return promise;
 }
