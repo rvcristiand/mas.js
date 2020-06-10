@@ -1617,14 +1617,14 @@ function setPinHeight( height ) {
     foundation = support.getObjectByName( 'foundation' );
   
     pin.scale.set( config[ 'support.pin.radius' ], config[ 'support.pin.radius' ], height );
-    foundation.position.set( 0, 0, -height ).applyQuaternion( quaternion );
+    foundation.position.copy( new THREE.Vector3( 0, 0, -height ).applyQuaternion( quaternion ) );
   });
 }
 
 function setPinRadius( radius ) {
   // set pin radius
 
-  var support, pin, foundation, quaternion = model.quaternion.clone().inverse();
+  var support, pin, foundation;
 
   Object.entries( structure.supports ).filter( ( [ , support ] ) => support.ux == support.uy == support.uz == true ).forEach( ( [ name, ] ) => {
     support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
@@ -1632,7 +1632,6 @@ function setPinRadius( radius ) {
     foundation = support.getObjectByName( 'foundation' );
     
     pin.scale.set( radius, radius, config[ 'support.pin.height' ] );
-    foundation.position.setZ( -( config[ 'support.pin.height' ] + config[ 'support.foundation.depth' ] / 2 ) ).applyQuaternion( quaternion );
   });
 }
 
