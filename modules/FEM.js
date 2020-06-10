@@ -115,11 +115,9 @@ var config = {
   'support.analytical.head.radius': 0.04,
   'support.analytical.head.height': 0.3,
 
+  'support.analytical.shaft.tube' : 0.04,
   'support.analytical.straightShaft.length': 1,
-  'support.analytical.straightShaft.radius': 0.01,
-
   'support.analytical.curveShaft.radius': 1,
-  'support.analytical.curveShaft.tube': 0.04,
 
   'support.analytical.restrain.radius': 0.1,
   'support.analytical.restrain.thickness': 0.01,
@@ -439,7 +437,8 @@ function init() {
   // add shaft folder
   let shaftArrowSupportFolder = analyticalSupportFolder.addFolder( "shaft" );
   shaftArrowSupportFolder.add( config, 'support.analytical.straightShaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => setAnalyticalShaftLengthSupport( length ) );
-  shaftArrowSupportFolder.add( config, 'support.analytical.straightShaft.radius' ).name( 'tube' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => setAnalyticalShaftTubeSupport( radius ) );
+  shaftArrowSupportFolder.add( config, 'support.analytical.curveShaft.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalShaftRadiusSupport( radius ) );
+  shaftArrowSupportFolder.add( config, 'support.analytical.shaft.tube' ).name( 'tube' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( radius => setAnalyticalShaftTubeSupport( radius ) );
   // add restrain folder
   let restrainArrowSupportFolder = analyticalSupportFolder.addFolder( "restrain" );
   restrainArrowSupportFolder.add( config, 'support.analytical.restrain.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalRestrainRadiusSupport( radius ) );
@@ -1268,9 +1267,9 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
   // create displacements supports
   var displacements = new THREE.Group();
 
-  if ( ux ) displacements.add( createDisplacementSupport( 'x', config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.straightShaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
-  if ( uy ) displacements.add( createDisplacementSupport( 'y', config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.straightShaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
-  if ( uz ) displacements.add( createDisplacementSupport( 'z', config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.straightShaft.radius' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
+  if ( ux ) displacements.add( createDisplacementSupport( 'x', config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.shaft.tube' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
+  if ( uy ) displacements.add( createDisplacementSupport( 'y', config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.shaft.tube' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
+  if ( uz ) displacements.add( createDisplacementSupport( 'z', config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.shaft.tube' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
 
   // create rotational supports
   var rotations = new THREE.Group();
@@ -1497,7 +1496,7 @@ function createRotationSupport( axis ) {
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var quaternion = new THREE.Quaternion();
 
-  var curveShaftGeometry = new THREE.TorusGeometry( config[ 'support.analytical.curveShaft.radius' ], config[ 'support.analytical.curveShaft.tube' ], 8, 6, 3 * Math.PI / 2 );
+  var curveShaftGeometry = new THREE.TorusGeometry( config[ 'support.analytical.curveShaft.radius' ], config[ 'support.analytical.shaft.tube' ], 8, 6, 3 * Math.PI / 2 );
   curveShaftGeometry.rotateY( Math.PI / 2 );
   
   switch ( axis ) {
@@ -1725,14 +1724,30 @@ function setAnalyticalShaftLengthSupport( length ) {
   });
 }
 
-function setAnalyticalShaftTubeSupport( radius ) {
-  // set analytical support's shaft radius
+function setAnalyticalShaftRadiusSupport( radius ) {
+  // set analytical support's curve shaft radius
 
-  var curveShaftGeometry = new THREE.TorusGeometry( config[ 'support.analytical.curveShaft.radius' ], radius, 8, 6, 3 * Math.PI / 2 );
+  var curveShaftGeometry = new THREE.TorusGeometry( radius, config[ 'support.analytical.shaft.tube'], 8, 6, 3 * Math.PI / 2 );
   curveShaftGeometry.rotateY( Math.PI / 2 );
 
   Object.keys( structure.supports ).forEach( name => {
-    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => displacement.getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( config[ 'support.analytical.straightShaft.length'], radius, radius ) );
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => {
+      rotation.getObjectByName( 'curveShaft' ).geometry.dispose();
+      rotation.getObjectByName( 'curveShaft' ).geometry = curveShaftGeometry;
+      rotation.getObjectByName( 'head' ).position.set( 0, -radius, 0 );
+      rotation.getObjectByName( 'restrain' ).position.set( 0, radius, 0 );
+    });
+  });
+}
+
+function setAnalyticalShaftTubeSupport( tube ) {
+  // set analytical support's shaft tube
+
+  var curveShaftGeometry = new THREE.TorusGeometry( config[ 'support.analytical.curveShaft.radius' ], tube, 8, 6, 3 * Math.PI / 2 );
+  curveShaftGeometry.rotateY( Math.PI / 2 );
+
+  Object.keys( structure.supports ).forEach( name => {
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => displacement.getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( config[ 'support.analytical.straightShaft.length'], tube, tube ) );
     model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => {
       rotation.getObjectByName( 'curveShaft' ).geometry.dispose();
       rotation.getObjectByName( 'curveShaft' ).geometry = curveShaftGeometry;
