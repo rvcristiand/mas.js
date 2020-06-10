@@ -1711,14 +1711,12 @@ function setAnalyticalHeadRadiusSupport( radius ) {
 function setAnalyticalShaftLengthSupport( length ) {
   // set analytical displacement length shaft
 
-  var position = new THREE.Vector3( -( length + config[ 'support.analytical.head.height' ] ), 0, 0 );
-
   Object.keys( structure.supports ).forEach( name => {
     model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { 
       displacement.getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.setX( length );
       displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).position.setX( length );
       displacement.getObjectByName( 'arrow' ).getObjectByName( 'restrain' ).position.set( length / 2, 0, 0 );
-      displacement.getObjectByName( 'arrow' ).position.copy( position );
+      displacement.getObjectByName( 'arrow' ).position.setX( -( length + config[ 'support.analytical.head.height' ] ) );
     });
     model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => rotation.getObjectByName( 'curveShaft' ).position.set( -( config[ 'support.analytical.head.height' ] + length / 2 ), 0, 0 ) );
   });
