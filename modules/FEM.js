@@ -1595,7 +1595,7 @@ function setPedestalSize( size ) {
 
   var support, pedestal, foundation, quaternion = model.quaternion.clone().inverse();
 
-  Object.entries( structure.supports ).filter( ( [ , support ] ) => support.ux == support.uy == support.uz == true ).forEach( ( [ name, ] ) => {
+  Object.entries( structure.supports ).filter( ( [ , support ] ) => support.ux == support.uy == support.uz == support.rx == support.ry == support.rz == true ).forEach( ( [ name, ] ) => {
     support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
     pedestal = support.getObjectByName( 'pedestal' );
     foundation = support.getObjectByName( 'foundation' );
@@ -1609,21 +1609,16 @@ function setPedestalSize( size ) {
 function setPinHeight( height ) {
   // set pin height
 
-  var support, pin, foundation;
+  var support, pin, foundation, quaternion = model.quaternion.clone().inverse();
 
-  for ( const name in structure.supports ) {
+  Object.entries( structure.supports ).filter( ( [ , support ] ) => support.ux == support.uy == support.uz == true ).forEach( ( [ name, ] ) => { 
     support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
     pin = support.getObjectByName( 'pin' );
     foundation = support.getObjectByName( 'foundation' );
-
-    if ( pin && foundation ) {
-      // set scale
-      pin.scale.set( config[ 'support.pin.radius' ], config[ 'support.pin.radius' ], height );
-
-      // set position
-      foundation.position.set( 0, 0, -height ).applyQuaternion( model.quaternion.clone().inverse() );
-    }
-  }
+  
+    pin.scale.set( config[ 'support.pin.radius' ], config[ 'support.pin.radius' ], height );
+    foundation.position.set( 0, 0, -height ).applyQuaternion( quaternion );
+  });
 }
 
 function setPinRadius( radius ) {
