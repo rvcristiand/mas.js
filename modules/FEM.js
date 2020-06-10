@@ -1703,8 +1703,8 @@ function setAnalyticalHeadRadiusSupport( radius ) {
 
   Object.keys( structure.supports ).forEach( name => { 
     analytical = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' );
-    analytical.getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) );
-    analytical.getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => { rotation.getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) } );
+    analytical.getObjectByName( 'displacements' ).children.forEach( displacement => displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) );
+    analytical.getObjectByName( 'rotations' ).children.forEach( rotation => rotation.getObjectByName( 'head' ).scale.set( config[ 'support.analytical.head.height'], radius, radius ) );
   });
 }
 
