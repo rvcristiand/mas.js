@@ -1690,7 +1690,10 @@ function setAnalyticalHeadHeightSupport( height ) {
       displacement.getObjectByName( 'arrow' ).position.copy( position );
       displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height );
     });
-    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => rotation.getObjectByName( 'head' ).scale.setX( height ) );
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => {
+      rotation.getObjectByName( 'head' ).scale.setX( height );
+      rotation.getObjectByName( 'curveShaft' ).position.set( -( height + config[ 'support.analytical.straightShaft.length' ] / 2 ), 0, 0 );
+    });
   });
 }
 
