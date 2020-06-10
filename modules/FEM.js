@@ -1749,6 +1749,13 @@ function setAnalyticalRestrainRadiusSupport( radius ) {
   });
 }
 
-function setAnalyticalRestrainThicknessSupport( thickness ) { Object.keys( structure.supports ).forEach( name => { model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => { displacement.getObjectByName( 'arrow' ).getObjectByName( 'restrain' ).scale.setX( thickness ) } ) } ) };
+function setAnalyticalRestrainThicknessSupport( thickness ) {
+  // set analytical support's restrain thickness
+  
+  Object.keys( structure.supports ).forEach( name => {
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => displacement.getObjectByName( 'arrow' ).getObjectByName( 'restrain' ).scale.setX( thickness ) );
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => rotation.getObjectByName( 'curveShaft' ).getObjectByName( 'restrain' ).scale.setX( thickness ) );
+  });
+}
 
 window.addEventListener( "resize", onResize, false );
