@@ -783,6 +783,7 @@ function createAxes( shaftLength, shaftRadius, headHeight, headRadius ) {
 
 function createArrow( material, shaftLength, shaftRadius, headHeight, headRadius ) {
   // create an arrow
+  
   var arrow = new THREE.Group();
 
   // shaft
@@ -1143,7 +1144,6 @@ export function addFrame( name, j, k, material, section ) {
         var axes = createAxes( config[ 'frame.axes.shaft.length'], config[ 'frame.axes.shaft.radius'], config[ 'frame.axes.head.height'], config[ 'frame.axes.head.radius'] );
         axes.name = 'axes';
         axes.visible = config[ 'frame.axes.visible' ];
-        axes.position.set( 0, 0, length / 2 );
         frame.add( axes );
     
         // set position
@@ -1271,9 +1271,9 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
   // create displacements supports
   var displacements = new THREE.Group();
 
-  if ( ux ) displacements.add( createDisplacementSupport( 'x', config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.shaft.tube' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
-  if ( uy ) displacements.add( createDisplacementSupport( 'y', config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.shaft.tube' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
-  if ( uz ) displacements.add( createDisplacementSupport( 'z', config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.shaft.tube' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] ) );
+  if ( ux ) displacements.add( createDisplacementSupport( 'x' ) );
+  if ( uy ) displacements.add( createDisplacementSupport( 'y' ) );
+  if ( uz ) displacements.add( createDisplacementSupport( 'z' ) );
 
   // create rotational supports
   var rotations = new THREE.Group();
@@ -1284,36 +1284,25 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
 
   // create space support
   var space = new THREE.Group();
-
-  // fallback mode
-  if ( !ux || !uy || !uz ) {
-    // space.copy( analytical );
-    if ( ux ) space.add( createDisplacementSupport( 'x' ) );
-    if ( uy ) space.add( createDisplacementSupport( 'y' ) );
-    if ( uz ) space.add( createDisplacementSupport( 'z' ) );
-    if ( rx ) space.add( createRotationSupport( 'x' ) );
-    if ( ry ) space.add( createRotationSupport( 'y' ) );
-    if ( rz ) space.add( createRotationSupport( 'z' ) );
-  }
-
+  
   // con las coordenadas identificar en que cara del cubo está el apoyo
   // aun no tengo un ejercicio el cual pueda usar para desarrollar esta herramienta
   // a al espera de ejemplos de mayor complejidad
-
+  
   // var box = new THREE.Box3();
   // box.setFromObject( joints );
-
+  
   // var boxHelper = new THREE.BoxHelper( joints, 0xffff00 );
   // scene.add( boxHelper );
-
+  
   // var vector = new THREE.Vector3();
   // for ( var joint of joints.children ) {
   //   box.clampPoint( joint.position, vector );
   //   console.log( joint.name, vector );
   // }
-  
+    
   var quaternion = model.quaternion.clone().inverse();
-
+  
   // fixed
   if ( ux && uy && uz && rx && ry && rz ) {
     // create foundation
@@ -1321,23 +1310,22 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
     // set position
     foundation.position.setZ( -( config [ 'support.pedestal.size' ] ) ).applyQuaternion( quaternion );
     space.add( foundation );
-
+    
     // create pedestal
-    var pedestal = createPedestal();
-    space.add( pedestal );
-  }
-
+    space.add( createPedestal() );
   // pined
-  if ( ux && uy && uz && !rx && !ry && !rz ) {
+  } else if ( ux && uy && uz && !rx && !ry && !rz ) {
     // create foundation
     var foundation = createFoundation();
     foundation.position.setZ( -( config[ 'support.pin.height' ] ) ).applyQuaternion( quaternion );
     space.add( foundation );
-
+    
     // create pin
-    var pin = createPin();
-    space.add( pin );
-  }
+    space.add( createPin() );
+  // fallback mode
+  } else {
+    space.copy( analytical );
+  } 
 
   analytical.name = 'analytical';
   displacements.name = 'displacements';
@@ -1406,8 +1394,8 @@ function createPedestal() {
 }
 
 function createPin() {
-  
   // create a pin
+
   var color1, color2, color3;
 
   switch ( config[ 'model.axisUpwards'] ) {
@@ -1429,7 +1417,7 @@ function createPin() {
   }
 
   // create pin
-w  var pin = new THREE.Mesh( pinGeometry, [ color1, color2, color1, color2, color3 ] );
+  var pin = new THREE.Mesh( pinGeometry, [ color1, color2, color1, color2, color3 ] );
   pin.name = 'pin';
 
   // create edges
@@ -1449,7 +1437,7 @@ w  var pin = new THREE.Mesh( pinGeometry, [ color1, color2, color1, color2, colo
   return pin;
 }
 
-function createDisplacementSupport( axis, shaftLength, shaftRadius, headHeight, headRadius ) {
+function createDisplacementSupport( axis ) {
   // create a displacement support
 
   var displacementSupport = new THREE.Group();
@@ -1461,16 +1449,16 @@ function createDisplacementSupport( axis, shaftLength, shaftRadius, headHeight, 
 
   switch ( axis ) {
     case 'x': 
-      arrow = createArrow( xMaterial, shaftLength, shaftRadius, headHeight, headRadius );
+      arrow = createArrow( xMaterial, config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.shaft.tube' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] );
       restrain = new THREE.Mesh( restrainGeometry, xMaterial );
       break;
     case 'y':
-      arrow = createArrow( yMaterial, shaftLength, shaftRadius, headHeight, headRadius );
+      arrow = createArrow( yMaterial, config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.shaft.tube' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] );
       restrain = new THREE.Mesh( restrainGeometry, yMaterial );
       quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
       break;
     case 'z':
-      arrow = createArrow( zMaterial, shaftLength, shaftRadius, headHeight, headRadius );
+      arrow = createArrow( zMaterial, config[ 'support.analytical.straightShaft.length' ], config[ 'support.analytical.shaft.tube' ], config[ 'support.analytical.head.height' ], config[ 'support.analytical.head.radius' ] );
       restrain = new THREE.Mesh( restrainGeometry, zMaterial );
       quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
       break;
@@ -1478,12 +1466,12 @@ function createDisplacementSupport( axis, shaftLength, shaftRadius, headHeight, 
 
   restrain.name = 'restrain';
   restrain.scale.set( config[ 'support.analytical.restrain.thickness' ], config[ 'support.analytical.restrain.radius' ], config[ 'support.analytical.restrain.radius' ] );
-  restrain.position.set( shaftLength / 2, 0, 0 );
+  restrain.position.set( config[ 'support.analytical.straightShaft.length' ] / 2, 0, 0 );
   restrain.rotateZ( Math.PI / 4 );
   arrow.add( restrain );
   
   arrow.name = 'arrow';
-  arrow.position.set( -( shaftLength + headHeight ), 0, 0 );
+  arrow.position.set( -( config[ 'support.analytical.straightShaft.length' ] + config[ 'support.analytical.head.height' ] ), 0, 0 );
   displacementSupport.add( arrow );
   
   displacementSupport.name = axis;
