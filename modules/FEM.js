@@ -1556,9 +1556,9 @@ export function addSupport( joint, ux, uy, uz, rx, ry, rz ) {
         var support = createSupport( ux, uy, uz, rx, ry, rz );
 
         // add support
-        model.getObjectByName( 'joints' ) .getObjectByName( joint ).add( support );
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).add( support );
 
-        resolve();
+        resolve( "'" + joint + "' support added" );
       } else {
         reject( new Error( "joint '" + "' does not exist" ) );
       }
