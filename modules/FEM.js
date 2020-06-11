@@ -1152,7 +1152,7 @@ export function addFrame( name, j, k, material, section ) {
     
         // add label
         const label = document.createElement( 'div' );
-        label.classList.add( 'frame' );
+        label.className = 'frame';
         label.textContent = name;
         var frameLabel = new THREE.CSS2DObject( label );
         frameLabel.name = 'label';
