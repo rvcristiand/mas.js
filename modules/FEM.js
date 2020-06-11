@@ -976,7 +976,7 @@ export function removeMaterial( name ) {
 // sections
 function createSection() { return wireFrameShape };
 
-function createRectangularSection( widht, height ) { return new THREE.Shape().moveTo(  widht / 2, -height / 2 ).lineTo(  widht / 2,  height / 2 ).lineTo( -widht / 2,  height / 2 ).lineTo( -widht / 2, -height / 2 ) };
+function createRectangularSection( widht, height ) { return new THREE.Shape().moveTo( widht / 2, -height / 2 ).lineTo( widht / 2, height / 2 ).lineTo( -widht / 2, height / 2 ).lineTo( -widht / 2, -height / 2 ).lineTo( widht / 2, -height / 2 ) };
 
 export function addSection( name ) {
   // add a section
