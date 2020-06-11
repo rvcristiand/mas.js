@@ -987,7 +987,7 @@ export function addSection( name ) {
 
     // check if section's name already exits
     if ( structure.sections.hasOwnProperty( name ) ) {
-      reject( new Error( "Section's name '" + name + "' already exits" ) );
+      reject( new Error( "section's name '" + name + "' already exits" ) );
     } else {
       structure.sections[ name ] = { type: "Section" };
       // create section
@@ -1015,9 +1015,9 @@ export function addRectangularSection( name, width, height ) {
       structure.sections[ name ] = { type: "RectangularSection", width: width, height: height };
       // create rectangular section
       sections[ name ] = createRectangularSection( width, height );
+    
+      resolve( "rectangular section '" + name + "' was added" );
     }
-
-    resolve( "rectangular section '" + name + "' was added" );
   });
 
   return promise;
