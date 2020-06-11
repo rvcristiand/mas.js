@@ -249,12 +249,13 @@ function init() {
   pedestalGeometry = new THREE.BoxBufferGeometry();
   pedestalEdgesGeometry = new THREE.EdgesGeometry( pedestalGeometry );
 
-  pinGeometry = new THREE.ConeBufferGeometry( 1, 1, 4, 1, true );
+  pinGeometry = new THREE.ConeBufferGeometry( 1, 1, 4, 1 );
   pinGeometry.groups = [];
-  pinGeometry.addGroup(  0, 6, 0 );
-  pinGeometry.addGroup(  6, 6, 1 );
-  pinGeometry.addGroup( 12, 6, 2 );
-  pinGeometry.addGroup( 18, 6, 3 );
+  pinGeometry.addGroup(  0,  6, 0 );
+  pinGeometry.addGroup(  6,  6, 1 );
+  pinGeometry.addGroup( 12,  6, 2 );
+  pinGeometry.addGroup( 18,  6, 3 );
+  pinGeometry.addGroup( 24, 12, 4 );
   pinGeometry.rotateX( Math.PI / 2 );
   pinGeometry.rotateZ( Math.PI / 4 );
   pinGeometry.translate( 0, 0, -0.5 );
@@ -1407,26 +1408,28 @@ function createPedestal() {
 function createPin() {
   
   // create a pin
-  var color1;
-  var color2;
+  var color1, color2, color3;
 
   switch ( config[ 'model.axisUpwards'] ) {
     case 'x':
       color1 = yMaterial;
       color2 = zMaterial;
+      color3 = xMaterial;
       break;
     case 'y':
       color1 = zMaterial;
       color2 = xMaterial;
+      color3 = yMaterial;
       break;
     case 'z':
       color1 = xMaterial;
       color2 = yMaterial;
+      color3 = zMaterial;
       break;
   }
 
   // create pin
-  var pin = new THREE.Mesh( pinGeometry, [ color1, color2, color1, color2 ] );
+w  var pin = new THREE.Mesh( pinGeometry, [ color1, color2, color1, color2, color3 ] );
   pin.name = 'pin';
 
   // create edges
