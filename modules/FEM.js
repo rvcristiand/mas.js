@@ -1587,16 +1587,12 @@ function setFoundationDepth( depth ) { Object.entries( structure.supports ).filt
 function setPedestalSize( size ) {
   // set pedestal size
 
-  var support, pedestal, foundation, quaternion = model.quaternion.clone().inverse();
+  var quaternion = model.quaternion.clone().inverse();
 
   Object.entries( structure.supports ).filter( ( [ , support ] ) => support.ux == support.uy == support.uz == support.rx == support.ry == support.rz == true ).forEach( ( [ name, ] ) => {
-    support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
-    pedestal = support.getObjectByName( 'pedestal' );
-    foundation = support.getObjectByName( 'foundation' );
-
-    pedestal.scale.setScalar( size );
-    pedestal.position.copy( new THREE.Vector3( 0, 0, -size / 2 ).applyQuaternion( quaternion ) );
-    foundation.position.copy( new THREE.Vector3( 0, 0, -size ).applyQuaternion( quaternion ) );
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'pedestal' ).scale.setScalar( size );
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'pedestal' ).position.copy( new THREE.Vector3( 0, 0, -size / 2 ).applyQuaternion( quaternion ) );
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'foundation' ).position.copy( new THREE.Vector3( 0, 0, -size ).applyQuaternion( quaternion ) );
   });
 }
 
