@@ -730,12 +730,14 @@ export function setUpwardsAxis( axis ) {
   
   var promise = new Promise( ( resolve, reject ) => {
     if ( axis =='x' || axis == 'y' || axis == 'z' ) {
+      var joint;
+      
       // set model rotation
       setModelRotation( axis );
-      
+
       // redraw the supports
-      Object.entries( structure.supports ).forEach( ( [ joint, support ] ) => {
-        joint = model.getObjectByName( 'joints' ).getObjectByName( joint );
+      Object.entries( structure.supports ).forEach( ( [ name, support ] ) => {
+        joint = model.getObjectByName( 'joints' ).getObjectByName( name );
         joint.remove( joint.getObjectByName( 'support' ) );
         joint.add( createSupport( support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) );
       });
