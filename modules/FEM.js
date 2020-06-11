@@ -945,9 +945,9 @@ export function addMaterial( name, e, g ) {
     } else {
       // add material to structure
       structure.materials[ name ] = { "E": e, "G": g };
-    }
 
-    resolve( "material '" + name + "' was added" );
+      resolve( "material '" + name + "' was added" );
+    }
   });
 
   return promise;
