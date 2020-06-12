@@ -174,13 +174,16 @@ function get_function_name(command) {
 function get_param_function(command) {
   // get parameters function
   var pattern = /^[_a-z]\w*\(([\w\s.,'"-]*)\)$/i;
+  
+  if ( !command.match(pattern)[1] ) return null;
+
   var params = command.match(pattern)[1].split(',');
   
   for ( var i = 0; i < params.length; i++ ) {
     let param = params[i].match(/^\s*["']?([\w\s.,-]*)["']?\s*$/i)[1];
     let paramNum = Number(param);
 
-    params[i] = isNaN(param) ? param : paramNum;
+    params[i] = isNaN(paramNum) ? param : paramNum;
 
     // if ( params[i] == "" ) {
     //   params[i] = undefined;

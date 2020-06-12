@@ -117,6 +117,9 @@ terminal.add_function("open", {
   }
 });
 
+// getStructure
+terminal.add_function( "getStructure", { func: FEM.getStructure, successful: "" } );
+
 // default command
 command_line.value = "open(" + '"' + "example_3.json" + '"' + ")";
 

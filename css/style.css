@@ -156,6 +156,9 @@ body {
 .log {
   color: green;
   margin: 0;
+  white-space: pre;
+  max-height: 10vh;
+  overflow: auto;
 }
 
 .log.remove-message {
