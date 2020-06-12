@@ -1607,19 +1607,7 @@ function setPinHeight( height ) {
   });
 }
 
-function setPinRadius( radius ) {
-  // set pin radius
-
-  var support, pin, foundation;
-
-  Object.entries( structure.supports ).filter( ( [ , support ] ) => ( support.ux == support.uy == support.uz == true ) && ( support.rx == support.ry == support.rz == false ) ).forEach( ( [ name, ] ) => {
-    support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
-    pin = support.getObjectByName( 'pin' );
-    foundation = support.getObjectByName( 'foundation' );
-    
-    pin.scale.set( radius, radius, config[ 'support.pin.height' ] );
-  });
-}
+function setPinRadius( radius ) { Object.entries( structure.supports ).filter( ( [ , support ] ) => ( support.ux == support.uy == support.uz == true ) && ( support.rx == support.ry == support.rz == false ) ).forEach( ( [ name, ] ) => model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'pin' ).scale.set( radius, radius, config[ 'support.pin.height' ] ) ) };
 
 function setAnalyticalHeadHeightSupport( height ) {
   // set analytical support's head height
