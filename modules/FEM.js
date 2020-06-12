@@ -1723,5 +1723,4 @@ export function addLoadPattern( name ) {
   return promise;
 }
 
-
 window.addEventListener( "resize", onResize, false );
