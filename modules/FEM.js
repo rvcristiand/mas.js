@@ -1599,15 +1599,11 @@ function setPedestalSize( size ) {
 function setPinHeight( height ) {
   // set pin height
 
-  var support, pin, foundation, quaternion = model.quaternion.clone().inverse();
+  var quaternion = model.quaternion.clone().inverse();
 
   Object.entries( structure.supports ).filter( ( [ , support ] ) => ( support.ux == support.uy == support.uz == true ) && ( support.rx == support.ry == support.rz == false ) ).forEach( ( [ name, ] ) => { 
-    support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
-    pin = support.getObjectByName( 'pin' );
-    foundation = support.getObjectByName( 'foundation' );
-  
-    pin.scale.set( config[ 'support.pin.radius' ], config[ 'support.pin.radius' ], height );
-    foundation.position.copy( new THREE.Vector3( 0, 0, -height ).applyQuaternion( quaternion ) );
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'pin' ).scale.set( config[ 'support.pin.radius' ], config[ 'support.pin.radius' ], height );
+    model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'foundation' ).position.copy( new THREE.Vector3( 0, 0, -height ).applyQuaternion( quaternion ) );
   });
 }
 
