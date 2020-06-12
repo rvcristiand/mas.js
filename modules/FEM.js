@@ -558,7 +558,7 @@ function onResize() {
 }
 
 // FEM.js
-function createStructure() { return { joints: {}, materials: {}, sections: {}, frames: {}, supports: {} } };
+function createStructure() { return { joints: {}, materials: {}, sections: {}, frames: {}, supports: {}, load_patterns: {} } };
 
 function createModel() {
   // create the model
@@ -661,6 +661,9 @@ export function open( filename ) {
 
       // add suports
       Object.entries( json.supports ).forEach( ( [ name, support ] ) => { addSupport( name, support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) } );
+
+      // add load patterns
+      Object.entries( json.load_patterns ).forEach( ( [ name, load_pattern] ) => addLoadPattern( name ) );
 
       return "the '" + filename + "' model has been loaded"
     });
@@ -1695,5 +1698,28 @@ function setAnalyticalRestrainThicknessSupport( thickness ) {
     model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => rotation.getObjectByName( 'curveShaft' ).getObjectByName( 'restrain' ).scale.setX( thickness ) );
   });
 }
+
+// loads
+export function addLoadPattern( name ) {
+  // add a load pattern
+
+  var promise = new Promise( ( resolve, reject ) => {
+    // only strings accepted as name
+    name = name.toString();
+
+    // check if load pattern's name already exits
+    if ( structure.load_patterns.hasOwnProperty( name) ) {
+      reject( new Error( "load pattern's name '" + name + "' already extis" ) );
+    } else {
+      // add load pattern to structure
+      structure.load_patterns[ name ] = {};
+
+      resolve( "load pattern '" + name + "' was added" );
+    }
+  });
+
+  return promise;
+}
+
 
 window.addEventListener( "resize", onResize, false );
