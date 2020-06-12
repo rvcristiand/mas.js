@@ -1612,11 +1612,9 @@ function setPinRadius( radius ) { Object.entries( structure.supports ).filter( (
 function setAnalyticalHeadHeightSupport( height ) {
   // set analytical support's head height
 
-  var position = new THREE.Vector3( -( config[ 'support.analytical.straightShaft.length' ] + height ), 0, 0 );
-
   Object.keys( structure.supports ).forEach( name => { 
     model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'displacements' ).children.forEach( displacement => {
-      displacement.getObjectByName( 'arrow' ).position.copy( position );
+      displacement.getObjectByName( 'arrow' ).position.setX( -( config[ 'support.analytical.straightShaft.length' ] + height ) );
       displacement.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height );
     });
     model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' ).getObjectByName( 'analytical' ).getObjectByName( 'rotations' ).children.forEach( rotation => {
