@@ -94,6 +94,9 @@
         }
     },
     "load_patterns": {
-        "distributed loads": {}
+        "distributed loads": {
+            "joints": {},
+            "frames": {}
+        }
     }
 }

@@ -121,7 +121,7 @@ terminal.add_function("open", {
 terminal.add_function( "getStructure", { func: FEM.getStructure, successful: "" } );
 
 // default command
-command_line.value = "open(" + '"' + "example_3.json" + '"' + ")";
+command_line.value = "open(" + '"' + "example_2.json" + '"' + ")";
 
 // focus terminal
 terminal.give_focus();

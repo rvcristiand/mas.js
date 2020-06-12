@@ -663,7 +663,10 @@ export function open( filename ) {
       Object.entries( json.supports ).forEach( ( [ name, support ] ) => { addSupport( name, support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) } );
 
       // add load patterns
-      Object.entries( json.load_patterns ).forEach( ( [ name, load_pattern] ) => addLoadPattern( name ) );
+      Object.entries( json.load_patterns ).forEach( ( [ name, load_pattern] ) => {
+        addLoadPattern( name );
+        Object.entries( load_pattern.joints ).forEach( ( [ joint, pointLoads ] ) => Object.values( pointLoads ).forEach( pointLoad => addLoadAtJoint( name, joint, pointLoad.fx, pointLoad.fy, pointLoad.fz, pointLoad.mx, pointLoad.my, pointLoad.mz ) ) );
+      });
 
       return "the '" + filename + "' model has been loaded"
     });
@@ -1714,9 +1717,35 @@ export function addLoadPattern( name ) {
       reject( new Error( "load pattern's name '" + name + "' already extis" ) );
     } else {
       // add load pattern to structure
-      structure.load_patterns[ name ] = {};
+      structure.load_patterns[ name ] = { joints: {}, frames: {} };
 
       resolve( "load pattern '" + name + "' was added" );
+    }
+  });
+
+  return promise;
+}
+
+export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
+  // add a load at joint
+
+  var promise = new Promise( ( resolve, reject ) => {
+    // only strings accepted as name
+    loadPattern = loadPattern.toString();
+    joint = joint.toString();
+
+    // check if loadPatter & joint exists
+    if ( structure.load_patterns.hasOwnProperty( loadPattern ) && structure.joints.hasOwnProperty( joint ) ) {
+      if ( !structure.load_patterns[ loadPattern ].joints.hasOwnProperty( joint ) ) structure.load_patterns[ loadPattern ].joints[ joint ] = {};
+      structure.load_patterns[ loadPattern ].joints[ joint ][ Object.keys( structure.load_patterns[ loadPattern ].joints[ joint ] ).length ] = { 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz };
+
+      resolve( "joint load added" );
+    } else {
+      if ( structure.load_patterns.hasOwnProperty( loadPattern ) ) {
+        reject( new Error( "joint '" + joint + "' does not exist" ) );
+      } else {
+        reject( new Error( "load pattern '" + name + "' does not exist" ) );
+      }
     }
   });
 
