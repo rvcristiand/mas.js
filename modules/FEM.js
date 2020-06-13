@@ -131,6 +131,7 @@ var config = {
   'support.pin.radius': 0.3,
 
   // load
+  'load.visible': true,
 
   'load.joints.force.scale': 0.1,
   'load.joints.torque.scale': 0.02,
@@ -468,6 +469,10 @@ function init() {
   let pinFolder = spaceSupportFolder.addFolder( "pin" );
   pinFolder.add( config, 'support.pin.height' ).name( 'height' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => setPinHeight( size ) );
   pinFolder.add( config, 'support.pin.radius' ).name( 'radius' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( radius => setPinRadius( radius ) );
+
+  // add load folder
+  let loadFolder = gui.addFolder( "load" );
+  loadFolder.add( config, 'load.visible' ).name( 'visible' ).onChange( visible => setLoadVisible( visible ) );
 
   render();
 }
@@ -1744,7 +1749,6 @@ function createLoadAtJoint( fx, fy, fz, mx, my, mz ) {
   loadAtJoint.add( torques );
 
   loadAtJoint.name = 'load';
-  // loadAtJoint.visible = config[ 'load.visible' ]
 
   return loadAtJoint;
 }
@@ -1865,27 +1869,56 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
     // only strings accepted as name
     loadPattern = loadPattern.toString();
     joint = joint.toString();
-
+      
     // check if loadPatter & joint exists
     if ( structure.load_patterns.hasOwnProperty( loadPattern ) && structure.joints.hasOwnProperty( joint ) ) {
       // add load to structure
-      if ( !structure.load_patterns[ loadPattern ].joints.hasOwnProperty( joint ) ) structure.load_patterns[ loadPattern ].joints[ joint ] = {};
-      structure.load_patterns[ loadPattern ].joints[ joint ][ Object.keys( structure.load_patterns[ loadPattern ].joints[ joint ] ).length ] = { 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz };
+
+      // add loads to joint
+      if ( !model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ) ) {
+        var loads = new THREE.Group();
+        loads.name = 'loads';
+        loads.visible = config[ 'load.visible' ];
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).add( loads );
+      }
+
+      if ( !structure.load_patterns[ loadPattern ].joints.hasOwnProperty( joint ) ) {
+        structure.load_patterns[ loadPattern ].joints[ joint ] = {};
+        var _loadPattern = new THREE.Group();
+        _loadPattern.name = loadPattern;
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).add( _loadPattern );
+      }
+
+      var count = Object.keys( structure.load_patterns[ loadPattern ].joints[ joint ] ).length;
+
+      structure.load_patterns[ loadPattern ].joints[ joint ][ count ] = { 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz };
 
       // add load to model
-      model.getObjectByName( 'joints' ).getObjectByName( joint ).add( createLoadAtJoint( fx, fy, fz, mx, my, mz ) );
+      var load = createLoadAtJoint( fx, fy, fz, mx, my, mz );
+      load.name = count;
+      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPattern ).add( load );
 
       resolve( "joint load added" );
     } else {
       if ( structure.load_patterns.hasOwnProperty( loadPattern ) ) {
         reject( new Error( "joint '" + joint + "' does not exist" ) );
       } else {
-        reject( new Error( "load pattern '" + name + "' does not exist" ) );
+        reject( new Error( "load pattern '" + loadPattern + "' does not exist" ) );
       }
     }
   });
 
   return promise;
+}
+
+function setLoadVisible( visible ) {
+  // set load visibile
+
+  
+  Object.values( structure.load_patterns ).forEach( loadPattern => {
+    Object.keys( loadPattern.joints ).forEach( joint => model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).visible = visible );
+    // Object.keys( loadPattern.frames ).forEach( frame => model.getObjectByName( 'freames' ).getObjectByName( frame ).getObjectByName( 'loads' ).visible = visible );
+  });
 }
 
 window.addEventListener( "resize", onResize, false );
