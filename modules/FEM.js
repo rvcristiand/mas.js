@@ -1302,6 +1302,13 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
   if ( ry ) rotations.add( createRotationSupport( 'y' ) );
   if ( rz ) rotations.add( createRotationSupport( 'z' ) );
 
+  displacements.name = 'displacements';
+  rotations.name = 'rotations';
+
+  analytical.name = 'analytical';
+  analytical.add( displacements );
+  analytical.add( rotations );
+
   // create space support
   var space = new THREE.Group();
   
@@ -1347,13 +1354,7 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
     space.copy( analytical );
   } 
 
-  analytical.name = 'analytical';
-  displacements.name = 'displacements';
-  rotations.name = 'rotations';
   space.name = 'space';
-
-  analytical.add( displacements );
-  analytical.add( rotations );
 
   space.visible = ( config[ 'support.mode' ] == 'space' );
   analytical.visible = ( config[ 'support.mode' ] == 'analytical' );
