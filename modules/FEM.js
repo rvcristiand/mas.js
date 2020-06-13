@@ -129,6 +129,15 @@ var config = {
 
   'support.pin.height': 0.3,
   'support.pin.radius': 0.3,
+
+  // load
+
+  'load.joints.scale': 0.1,
+
+  'load.joints.head.radius': 0.05,
+  'load.joints.head.height': 0.3,
+
+  'load.joints.shaft.tube' : 0.02,
 };
 
 var structure, model;
@@ -1707,6 +1716,64 @@ function setAnalyticalRestrainThicknessSupport( thickness ) {
 }
 
 // loads
+function createLoadAtJoint( fx, fy, fz ) { // , mx, my, mz
+  // create a load at joint
+
+  var loadAtJoint = new THREE.Group();
+
+  // create forces
+  var forces = new THREE.Group();
+
+  if ( fx != 0 ) forces.add( createForce( fx, 'x' ) );
+  if ( fy != 0 ) forces.add( createForce( fy, 'y' ) );
+  if ( fz != 0 ) forces.add( createForce( fz, 'z' ) );
+
+  forces.name = 'forces';
+  
+  loadAtJoint.add( forces );
+
+  loadAtJoint.name = 'load';
+  // loadAtJoint.visible = config[ 'load.visible' ]
+
+  return loadAtJoint;
+}
+
+function createForce( magnitud, axis ) {
+  // create a force
+
+  var force = new THREE.Group();
+
+  var arrow;
+
+  var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
+  var quaternion = new THREE.Quaternion();
+
+  magnitud = config[ 'load.joints.scale' ] * magnitud;
+
+  switch ( axis ) {
+    case 'x':
+      arrow = createArrow( xMaterial, Math.abs( magnitud ), config[ 'load.joints.shaft.tube' ], config[ 'load.joints.head.height' ], config[ 'load.joints.head.radius' ] );
+      break;
+    case 'y':
+      arrow = createArrow( yMaterial, Math.abs( magnitud ), config[ 'load.joints.shaft.tube' ], config[ 'load.joints.head.height' ], config[ 'load.joints.head.radius' ] );
+      quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
+      break;
+    case 'z':
+      arrow = createArrow( zMaterial, Math.abs( magnitud ), config[ 'load.joints.shaft.tube' ], config[ 'load.joints.head.height' ], config[ 'load.joints.head.radius' ] );
+      quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
+      break;
+  }
+
+  arrow.name = axis;
+  if ( magnitud / Math.abs( magnitud ) < 0 ) arrow.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( -1, 0, 0 ) );
+  arrow.position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( magnitud ) + config[ 'load.joints.head.height' ] ) ); // .applyQuaternion( quaternion )
+  force.add( arrow );
+    
+  force.quaternion.copy( quaternion );
+
+  return force;
+}
+
 export function addLoadPattern( name ) {
   // add a load pattern
 
@@ -1738,8 +1805,15 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
 
     // check if loadPatter & joint exists
     if ( structure.load_patterns.hasOwnProperty( loadPattern ) && structure.joints.hasOwnProperty( joint ) ) {
+      // add load to structure
       if ( !structure.load_patterns[ loadPattern ].joints.hasOwnProperty( joint ) ) structure.load_patterns[ loadPattern ].joints[ joint ] = {};
       structure.load_patterns[ loadPattern ].joints[ joint ][ Object.keys( structure.load_patterns[ loadPattern ].joints[ joint ] ).length ] = { 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz };
+
+      // create load at joint
+      var load = createLoadAtJoint( fx, fy, fz, mx, my, mz );
+
+      // add load
+      model.getObjectByName( 'joints' ).getObjectByName( joint ).add( load );
 
       resolve( "joint load added" );
     } else {
