@@ -157,7 +157,7 @@ body {
   color: green;
   margin: 0;
   white-space: pre;
-  max-height: 10vh;
+  max-height: 20vh;
   overflow: auto;
 }
 

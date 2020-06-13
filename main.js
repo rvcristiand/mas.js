@@ -120,6 +120,9 @@ terminal.add_function("open", {
 // getStructure
 terminal.add_function( "getStructure", { func: FEM.getStructure, successful: "" } );
 
+// get load patterns
+terminal.add_function( "getLoadPatterns", { func: FEM.getLoadPatterns, successful: "" } );
+
 // default command
 command_line.value = "open(" + '"' + "example_2.json" + '"' + ")";
 

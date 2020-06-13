@@ -729,7 +729,9 @@ function setGridMenor( color ) {
   ground.add( createGrid( config[ 'ground.grid.divisions' ], config[ 'ground.grid.major' ], color ) );
 }
 
-export function getStructure( ) { return new Promise( resolve => resolve( JSON.stringify( structure, null, 2 ) ) ) };
+export function getStructure() { return new Promise( resolve => resolve( JSON.stringify( structure, null, 2 ) ) ) };
+
+export function getLoadPatterns() { return new Promise( resolve => resolve( JSON.stringify( structure.load_patterns, null, 2 ) ) ) };
 
 // model 
 function setModelRotation( axis ) { model.setRotationFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), { x: 4 * Math.PI / 3, y: 2 * Math.PI / 3, z: 0 }[ axis ] ) };
