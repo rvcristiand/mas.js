@@ -132,7 +132,8 @@ var config = {
 
   // load
 
-  'load.joints.scale': 0.1,
+  'load.joints.force.scale': 0.1,
+  'load.joints.torque.scale': 0.02,
 
   'load.joints.head.radius': 0.05,
   'load.joints.head.height': 0.3,
@@ -1509,11 +1510,11 @@ function createRotationSupport( axis ) {
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var quaternion = new THREE.Quaternion();
 
-  var curveShaftGeometry = new THREE.TorusGeometry( config[ 'support.analytical.curveShaft.radius' ], config[ 'support.analytical.shaft.tube' ], 8, 6, 3 * Math.PI / 2 );
+  var curveShaftGeometry = new THREE.TorusBufferGeometry( config[ 'support.analytical.curveShaft.radius' ], config[ 'support.analytical.shaft.tube' ], 8, 6, 3 * Math.PI / 2 );
   curveShaftGeometry.rotateY( Math.PI / 2 );
   
   switch ( axis ) {
-    case'x':
+    case 'x':
       head = new THREE.Mesh( headGeometry, xMaterial );
       curveShaft = new THREE.Mesh( curveShaftGeometry, xMaterial );
       restrain = new THREE.Mesh( restrainGeometry, xMaterial );
@@ -1669,7 +1670,7 @@ function setAnalyticalShaftLengthSupport( length ) {
 function setAnalyticalShaftRadiusSupport( radius ) {
   // set analytical support's curve shaft radius
 
-  var curveShaftGeometry = new THREE.TorusGeometry( radius, config[ 'support.analytical.shaft.tube'], 8, 6, 3 * Math.PI / 2 );
+  var curveShaftGeometry = new THREE.TorusBufferGeometry( radius, config[ 'support.analytical.shaft.tube'], 8, 6, 3 * Math.PI / 2 );
   curveShaftGeometry.rotateY( Math.PI / 2 );
 
   Object.keys( structure.supports ).forEach( name => {
@@ -1685,7 +1686,7 @@ function setAnalyticalShaftRadiusSupport( radius ) {
 function setAnalyticalShaftTubeSupport( tube ) {
   // set analytical support's shaft tube
 
-  var curveShaftGeometry = new THREE.TorusGeometry( config[ 'support.analytical.curveShaft.radius' ], tube, 8, 6, 3 * Math.PI / 2 );
+  var curveShaftGeometry = new THREE.TorusBufferGeometry( config[ 'support.analytical.curveShaft.radius' ], tube, 8, 6, 3 * Math.PI / 2 );
   curveShaftGeometry.rotateY( Math.PI / 2 );
 
   Object.keys( structure.supports ).forEach( name => {
@@ -1716,21 +1717,30 @@ function setAnalyticalRestrainThicknessSupport( thickness ) {
 }
 
 // loads
-function createLoadAtJoint( fx, fy, fz ) { // , mx, my, mz
+function createLoadAtJoint( fx, fy, fz, mx, my, mz ) {
   // create a load at joint
 
   var loadAtJoint = new THREE.Group();
 
-  // create forces
+  // create axial forces
   var forces = new THREE.Group();
 
   if ( fx != 0 ) forces.add( createForce( fx, 'x' ) );
   if ( fy != 0 ) forces.add( createForce( fy, 'y' ) );
   if ( fz != 0 ) forces.add( createForce( fz, 'z' ) );
 
+  // create torque forces
+  var torques = new THREE.Group();
+
+  if ( mx != 0 ) torques.add( createTorque( mx, 'x' ) );
+  if ( my != 0 ) torques.add( createTorque( my, 'y' ) );
+  if ( mz != 0 ) torques.add( createTorque( mz, 'z' ) );
+
   forces.name = 'forces';
+  torques.name = 'torques';
   
   loadAtJoint.add( forces );
+  loadAtJoint.add( torques );
 
   loadAtJoint.name = 'load';
   // loadAtJoint.visible = config[ 'load.visible' ]
@@ -1748,7 +1758,7 @@ function createForce( magnitud, axis ) {
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var quaternion = new THREE.Quaternion();
 
-  magnitud = config[ 'load.joints.scale' ] * magnitud;
+  magnitud = config[ 'load.joints.force.scale' ] * magnitud;
 
   switch ( axis ) {
     case 'x':
@@ -1772,6 +1782,58 @@ function createForce( magnitud, axis ) {
   force.quaternion.copy( quaternion );
 
   return force;
+}
+
+function createTorque( magnitud, axis ) {
+  // create a torque
+
+  var torque = new THREE.Group();
+
+  var head, curveShaft;
+
+  var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
+  var quaternion = new THREE.Quaternion();
+
+  magnitud = config[ 'load.joints.torque.scale' ] * magnitud / 2;
+
+  var curveShaftGeometry = new THREE.TorusBufferGeometry( Math.abs( magnitud ), config[ 'load.joints.shaft.tube' ], 8, 6, 3 * Math.PI / 2 );
+  curveShaftGeometry.rotateY( Math.PI / 2 );
+
+  switch ( axis ) {
+    case 'x':
+      head = new THREE.Mesh( headGeometry, xMaterial );
+      curveShaft = new THREE.Mesh( curveShaftGeometry, xMaterial );
+      break;
+    case 'y':
+      head = new THREE.Mesh( headGeometry, yMaterial );
+      curveShaft = new THREE.Mesh( curveShaftGeometry, yMaterial );
+      quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
+      break;
+    case 'z':
+      head = new THREE.Mesh( headGeometry, zMaterial );
+      curveShaft = new THREE.Mesh( curveShaftGeometry, zMaterial );
+      quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
+      break;
+  }
+
+  head.name = 'head';
+  head.scale.set( config[ 'load.joints.head.height' ], config[ 'load.joints.head.radius' ], config[ 'load.joints.head.radius' ] );
+  if ( magnitud / Math.abs( magnitud ) < 0) {
+    head.position.set( 0, 0, -Math.abs( magnitud ) );
+    head.rotateZ( -Math.PI / 2 );
+  } else {
+    head.position.set( 0, -Math.abs( magnitud ), 0 );
+    head.rotateY( Math.PI / 2 );
+  }
+  curveShaft.add( head );
+
+  curveShaft.name = 'curveShaft';
+  torque.add( curveShaft );
+  
+  torque.name = 'axis';
+  torque.quaternion.copy( quaternion );
+
+  return torque;
 }
 
 export function addLoadPattern( name ) {
@@ -1809,11 +1871,8 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
       if ( !structure.load_patterns[ loadPattern ].joints.hasOwnProperty( joint ) ) structure.load_patterns[ loadPattern ].joints[ joint ] = {};
       structure.load_patterns[ loadPattern ].joints[ joint ][ Object.keys( structure.load_patterns[ loadPattern ].joints[ joint ] ).length ] = { 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz };
 
-      // create load at joint
-      var load = createLoadAtJoint( fx, fy, fz, mx, my, mz );
-
-      // add load
-      model.getObjectByName( 'joints' ).getObjectByName( joint ).add( load );
+      // add load to model
+      model.getObjectByName( 'joints' ).getObjectByName( joint ).add( createLoadAtJoint( fx, fy, fz, mx, my, mz ) );
 
       resolve( "joint load added" );
     } else {
