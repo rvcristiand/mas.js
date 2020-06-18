@@ -473,6 +473,7 @@ function init() {
   // add load folder
   let loadFolder = gui.addFolder( "load" );
   loadFolder.add( config, 'load.visible' ).name( 'visible' ).onChange( visible => setLoadVisible( visible ) );
+  loadFolder.add( config, 'load.joints.force.scale' ).name( 'force' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadForceScale( scale ) );
 
   render();
 }
@@ -1779,11 +1780,12 @@ function createForce( magnitud, axis ) {
       break;
   }
 
-  arrow.name = axis;
+  arrow.name = 'arrow';
   if ( magnitud / Math.abs( magnitud ) < 0 ) arrow.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( -1, 0, 0 ) );
-  arrow.position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( magnitud ) + config[ 'load.joints.head.height' ] ) ); // .applyQuaternion( quaternion )
+  arrow.position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( magnitud ) + config[ 'load.joints.head.height' ] ) );
   force.add( arrow );
     
+  force.name = axis;
   force.quaternion.copy( quaternion );
 
   return force;
@@ -1919,6 +1921,24 @@ function setLoadVisible( visible ) {
     Object.keys( loadPattern.joints ).forEach( joint => model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).visible = visible );
     // Object.keys( loadPattern.frames ).forEach( frame => model.getObjectByName( 'freames' ).getObjectByName( frame ).getObjectByName( 'loads' ).visible = visible );
   });
+}
+
+function setLoadForceScale( scale ) {
+  // set load force scale
+
+  var axis;
+
+  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => Object.values( loads ).forEach( load => Object.entries( load ).filter( ( [ component, ] ) => component == 'fx' || component == 'fy' || component == 'fz' ).forEach( ( [ component, magnitud ] ) => { 
+    if ( magnitud != 0 ) {
+      magnitud = scale * magnitud;
+      axis = { 'fx': 'x', 'fy': 'y', 'fz': 'z' }[ component ];
+      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => {
+        _load.getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.setX( Math.abs( magnitud ) );
+        _load.getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' ).getObjectByName( 'head' ).position.setX( Math.abs( magnitud ) );
+        _load.getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' ).position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( magnitud ) + config[ 'load.joints.head.height' ] ) );
+      });    
+    }
+  }))));
 }
 
 window.addEventListener( "resize", onResize, false );
