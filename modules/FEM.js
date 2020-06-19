@@ -478,6 +478,7 @@ function init() {
   // add head folder
   let headArrowLoadFolder = loadFolder.addFolder( "head" );
   headArrowLoadFolder.add( config, 'load.joints.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setLoadHeadHeight( height ) );
+  headArrowLoadFolder.add( config, 'load.joints.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setLoadHeadRadius( radius ) );
 
   render();
 }
@@ -1996,6 +1997,17 @@ function setLoadHeadHeight( height ) {
     if ( load.my != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => _load.getObjectByName( 'torques' ).getObjectByName( 'y' ).getObjectByName( 'head' ).scale.setX( height ) );
     if ( load.mz != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => _load.getObjectByName( 'torques' ).getObjectByName( 'z' ).getObjectByName( 'head' ).scale.setX( height ) );
   })));
+}
+
+function setLoadHeadRadius( radius ) {
+  // set load head radius
+
+  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => Object.keys( loadPatternValue.joints ).forEach( joint => {
+    model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( load => {
+      load.getObjectByName( 'forces' ).children.forEach( force => force.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'load.joints.head.height' ], radius, radius ) );
+      load.getObjectByName( 'torques' ).children.forEach( torque => torque.getObjectByName( 'head' ).scale.set( config[ 'load.joints.head.height' ], radius, radius ) );
+    });
+  }));
 }
 
 window.addEventListener( "resize", onResize, false );
