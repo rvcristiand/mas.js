@@ -475,6 +475,9 @@ function init() {
   loadFolder.add( config, 'load.visible' ).name( 'visible' ).onChange( visible => setLoadVisible( visible ) );
   loadFolder.add( config, 'load.joints.force.scale' ).name( 'force' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadForceScale( scale ) );
   loadFolder.add( config, 'load.joints.torque.scale' ).name( 'torque' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadTorqueScale( scale ) );
+  // add head folder
+  let headArrowLoadFolder = loadFolder.addFolder( "head" );
+  headArrowLoadFolder.add( config, 'load.joints.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setLoadHeadHeight( height ) );
 
   render();
 }
@@ -1965,6 +1968,34 @@ function setLoadTorqueScale( scale ) {
       });
     }
   }))));
+}
+
+function setLoadHeadHeight( height ) {
+  // set load head height
+
+  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => Object.values( loads ).forEach( load => {
+    if ( load.fx != 0 ) {
+      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => {
+        _load.getObjectByName( 'forces' ).getObjectByName( 'x' ).getObjectByName( 'arrow' ).position.setX( -( load.fx / Math.abs( load.fx ) ) * ( Math.abs( config[ 'load.joints.force.scale' ] * load.fx ) + height ) );
+        _load.getObjectByName( 'forces' ).getObjectByName( 'x' ).getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height );
+      });
+    }
+    if ( load.fy != 0 ) {
+      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => {
+        _load.getObjectByName( 'forces' ).getObjectByName( 'y' ).getObjectByName( 'arrow' ).position.setX( -( load.fy / Math.abs( load.fy ) ) * ( Math.abs( config[ 'load.joints.force.scale' ] * load.fy ) + height ) );
+        _load.getObjectByName( 'forces' ).getObjectByName( 'y' ).getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height );
+      });
+    }
+    if ( load.fz != 0 ) {
+      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => {
+        _load.getObjectByName( 'forces' ).getObjectByName( 'z' ).getObjectByName( 'arrow' ).position.setX( -( load.fz / Math.abs( load.fz ) ) * ( Math.abs( config[ 'load.joints.force.scale' ] * load.fz ) + height ) );
+        _load.getObjectByName( 'forces' ).getObjectByName( 'z' ).getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height );
+      });
+    }
+    if ( load.mx != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => _load.getObjectByName( 'torques' ).getObjectByName( 'x' ).getObjectByName( 'head' ).scale.setX( height ) );
+    if ( load.my != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => _load.getObjectByName( 'torques' ).getObjectByName( 'y' ).getObjectByName( 'head' ).scale.setX( height ) );
+    if ( load.mz != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => _load.getObjectByName( 'torques' ).getObjectByName( 'z' ).getObjectByName( 'head' ).scale.setX( height ) );
+  })));
 }
 
 window.addEventListener( "resize", onResize, false );
