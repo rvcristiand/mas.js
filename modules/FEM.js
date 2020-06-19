@@ -474,6 +474,7 @@ function init() {
   let loadFolder = gui.addFolder( "load" );
   loadFolder.add( config, 'load.visible' ).name( 'visible' ).onChange( visible => setLoadVisible( visible ) );
   loadFolder.add( config, 'load.joints.force.scale' ).name( 'force' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadForceScale( scale ) );
+  loadFolder.add( config, 'load.joints.torque.scale' ).name( 'torque' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadTorqueScale( scale ) );
 
   render();
 }
@@ -1837,7 +1838,7 @@ function createTorque( magnitud, axis ) {
   curveShaft.name = 'curveShaft';
   torque.add( curveShaft );
   
-  torque.name = 'axis';
+  torque.name = axis;
   torque.quaternion.copy( quaternion );
 
   return torque;
@@ -1937,6 +1938,31 @@ function setLoadForceScale( scale ) {
         _load.getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' ).getObjectByName( 'head' ).position.setX( Math.abs( magnitud ) );
         _load.getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' ).position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( magnitud ) + config[ 'load.joints.head.height' ] ) );
       });    
+    }
+  }))));
+}
+
+function setLoadTorqueScale( scale ) {
+  // set load torque scale
+
+  var axis, curveShaftGeometry;
+
+  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => Object.values( loads ).forEach( load => Object.entries( load ).filter( ( [ component, ] ) => component == 'mx' || component == 'my' || component == 'mz' ).forEach( ( [ component, magnitud ] ) => {
+    if ( magnitud != 0 ) {
+      magnitud = scale * magnitud / 2;
+      curveShaftGeometry = new THREE.TorusBufferGeometry( Math.abs( magnitud ), config[ 'load.joints.shaft.tube' ], 8, 6, 3 * Math.PI / 2 );
+      curveShaftGeometry.rotateY( Math.PI / 2 );
+      axis = { 'mx': 'x', 'my': 'y', 'mz': 'z' }[ component ];
+
+      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => {
+        _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' ).geometry.dispose();
+        _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' ).geometry = curveShaftGeometry;
+        if ( magnitud < 0) {
+          _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'head' ).position.set( 0, 0, -Math.abs( magnitud ) );
+        } else {
+          _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'head' ).position.set( 0, -Math.abs( magnitud ), 0 );
+        }
+      });
     }
   }))));
 }
