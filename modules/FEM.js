@@ -479,6 +479,9 @@ function init() {
   let headArrowLoadFolder = loadFolder.addFolder( "head" );
   headArrowLoadFolder.add( config, 'load.joints.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setLoadHeadHeight( height ) );
   headArrowLoadFolder.add( config, 'load.joints.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setLoadHeadRadius( radius ) );
+  // add shaft folder
+  let shaftArrowLoadFolder = loadFolder.addFolder( "shaft" );
+  shaftArrowLoadFolder.add( config, 'load.joints.shaft.tube' ).name( 'tube' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( tube => setLoadShaftTube( tube ) );
 
   render();
 }
@@ -2008,6 +2011,37 @@ function setLoadHeadRadius( radius ) {
       load.getObjectByName( 'torques' ).children.forEach( torque => torque.getObjectByName( 'head' ).scale.set( config[ 'load.joints.head.height' ], radius, radius ) );
     });
   }));
+}
+
+function setLoadShaftTube( tube ) {
+  // set load shaft tube
+
+  var axis, curveShaftGeometry;
+  
+  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => Object.values( loads ).forEach( load => {
+    Object.entries( load ).filter( ( [ component, ] ) => component == 'fx' || component == 'fy' || component == 'fz' ).forEach( ( [ component, magnitud ] ) => {
+      if ( magnitud != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => _load.getObjectByName( 'forces' ).getObjectByName( { 'fx': 'x', 'fy': 'y', 'fz': 'z' }[ component ] ).getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( Math.abs( config[ 'load.joints.force.scale' ] * magnitud ), tube, tube ) );
+    });
+    
+    Object.entries( load ).filter( ( [ component, ] ) => component == 'mx' || component == 'my' || component == 'mz' ).forEach( ( [ component, magnitud ] ) => {
+      if ( magnitud != 0 ) {
+        magnitud = config[ 'load.joints.torque.scale'] * magnitud / 2;
+        curveShaftGeometry = new THREE.TorusBufferGeometry( Math.abs( magnitud ), tube, 8, 6, 3 * Math.PI / 2 );
+        curveShaftGeometry.rotateY( Math.PI / 2 );
+        axis = { 'mx': 'x', 'my': 'y', 'mz': 'z' }[ component ];
+
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => {
+          _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' ).geometry.dispose();
+          _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' ).geometry = curveShaftGeometry;
+          if ( magnitud < 0) {
+            _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'head' ).position.set( 0, 0, -Math.abs( magnitud ) );
+          } else {
+            _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'head' ).position.set( 0, -Math.abs( magnitud ), 0 );
+          }
+        });
+      }
+    });
+  })));
 }
 
 window.addEventListener( "resize", onResize, false );
