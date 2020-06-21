@@ -689,7 +689,7 @@ export function open( filename ) {
       // add load patterns
       Object.entries( json.load_patterns ).forEach( ( [ name, load_pattern] ) => {
         addLoadPattern( name );
-        Object.entries( load_pattern.joints ).forEach( ( [ joint, pointLoads ] ) => Object.values( pointLoads ).forEach( pointLoad => addLoadAtJoint( name, joint, pointLoad.fx, pointLoad.fy, pointLoad.fz, pointLoad.mx, pointLoad.my, pointLoad.mz ) ) );
+        if ( load_pattern.hasOwnProperty( 'joints' ) ) Object.entries( load_pattern.joints ).forEach( ( [ joint, pointLoads ] ) => pointLoads.forEach( pointLoad => addLoadAtJoint( name, joint, pointLoad.fx, pointLoad.fy, pointLoad.fz, pointLoad.mx, pointLoad.my, pointLoad.mz ) ) );
       });
 
       return "the '" + filename + "' model has been loaded"
@@ -1863,7 +1863,7 @@ export function addLoadPattern( name ) {
       reject( new Error( "load pattern's name '" + name + "' already extis" ) );
     } else {
       // add load pattern to structure
-      structure.load_patterns[ name ] = { joints: {}, frames: {} };
+      structure.load_patterns[ name ] = {};
 
       resolve( "load pattern '" + name + "' was added" );
     }
@@ -1884,6 +1884,23 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
     if ( structure.load_patterns.hasOwnProperty( loadPattern ) && structure.joints.hasOwnProperty( joint ) ) {
       // add load to structure
 
+      if ( !structure.load_patterns[ loadPattern ].hasOwnProperty( 'joints' ) ) structure.load_patterns[ loadPattern ].joints = {};
+
+      if ( !structure.load_patterns[ loadPattern ].joints.hasOwnProperty( joint ) ) structure.load_patterns[ loadPattern ].joints[ joint ] = [];
+
+      structure.load_patterns[ loadPattern ].joints[ joint ].push( { 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz } );
+
+      fx = fy = fz = mx = my = mz = 0;
+
+      structure.load_patterns[ loadPattern ].joints[ joint ].forEach( load => {
+        fx += load.fx;
+        fy += load.fy;
+        fz += load.fy;
+        mx += load.mx;
+        my += load.my;
+        mz += load.mz;
+      });
+
       // add loads to joint
       if ( !model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ) ) {
         var loads = new THREE.Group();
@@ -1892,21 +1909,12 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
         model.getObjectByName( 'joints' ).getObjectByName( joint ).add( loads );
       }
 
-      if ( !structure.load_patterns[ loadPattern ].joints.hasOwnProperty( joint ) ) {
-        structure.load_patterns[ loadPattern ].joints[ joint ] = {};
-        var _loadPattern = new THREE.Group();
-        _loadPattern.name = loadPattern;
-        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).add( _loadPattern );
-      }
-
-      var count = Object.keys( structure.load_patterns[ loadPattern ].joints[ joint ] ).length;
-
-      structure.load_patterns[ loadPattern ].joints[ joint ][ count ] = { 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz };
+      if ( model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).remove( model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) );
 
       // add load to model
       var load = createLoadAtJoint( fx, fy, fz, mx, my, mz );
-      load.name = count;
-      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPattern ).add( load );
+      load.name = loadPattern;
+      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).add( load );
 
       resolve( "joint load added" );
     } else {
@@ -1924,9 +1932,8 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
 function setLoadVisible( visible ) {
   // set load visibile
 
-  
   Object.values( structure.load_patterns ).forEach( loadPattern => {
-    Object.keys( loadPattern.joints ).forEach( joint => model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).visible = visible );
+    if ( loadPattern.hasOwnProperty( 'joints' ) ) Object.keys( loadPattern.joints ).forEach( joint => model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).visible = visible );
     // Object.keys( loadPattern.frames ).forEach( frame => model.getObjectByName( 'freames' ).getObjectByName( frame ).getObjectByName( 'loads' ).visible = visible );
   });
 }
@@ -1934,114 +1941,142 @@ function setLoadVisible( visible ) {
 function setLoadForceScale( scale ) {
   // set load force scale
 
-  var axis;
+  var fx, fy, fz, arrow;
 
-  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => Object.values( loads ).forEach( load => Object.entries( load ).filter( ( [ component, ] ) => component == 'fx' || component == 'fy' || component == 'fz' ).forEach( ( [ component, magnitud ] ) => { 
-    if ( magnitud != 0 ) {
-      magnitud = scale * magnitud;
-      axis = { 'fx': 'x', 'fy': 'y', 'fz': 'z' }[ component ];
-      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => {
-        _load.getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.setX( Math.abs( magnitud ) );
-        _load.getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' ).getObjectByName( 'head' ).position.setX( Math.abs( magnitud ) );
-        _load.getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' ).position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( magnitud ) + config[ 'load.joints.head.height' ] ) );
-      });    
+  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
+    if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
+      Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => {
+        fx = fy = fz = 0;
+        loads.forEach( load => {
+          fx += load.fx;
+          fy += load.fy;
+          fz += load.fz;
+        });
+        Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => { 
+          if ( magnitud != 0 ) {
+            magnitud = scale * magnitud;
+            arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' );
+            arrow.getObjectByName( 'shaft' ).scale.setX( Math.abs( magnitud ) );
+            arrow.getObjectByName( 'head' ).position.setX( Math.abs( magnitud ) );
+            arrow.position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( magnitud ) + config[ 'load.joints.head.height' ] ) );
+          }
+        });
+      });
     }
-  }))));
+  });
 }
 
 function setLoadTorqueScale( scale ) {
   // set load torque scale
 
-  var axis, curveShaftGeometry;
+  var mx, my, mz, curveShaftGeometry, curveShaft, head;
 
-  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => Object.values( loads ).forEach( load => Object.entries( load ).filter( ( [ component, ] ) => component == 'mx' || component == 'my' || component == 'mz' ).forEach( ( [ component, magnitud ] ) => {
-    if ( magnitud != 0 ) {
-      magnitud = scale * magnitud / 2;
-      curveShaftGeometry = new THREE.TorusBufferGeometry( Math.abs( magnitud ), config[ 'load.joints.shaft.tube' ], 8, 6, 3 * Math.PI / 2 );
-      curveShaftGeometry.rotateY( Math.PI / 2 );
-      axis = { 'mx': 'x', 'my': 'y', 'mz': 'z' }[ component ];
+  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
+    if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
+      Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => {
+        mx = my = mz = 0;
+        loads.forEach( load => {
+          mx += load.mx;
+          my += load.my;
+          mz += load.mz;
+        });
+        Object.entries( { 'x': mx, 'y': my, 'z': mz } ).forEach( ( [ axis, magnitud ] ) => {
+          if ( magnitud != 0 ) {
+            magnitud = scale * magnitud / 2;
+            curveShaftGeometry = new THREE.TorusBufferGeometry( Math.abs( magnitud ), config[ 'load.joints.shaft.tube' ], 8, 6, 3 * Math.PI / 2 );
+            curveShaftGeometry.rotateY( Math.PI / 2 );
 
-      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => {
-        _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' ).geometry.dispose();
-        _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' ).geometry = curveShaftGeometry;
-        if ( magnitud < 0) {
-          _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'head' ).position.set( 0, 0, -Math.abs( magnitud ) );
-        } else {
-          _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'head' ).position.set( 0, -Math.abs( magnitud ), 0 );
-        }
+            curveShaft = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' );
+            curveShaft.geometry.dispose();
+            curveShaft.geometry = curveShaftGeometry;
+
+            head = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'head' );
+            if ( magnitud < 0) {
+              head.position.set( 0, 0, -Math.abs( magnitud ) );
+            } else {
+              head.position.set( 0, -Math.abs( magnitud ), 0 );
+            }
+          }
+        });
       });
     }
-  }))));
+  });
 }
 
 function setLoadHeadHeight( height ) {
   // set load head height
 
-  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => Object.values( loads ).forEach( load => {
-    if ( load.fx != 0 ) {
-      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => {
-        _load.getObjectByName( 'forces' ).getObjectByName( 'x' ).getObjectByName( 'arrow' ).position.setX( -( load.fx / Math.abs( load.fx ) ) * ( Math.abs( config[ 'load.joints.force.scale' ] * load.fx ) + height ) );
-        _load.getObjectByName( 'forces' ).getObjectByName( 'x' ).getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height );
+  var fx, fy, fz, arrow;
+
+  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
+    if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
+      Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => {
+        fx = fy = fz = 0;
+        loads.forEach( load => {
+          fx += load.fx;
+          fy += load.fy;
+          fz += load.fz;
+        });
+        Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => {
+          if ( magnitud != 0 ) {
+            arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' );
+            arrow.position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( config[ 'load.joints.force.scale' ] * magnitud ) + height ) );
+            arrow.getObjectByName( 'head' ).scale.setX( height );
+          }
+        });
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).children.forEach( torque => torque.getObjectByName( 'head' ).scale.setX( height ) );
       });
     }
-    if ( load.fy != 0 ) {
-      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => {
-        _load.getObjectByName( 'forces' ).getObjectByName( 'y' ).getObjectByName( 'arrow' ).position.setX( -( load.fy / Math.abs( load.fy ) ) * ( Math.abs( config[ 'load.joints.force.scale' ] * load.fy ) + height ) );
-        _load.getObjectByName( 'forces' ).getObjectByName( 'y' ).getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height );
-      });
-    }
-    if ( load.fz != 0 ) {
-      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => {
-        _load.getObjectByName( 'forces' ).getObjectByName( 'z' ).getObjectByName( 'arrow' ).position.setX( -( load.fz / Math.abs( load.fz ) ) * ( Math.abs( config[ 'load.joints.force.scale' ] * load.fz ) + height ) );
-        _load.getObjectByName( 'forces' ).getObjectByName( 'z' ).getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height );
-      });
-    }
-    if ( load.mx != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => _load.getObjectByName( 'torques' ).getObjectByName( 'x' ).getObjectByName( 'head' ).scale.setX( height ) );
-    if ( load.my != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => _load.getObjectByName( 'torques' ).getObjectByName( 'y' ).getObjectByName( 'head' ).scale.setX( height ) );
-    if ( load.mz != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => _load.getObjectByName( 'torques' ).getObjectByName( 'z' ).getObjectByName( 'head' ).scale.setX( height ) );
-  })));
+  });
 }
 
 function setLoadHeadRadius( radius ) {
   // set load head radius
 
-  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => Object.keys( loadPatternValue.joints ).forEach( joint => {
-    model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( load => {
-      load.getObjectByName( 'forces' ).children.forEach( force => force.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'load.joints.head.height' ], radius, radius ) );
-      load.getObjectByName( 'torques' ).children.forEach( torque => torque.getObjectByName( 'head' ).scale.set( config[ 'load.joints.head.height' ], radius, radius ) );
-    });
-  }));
+  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
+    if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
+      Object.keys( loadPatternValue.joints ).forEach( joint => {
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'forces' ).children.forEach( force => force.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'load.joints.head.height' ], radius, radius ) );
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).children.forEach( torque => torque.getObjectByName( 'head' ).scale.set( config[ 'load.joints.head.height' ], radius, radius ) );
+      });
+    }
+  });
 }
 
 function setLoadShaftTube( tube ) {
   // set load shaft tube
 
-  var axis, curveShaftGeometry;
+  var fx, fy, fz, mx, my, mz, curveShaftGeometry;
   
-  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => Object.values( loads ).forEach( load => {
-    Object.entries( load ).filter( ( [ component, ] ) => component == 'fx' || component == 'fy' || component == 'fz' ).forEach( ( [ component, magnitud ] ) => {
-      if ( magnitud != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => _load.getObjectByName( 'forces' ).getObjectByName( { 'fx': 'x', 'fy': 'y', 'fz': 'z' }[ component ] ).getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( Math.abs( config[ 'load.joints.force.scale' ] * magnitud ), tube, tube ) );
-    });
+  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
+    if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
+      Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => {
+        fx = fy = fz = mx = my = mz = 0;
+        loads.forEach( load => {
+          fx += load.fx;
+          fy += load.fy;
+          fz += load.fz;
+          mx += load.mx;
+          my += load.my;
+          mz += load.mz;
+        });
+        Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => {
+          if ( magnitud != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( Math.abs( config[ 'load.joints.force.scale' ] * magnitud ), tube, tube );
+        });
+                  
+        Object.entries( { 'x': mx, 'y': my, 'z': mz } ).forEach( ( [ axis, magnitud ] ) => {
+          if ( magnitud != 0 ) {
+            magnitud = config[ 'load.joints.torque.scale'] * magnitud / 2;
+            curveShaftGeometry = new THREE.TorusBufferGeometry( Math.abs( magnitud ), tube, 8, 6, 3 * Math.PI / 2 );
+            curveShaftGeometry.rotateY( Math.PI / 2 );
     
-    Object.entries( load ).filter( ( [ component, ] ) => component == 'mx' || component == 'my' || component == 'mz' ).forEach( ( [ component, magnitud ] ) => {
-      if ( magnitud != 0 ) {
-        magnitud = config[ 'load.joints.torque.scale'] * magnitud / 2;
-        curveShaftGeometry = new THREE.TorusBufferGeometry( Math.abs( magnitud ), tube, 8, 6, 3 * Math.PI / 2 );
-        curveShaftGeometry.rotateY( Math.PI / 2 );
-        axis = { 'mx': 'x', 'my': 'y', 'mz': 'z' }[ component ];
-
-        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).children.forEach( _load => {
-          _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' ).geometry.dispose();
-          _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' ).geometry = curveShaftGeometry;
-          if ( magnitud < 0) {
-            _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'head' ).position.set( 0, 0, -Math.abs( magnitud ) );
-          } else {
-            _load.getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'head' ).position.set( 0, -Math.abs( magnitud ), 0 );
+            model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' ).geometry.dispose();
+            model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' ).geometry = curveShaftGeometry;
           }
         });
-      }
-    });
-  })));
+      });
+    }
+  });
 }
 
 window.addEventListener( "resize", onResize, false );
