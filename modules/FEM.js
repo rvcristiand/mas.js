@@ -789,6 +789,54 @@ export function setUpwardsAxis( axis ) {
   return promise;
 }
 
+export function setView( direction ) {
+  // set the standard view direction of the camera: 
+  // t = top, f = front, b = back, r = right, l = left
+
+  var promise = new Promise( ( resolve, reject ) => {
+    if ( direction == 't' || direction == 'f' || direction == 'b' || 
+      direction == 'r' || direction == 'l' ) {
+
+      // get the target of the camera
+      var target = controls.target.clone();
+
+      // get distance from camera to model point
+      var distance = camera.position.distanceTo( target );
+
+      // set the base quaternion to define camera direction
+      var quaternion = new THREE.Quaternion()
+      quaternion.setFromAxisAngle( new THREE.Vector3( 1, 0, 0 ), 0 );
+      
+      switch ( direction ) {
+        case 'f':
+          var vector = new THREE.Vector3( distance, 0, 0 );
+          break;
+        case 'r':
+          var vector = new THREE.Vector3( 0, distance, 0 );
+          break;
+        case 't':
+          var vector = new THREE.Vector3( 0, 0, distance );
+          break;
+        case 'b':
+          var vector = new THREE.Vector3( -distance, 0, 0 );
+          break;
+        case 'l':
+          var vector = new THREE.Vector3( 0, -distance, 0 );
+          break;
+      }
+
+      // set camera new position
+      vector.applyQuaternion( quaternion );
+      camera.position.copy( vector );
+
+    } else {
+      reject( new Error( "'" + direction + "' standard view is not available yet" ) );
+    }
+  });
+
+  return promise;
+}
+
 // axes
 function createAxes( shaftLength, shaftRadius, headHeight, headRadius ) {
   // create the axes

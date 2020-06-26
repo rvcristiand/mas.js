@@ -109,6 +109,14 @@ terminal.add_function("setUpwardsAxis", {
   }
 });
 
+// setView
+terminal.add_function("setView", {
+  func: FEM.setView,
+  succesfull: function ( direction ) {
+    return "standard view set to " + direction;
+  }
+});
+
 // loadModel
 terminal.add_function("open", {
   func: FEM.open,
