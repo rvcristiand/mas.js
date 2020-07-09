@@ -6,70 +6,79 @@ var webGLRenderer, CSS2DRenderer;
 var canvasWebGLRenderer = document.getElementById( "canvas" );
 var canvasCSS2DRenderer = document.getElementById( "labels" );
 
+// controls
+var stats, gui;
+
+var model;
+
+var jointMaterial, frameMaterial, frameEdgesMaterial, xMaterial, yMaterial, zMaterial, foundationMaterial, foundationEdgesMaterial, pedestalMaterial, pedestalEdgesMaterial, pinEdgesMaterial, xLoadMaterial, xLoadEdgesMaterial, yLoadMaterial, yLoadEdgesMaterial, zLoadMaterial, zLoadEdgesMaterial;
+var jointGeometry, wireFrameShape, straightShaftGeometry, headGeometry, restrainGeometry, foundationGeometry, foundationEdgesGeometry, pedestalGeometry, pedestalEdgesGeometry, pinGeometry, pinEdgesGeometry;
+
 // light
 // var ambientLight;
 // var hemisphereLight;
 // var directionalLight;
 
-// controls
-var stats, gui;
+var structure, sections;
+structure = {};
+sections = {};
 
 // FEM.js
 var config = {
   // background
   'background.topColor': '#000000',
   'background.bottomColor': '#282828',
-
+  
   // model
   'model.axisUpwards': 'y',
-
+  
   'model.axes.visible': true,
   'model.axes.size': 1,
-
+  
   'model.axes.head.radius': 0.04,
   'model.axes.head.height': 0.3,
-
+  
   'model.axes.shaft.length': 0.7, 
   'model.axes.shaft.radius': 0.01,
-
+  
   // camera
   'camera.type': 'perspective',
   
   'camera.perspective.fov': 45,
   'camera.perspective.near': 0.1,
   'camera.perspective.far': 1000,
-
+  
   'camera.position.x': 10,
   'camera.position.y': 10,
   'camera.position.z': 10,
-
+  
   'camera.target.x': 0, 
   'camera.target.y': 0,
   'camera.target.z': 0,
-
+  
   // controls
   'controls.rotateSpeed': 1,
   'controls.zoomSpeed': 1.2,
   'controls.panSpeed': 0.3,
   'controls.screenPanning': true,
-
+  
   'controls.damping.enable': false,
   'controls.damping.factor': 0.05,
- 
+  
   // 'lights.ambient.color': 0x0c0c0c,
-
+  
   // 'lights.direction.color': 0xffffff,
   // 'lights.direction.intensity': 1,
-
+  
   // axes
   'axes.x': '#ff0000',
   'axes.y': '#00ff00',
   'axes.z': '#0000ff',
-
+  
   // ground
   'ground.visible': true,
   'ground.size': 20,
-
+  
   'ground.plane.visible': false,
   'ground.plane.color': 0x000000,
   'ground.plane.transparent': true,
@@ -79,7 +88,7 @@ var config = {
   'ground.grid.divisions': 20,
   'ground.grid.major': 0xff0000,
   'ground.grid.menor': 0xffffff,
-
+  
   // joint
   'joint.visible': true,
   'joint.size': 0.03,
@@ -87,7 +96,7 @@ var config = {
   'joint.transparent': true,
   'joint.opacity': 1,
   'joint.label': false,
-
+  
   // frame
   'frame.visible': true,
   'frame.view': 'extrude',
@@ -96,66 +105,61 @@ var config = {
   'frame.transparent': true,
   'frame.opacity': 0.5,
   'frame.label': false,
-
+  
   'frame.axes.visible': true,
   'frame.axes.size': 1,
   
   'frame.axes.head.radius': 0.04,
   'frame.axes.head.height': 0.3,
-
+  
   'frame.axes.shaft.length': 0.7,
   'frame.axes.shaft.radius': 0.01,
-
+  
   // support
   'support.visible': true,
   'support.mode': 'space',
-
+  
   'support.analytical.size': 1,
   
   'support.analytical.head.radius': 0.04,
   'support.analytical.head.height': 0.3,
-
+  
   'support.analytical.shaft.tube' : 0.04,
   'support.analytical.straightShaft.length': 1,
   'support.analytical.curveShaft.radius': 1,
-
+  
   'support.analytical.restrain.radius': 0.1,
   'support.analytical.restrain.thickness': 0.01,
-
+  
   'support.foundation.size': 0.5,
   'support.foundation.depth': 0.05,
-
+  
   'support.pedestal.size': 0.3,
-
+  
   'support.pin.height': 0.3,
   'support.pin.radius': 0.3,
-
+  
   // load
   'load.visible': true,
-
+  'load.system': 'global',
+  
+  'load.head.radius': 0.05,
+  'load.head.height': 0.3,
+  'load.shaft.tube' : 0.02,
+  
   'load.joints.force.scale': 0.1,
   'load.joints.torque.scale': 0.02,
-
-  'load.joints.head.radius': 0.05,
-  'load.joints.head.height': 0.3,
-
-  'load.joints.shaft.tube' : 0.02,
+  
+  'load.frames.force.scale': 0.5,
+  
+  'load.frames.transparent': true,
+  'load.frames.opacity': 0.2
 };
-
-var structure, model;
-
-var jointMaterial, frameMaterial, frameEdgesMaterial, xMaterial, yMaterial, zMaterial, foundationMaterial, foundationEdgesMaterial, pedestalMaterial, pedestalEdgesMaterial, pinEdgesMaterial;
-var jointGeometry, wireFrameShape, straightShaftGeometry, headGeometry, restrainGeometry, foundationGeometry, foundationEdgesGeometry, pedestalGeometry, pedestalEdgesGeometry, pinGeometry, pinEdgesGeometry;
-
-var sections = {};
 
 function init() {
   // refresh the config
   var json = JSON.parse( localStorage.getItem( window.location.href + '.gui' ) );
-  if ( json ) {
-    var preset = json.remembered[ json.preset ][ '0' ];
-    for ( let [ key, value ] of Object.entries( preset ) ) config[ key ] = value;
-  }
+  if ( json ) for ( let [ key, value ] of Object.entries( json.remembered[ json.preset ][ '0' ] ) ) config[ key ] = value;
   
   // set the background
   setBackgroundColor( config[ 'background.topColor' ], config[ 'background.bottomColor' ] );
@@ -236,6 +240,14 @@ function init() {
   pedestalEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
 
   pinEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
+
+  xLoadMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.x' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
+  yLoadMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.y' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
+  zLoadMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.z' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
+
+  xLoadEdgesMaterial = new THREE.LineBasicMaterial( { color: config[ 'axes.x' ] } );
+  yLoadEdgesMaterial = new THREE.LineBasicMaterial( { color: config[ 'axes.y' ] } );
+  zLoadEdgesMaterial = new THREE.LineBasicMaterial( { color: config[ 'axes.z' ] } );
 
   // set the geometries
   jointGeometry = new THREE.SphereBufferGeometry( 1, 32, 32 );
@@ -401,9 +413,9 @@ function init() {
 
   // add axes folder
   let axesFolder = gui.addFolder( "axes" );
-  axesFolder.addColor( config, 'axes.x' ).name( 'x' ).onChange( color => xMaterial.color = new THREE.Color( color ) );
-  axesFolder.addColor( config, 'axes.y' ).name( 'y' ).onChange( color => yMaterial.color = new THREE.Color( color ) );
-  axesFolder.addColor( config, 'axes.z' ).name( 'z' ).onChange( color => zMaterial.color = new THREE.Color( color ) );
+  axesFolder.addColor( config, 'axes.x' ).name( 'x' ).onChange( color => xMaterial.color = xLoadMaterial.color = xLoadEdgesMaterial.color = new THREE.Color( color ) );
+  axesFolder.addColor( config, 'axes.y' ).name( 'y' ).onChange( color => yMaterial.color = yLoadMaterial.color = yLoadEdgesMaterial.color = new THREE.Color( color ) );
+  axesFolder.addColor( config, 'axes.z' ).name( 'z' ).onChange( color => zMaterial.color = zLoadMaterial.color = zLoadEdgesMaterial.color = new THREE.Color( color ) );
 
   // add a joint folder
   let jointFolder = gui.addFolder( "joint" );
@@ -412,11 +424,11 @@ function init() {
   jointFolder.add( config, 'joint.label' ).name( 'label' ).onChange( visible => setJointLabel( visible ) );
   jointFolder.addColor( config, "joint.color" ).name( 'color' ).onChange( color => setJointColor( color ) );
   jointFolder.add( config, 'joint.transparent' ).name( 'transparent' ).onChange( transparent => setJointTransparent( transparent ) );
-  jointFolder.add( config, 'joint.opacity' ).name( 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( opacity => setJointOpacity( opacity ));
+  jointFolder.add( config, 'joint.opacity' ).name( 'opacity' ).min( 0 ).max( 1 ).step( 0.01 ).onChange( opacity => setJointOpacity( opacity ) );
 
   // add a frame folder
   let frameFolder = gui.addFolder( "frame" );
-  frameFolder.add( config, 'frame.visible' ).name( 'visible' ).onChange( visible => setFrameVisible( visible ));
+  frameFolder.add( config, 'frame.visible' ).name( 'visible' ).onChange( visible => setFrameVisible( visible ) );
   frameFolder.add( config, 'frame.view', [ 'wireframe', 'extrude' ] ).name( 'view' ).onChange( view  =>  setFrameView( view ) );
   frameFolder.add( config, 'frame.size' ).name( 'size' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( size => setFrameSize( size ) );
   frameFolder.add( config, 'frame.label' ).name( 'label' ).onChange( visible => model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'label' ).visible = ( visible && config[ 'frame.visible' ] ) ) );
@@ -473,15 +485,16 @@ function init() {
   // add load folder
   let loadFolder = gui.addFolder( "load" );
   loadFolder.add( config, 'load.visible' ).name( 'visible' ).onChange( visible => setLoadVisible( visible ) );
+  loadFolder.add( config, 'load.system' ).options( [ 'global' ] ).name ( 'system' ).onChange( system => console.log( system ) );  // TODO: add 'local'
   loadFolder.add( config, 'load.joints.force.scale' ).name( 'force' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadForceScale( scale ) );
   loadFolder.add( config, 'load.joints.torque.scale' ).name( 'torque' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadTorqueScale( scale ) );
   // add head folder
   let headArrowLoadFolder = loadFolder.addFolder( "head" );
-  headArrowLoadFolder.add( config, 'load.joints.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setLoadHeadHeight( height ) );
-  headArrowLoadFolder.add( config, 'load.joints.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setLoadHeadRadius( radius ) );
+  headArrowLoadFolder.add( config, 'load.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setLoadHeadHeight( height ) );
+  headArrowLoadFolder.add( config, 'load.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setLoadHeadRadius( radius ) );
   // add shaft folder
   let shaftArrowLoadFolder = loadFolder.addFolder( "shaft" );
-  shaftArrowLoadFolder.add( config, 'load.joints.shaft.tube' ).name( 'tube' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( tube => setLoadShaftTube( tube ) );
+  shaftArrowLoadFolder.add( config, 'load.shaft.tube' ).name( 'tube' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( tube => setLoadShaftTube( tube ) );
 
   render();
 }
@@ -550,7 +563,7 @@ function setCameraType( type ) {
     worldDirection.multiplyScalar( -1 / ( 2 * zoom * Math.tan( ( config[ 'camera.perspective.fov' ] / 2 ) * Math.PI / 180 ) ) );
     camera.position.copy( target.clone().add( worldDirection ) );
   } else {
-    camera.position.add( position.clone().sub( target ).multiplyScalar( 10 ) ); // TODO: proyect camera in the scene's boundaty sphere
+    camera.position.add( position.clone().sub( target ).multiplyScalar( 10 ) ); // TODO: proyect camera in the scene's boundary sphere
   }
 
   // set controls
@@ -607,6 +620,12 @@ function createModel() {
   frames.visible = config[ 'frame.visible' ];
   model.add( frames );
 
+  // add loads
+  var loadPatterns = new THREE.Group();
+  loadPatterns.name = 'loadPatterns';
+  loadPatterns.visible = config[ 'load.visible' ];
+  model.add( loadPatterns );
+
   return model;
 }
 
@@ -625,7 +644,7 @@ function createGround( size, divisions, color, transparent, opacity, colorCenter
   var plane = new THREE.Mesh( new THREE.PlaneBufferGeometry(), new THREE.MeshBasicMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } ) );
   plane.name = 'plane';
   plane.visible = config[ 'ground.plane.visible'];
-  ground.add( plane )
+  ground.add( plane );
   
   // set size
   ground.scale.setScalar( size );
@@ -643,7 +662,7 @@ function createGrid( divisions, colorCenterLine, colorGrid ) {
   
   grid.name = 'grid';
   grid.visible = config[ 'ground.grid.visible' ];
-  grid.rotation.x = Math.PI / 2;  // rotate grid to plane xy
+  grid.rotation.x = Math.PI / 2;
 
   return grid;
 }
@@ -665,7 +684,7 @@ export function open( filename ) {
       structure = createStructure();
       
       // add objects
-      Object.entries( json.joints ).forEach( ( [ name, joint ] ) => { addJoint( name, joint.x, joint.y, joint.z ) } );
+      if ( json.hasOwnProperty( 'joints' ) ) Object.entries( json.joints ).forEach( ( [ name, joint ] ) => { addJoint( name, joint.x, joint.y, joint.z ) } );
       Object.entries( json.materials ).forEach( ( [ name, material ] ) => { addMaterial( name, material.E, material.G ) } );
       
       // add sections
@@ -690,9 +709,12 @@ export function open( filename ) {
       Object.entries( json.load_patterns ).forEach( ( [ name, load_pattern] ) => {
         addLoadPattern( name );
         if ( load_pattern.hasOwnProperty( 'joints' ) ) Object.entries( load_pattern.joints ).forEach( ( [ joint, pointLoads ] ) => pointLoads.forEach( pointLoad => addLoadAtJoint( name, joint, pointLoad.fx, pointLoad.fy, pointLoad.fz, pointLoad.mx, pointLoad.my, pointLoad.mz ) ) );
+        if ( load_pattern.hasOwnProperty( 'frames' ) ) Object.entries( load_pattern.frames ).forEach( ( [ frame, load_types ] ) => {
+          if ( load_types.hasOwnProperty( 'uniformly_distributed' ) ) Object.entries( load_types.uniformly_distributed ).forEach( ( [ system, loads ] ) => loads.forEach( load => addUniformlyDistributedLoadAtFrame( name, frame, system, load.fx, load.fy, load.fz, load.mx, load.my, load.mz ) ) );
+        });
       });
 
-      return "the '" + filename + "' model has been loaded"
+      return "the '" + filename + "' model has been loaded";
     });
 
   return promise;
@@ -764,7 +786,7 @@ export function setUpwardsAxis( axis ) {
   // set the upwards axis
   
   var promise = new Promise( ( resolve, reject ) => {
-    if ( axis =='x' || axis == 'y' || axis == 'z' ) {
+    if ( axis == 'x' || axis == 'y' || axis == 'z' ) {
       var joint;
       
       // set model rotation
@@ -798,19 +820,12 @@ function createAxes( shaftLength, shaftRadius, headHeight, headRadius ) {
 
   var arrow;
 
-  // axis x
-  arrow = createArrow( xMaterial, shaftLength, shaftRadius, headHeight, headRadius );
-  axes.add( arrow );
-
-  // axis y
-  arrow = createArrow( yMaterial, shaftLength, shaftRadius, headHeight, headRadius );
-  arrow.quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
-  axes.add( arrow );
-
-  // axis z
-  arrow = createArrow( zMaterial, shaftLength, shaftRadius, headHeight, headRadius );
-  arrow.quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
-  axes.add( arrow );
+  [ [ 'x', xMaterial, 0 ] , [ 'y', yMaterial, 2 * Math.PI / 3 ], [ 'z', zMaterial, 4 * Math.PI / 3 ] ].forEach( ( [ name, material, angle ] ) => {
+    arrow = createArrow( material, shaftLength, shaftRadius, headHeight, headRadius );
+    arrow.name = name;
+    arrow.quaternion.setFromAxisAngle( vector, angle );
+    axes.add( arrow );
+  });
 
   return axes;
 }
@@ -838,7 +853,7 @@ function createArrow( material, shaftLength, shaftRadius, headHeight, headRadius
 
 function setAxesHeadHeight( axes, head ) { axes.children.forEach( arrow => arrow.getObjectByName( 'head' ).scale.setX( head ) ) };
 
-function setAxesHeadRadius( axes, radius) { axes.children.forEach( arrow => arrow.getObjectByName( 'head' ).scale.set( arrow.getObjectByName( 'head' ).scale.x, radius, radius ) ) };
+function setAxesHeadRadius( axes, radius ) { axes.children.forEach( arrow => arrow.getObjectByName( 'head' ).scale.set( arrow.getObjectByName( 'head' ).scale.x, radius, radius ) ) };
 
 function setAxesShaftLength( axes, length ) {
   // set axes shaft length
@@ -882,29 +897,25 @@ export function addJoint( name, x, y, z ) {
       // add joint to structure
       structure.joints[ name ] = { x: x, y: y, z: z };
 
-      // create parent
+      // parent
       var parent = new THREE.Group();
       parent.name = name;
+      parent.position.set( x, y, z );
+      model.getObjectByName( 'joints' ).add( parent );
     
-      // create joint
+      // joint
       var joint = createJoint( config[ 'joint.size' ] );
       parent.add( joint );
   
-      // add label
-      const label = document.createElement( 'div' );
+      // label
+      var label = document.createElement( 'div' );
       label.className = 'joint';
       label.textContent = name;
-      var jointLabel = new THREE.CSS2DObject( label );
-      jointLabel.name = 'label';
-      jointLabel.visible = config[ 'joint.label' ];
-      jointLabel.position.set( 0.5, 0.5, 0.5 );
-      joint.add( jointLabel );
-      
-      // set position
-      parent.position.set( x, y, z );
-
-      // add parent to scene
-      model.getObjectByName( 'joints' ).add( parent );
+      label = new THREE.CSS2DObject( label );
+      label.name = 'label';
+      label.visible = config[ 'joint.label' ];
+      label.position.set( 0.5, 0.5, 0.5 );
+      joint.add( label );
 
       resolve( "joint '" + name + "' was added" );
     }
@@ -1732,34 +1743,73 @@ function setAnalyticalRestrainThicknessSupport( thickness ) {
 }
 
 // loads
-function createLoadAtJoint( fx, fy, fz, mx, my, mz ) {
+function createLoadAtJoint( loadPattern, joint ) {
   // create a load at joint
 
   var loadAtJoint = new THREE.Group();
-
+  
+  var fx, fy, fz, mx, my, mz;
+  fx = fy = fz = mx = my = mz = 0;
+  
+  structure.load_patterns[ loadPattern ].joints[ joint ].forEach( load => {
+    fx += load.fx;
+    fy += load.fy;
+    fz += load.fz;
+    mx += load.mx;
+    my += load.my;
+    mz += load.mz;
+  });
+  
   // create axial forces
   var forces = new THREE.Group();
-
+  forces.name = 'forces';
+  
   if ( fx != 0 ) forces.add( createForce( fx, 'x' ) );
   if ( fy != 0 ) forces.add( createForce( fy, 'y' ) );
   if ( fz != 0 ) forces.add( createForce( fz, 'z' ) );
+  loadAtJoint.add( forces );
 
   // create torque forces
   var torques = new THREE.Group();
+  torques.name = 'torques';
 
   if ( mx != 0 ) torques.add( createTorque( mx, 'x' ) );
   if ( my != 0 ) torques.add( createTorque( my, 'y' ) );
   if ( mz != 0 ) torques.add( createTorque( mz, 'z' ) );
-
-  forces.name = 'forces';
-  torques.name = 'torques';
-  
-  loadAtJoint.add( forces );
   loadAtJoint.add( torques );
 
-  loadAtJoint.name = 'load';
-
   return loadAtJoint;
+}
+
+function createGlobalLoadAtFrame( loadPattern, frame ) {
+  // create a global load at frame
+
+  var loadAtFrame = new THREE.Group();
+
+  var fx, fy, fz, mx, my, mz;
+  fx = fy = fz = mx = my = mz = 0;
+  
+  if ( structure.load_patterns[ loadPattern ].frames[ frame ].hasOwnProperty( 'uniformly_distributed' ) ) {
+    if ( structure.load_patterns[ loadPattern ].frames[ frame ].uniformly_distributed.hasOwnProperty( 'global' ) ) structure.load_patterns[ loadPattern ].frames[ frame ].uniformly_distributed.global.forEach( load => {
+      fx += load.fx;
+      fy += load.fy;
+      fz += load.fz;
+      mx += load.mx;
+      my += load.my;
+      mz += load.mz;
+    });
+  }
+
+  // create axial forces
+  var forces = new THREE.Group();
+  forces.name = 'forces';
+  
+  if ( fx != 0 ) forces.add( createGlobalUniformlyDistributedForceAtFrame( frame, fx, 'x' ) );
+  if ( fy != 0 ) forces.add( createGlobalUniformlyDistributedForceAtFrame( frame, fy, 'y' ) );
+  if ( fz != 0 ) forces.add( createGlobalUniformlyDistributedForceAtFrame( frame, fz, 'z' ) );
+  loadAtFrame.add( forces );
+
+  return loadAtFrame;
 }
 
 function createForce( magnitud, axis ) {
@@ -1776,23 +1826,23 @@ function createForce( magnitud, axis ) {
 
   switch ( axis ) {
     case 'x':
-      arrow = createArrow( xMaterial, Math.abs( magnitud ), config[ 'load.joints.shaft.tube' ], config[ 'load.joints.head.height' ], config[ 'load.joints.head.radius' ] );
+      arrow = createArrow( xMaterial, Math.abs( magnitud ), config[ 'load.shaft.tube' ], config[ 'load.head.height' ], config[ 'load.head.radius' ] );
       break;
     case 'y':
-      arrow = createArrow( yMaterial, Math.abs( magnitud ), config[ 'load.joints.shaft.tube' ], config[ 'load.joints.head.height' ], config[ 'load.joints.head.radius' ] );
+      arrow = createArrow( yMaterial, Math.abs( magnitud ), config[ 'load.shaft.tube' ], config[ 'load.head.height' ], config[ 'load.head.radius' ] );
       quaternion.setFromAxisAngle( vector, 2 * Math.PI / 3 );
       break;
     case 'z':
-      arrow = createArrow( zMaterial, Math.abs( magnitud ), config[ 'load.joints.shaft.tube' ], config[ 'load.joints.head.height' ], config[ 'load.joints.head.radius' ] );
+      arrow = createArrow( zMaterial, Math.abs( magnitud ), config[ 'load.shaft.tube' ], config[ 'load.head.height' ], config[ 'load.head.radius' ] );
       quaternion.setFromAxisAngle( vector, 4 * Math.PI / 3 );
       break;
   }
 
   arrow.name = 'arrow';
   if ( magnitud / Math.abs( magnitud ) < 0 ) arrow.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( -1, 0, 0 ) );
-  arrow.position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( magnitud ) + config[ 'load.joints.head.height' ] ) );
+  arrow.position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( magnitud ) + config[ 'load.head.height' ] ) );
   force.add( arrow );
-    
+  
   force.name = axis;
   force.quaternion.copy( quaternion );
 
@@ -1811,7 +1861,7 @@ function createTorque( magnitud, axis ) {
 
   magnitud = config[ 'load.joints.torque.scale' ] * magnitud / 2;
 
-  var curveShaftGeometry = new THREE.TorusBufferGeometry( Math.abs( magnitud ), config[ 'load.joints.shaft.tube' ], 8, 6, 3 * Math.PI / 2 );
+  var curveShaftGeometry = new THREE.TorusBufferGeometry( Math.abs( magnitud ), config[ 'load.shaft.tube' ], 8, 6, 3 * Math.PI / 2 );
   curveShaftGeometry.rotateY( Math.PI / 2 );
 
   switch ( axis ) {
@@ -1832,7 +1882,7 @@ function createTorque( magnitud, axis ) {
   }
 
   head.name = 'head';
-  head.scale.set( config[ 'load.joints.head.height' ], config[ 'load.joints.head.radius' ], config[ 'load.joints.head.radius' ] );
+  head.scale.set( config[ 'load.head.height' ], config[ 'load.head.radius' ], config[ 'load.head.radius' ] );
   if ( magnitud / Math.abs( magnitud ) < 0) {
     head.position.set( 0, 0, -Math.abs( magnitud ) );
     head.rotateZ( -Math.PI / 2 );
@@ -1851,6 +1901,97 @@ function createTorque( magnitud, axis ) {
   return torque;
 }
 
+
+function createGlobalUniformlyDistributedForceAtFrame( frame, magnitud, axis ) {
+  // create a uniformly distributed force
+
+  var uniformlyDistributed = new THREE.Group();
+
+  var load, loadGeometry, loadEdges, loadEdgesGeometry;
+  
+  var p1, p2;
+  p1 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].j ).position;  // structure.joints[ structure.frames[ frame.name ].j ];
+  p2 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].k ).position;  // structure.joints[ structure.frames[ frame.name ].k ];
+
+  frame = model.getObjectByName( 'frames' ).getObjectByName( frame );
+  magnitud = config[ 'load.frames.force.scale' ] * magnitud;
+  
+  var vector = new THREE.Vector3( 1, 0, 0 );
+  vector.applyQuaternion( frame.quaternion );
+
+  if ( Math.abs( vector.dot( new THREE.Vector3( axis == 'x' ? 1: 0, axis == 'y' ? 1: 0, axis == 'z' ? 1: 0 ) ) - 1 )  < 0.1 ) {
+    // TODO: axial force
+    var length = p2.clone().sub( p1 ).length();
+
+    var quantite_arrows = length / ( magnitud );
+
+    if ( quantite_arrows < 1 ) {
+      quantite_arrows = 1;
+    } else if( quantite_arrows > 1 ) {
+      quantite_arrows = Math.floor( quantite_arrows );
+    }
+    
+    console.log( quantite_arrows );
+  } else {
+    var p3, p4;
+    p3 = { 'x': p2.x, 'y': p2.y, 'z': p2.z };
+    p4 = { 'x': p1.x, 'y': p1.y, 'z': p1.z };
+
+    switch ( axis ) {
+      case 'x':
+        p3.x -= magnitud;
+        p4.x -= magnitud;
+        break;
+      case 'y':
+        p3.y -= magnitud;
+        p4.y -= magnitud;
+        break;
+      case 'z':
+        p3.z -= magnitud;
+        p4.z -= magnitud;
+        break;
+    }
+
+    var positions = [];
+
+    positions.push( p1.x, p1.y, p1.z );
+    positions.push( p2.x, p2.y, p2.z );
+    positions.push( p3.x, p3.y, p3.z );
+    positions.push( p3.x, p3.y, p3.z );
+    positions.push( p4.x, p4.y, p4.z );
+    positions.push( p1.x, p1.y, p1.z );
+    
+    loadGeometry = new THREE.BufferGeometry();
+    loadGeometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array( positions ), 3) );
+
+    loadEdgesGeometry = new THREE.EdgesGeometry( loadGeometry );
+    
+    switch ( axis ) {
+      case 'x':
+        load = new THREE.Mesh( loadGeometry, xLoadMaterial );
+        loadEdges = new THREE.LineSegments( loadEdgesGeometry, xLoadEdgesMaterial );
+        break;
+      case 'y':
+        load = new THREE.Mesh( loadGeometry, yLoadMaterial );
+        loadEdges = new THREE.LineSegments( loadEdgesGeometry, yLoadEdgesMaterial );
+        break;
+      case 'z':
+        load = new THREE.Mesh( loadGeometry, zLoadMaterial );
+        loadEdges = new THREE.LineSegments( loadEdgesGeometry, zLoadEdgesMaterial );
+        break;
+    }
+  }
+  load.name = 'load';
+  loadEdges.name = 'edges';
+
+  load.add( loadEdges );
+
+  uniformlyDistributed.add( load );
+  uniformlyDistributed.name = axis;
+
+  return uniformlyDistributed;
+}
+
 export function addLoadPattern( name ) {
   // add a load pattern
 
@@ -1864,6 +2005,11 @@ export function addLoadPattern( name ) {
     } else {
       // add load pattern to structure
       structure.load_patterns[ name ] = {};
+
+      // add load pattern to model
+      var loadPattern = new THREE.Group();
+      loadPattern.name = name;
+      model.getObjectByName( 'loadPatterns' ).add( loadPattern );
 
       resolve( "load pattern '" + name + "' was added" );
     }
@@ -1885,21 +2031,9 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
       // add load to structure
 
       if ( !structure.load_patterns[ loadPattern ].hasOwnProperty( 'joints' ) ) structure.load_patterns[ loadPattern ].joints = {};
-
       if ( !structure.load_patterns[ loadPattern ].joints.hasOwnProperty( joint ) ) structure.load_patterns[ loadPattern ].joints[ joint ] = [];
 
       structure.load_patterns[ loadPattern ].joints[ joint ].push( { 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz } );
-
-      fx = fy = fz = mx = my = mz = 0;
-
-      structure.load_patterns[ loadPattern ].joints[ joint ].forEach( load => {
-        fx += load.fx;
-        fy += load.fy;
-        fz += load.fy;
-        mx += load.mx;
-        my += load.my;
-        mz += load.mz;
-      });
 
       // add loads to joint
       if ( !model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ) ) {
@@ -1909,10 +2043,11 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
         model.getObjectByName( 'joints' ).getObjectByName( joint ).add( loads );
       }
 
+      // remove loadPattern
       if ( model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).remove( model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) );
 
       // add load to model
-      var load = createLoadAtJoint( fx, fy, fz, mx, my, mz );
+      var load = createLoadAtJoint( loadPattern, joint );
       load.name = loadPattern;
       model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).add( load );
 
@@ -1929,11 +2064,66 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
   return promise;
 }
 
+export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, fx, fy, fz, mx, my, mz )  {
+  // add a uniformly distributed load at frame
+
+  var promise = new Promise( ( resolve, reject ) => {
+    // only strings accepted as name
+    loadPattern = loadPattern.toString();
+    frame = frame.toString();
+
+    // check if loadPatttern & frame exists
+    if ( structure.load_patterns.hasOwnProperty( loadPattern ) && structure.frames.hasOwnProperty( frame ) ) {
+      // add load to structure
+
+      if ( !structure.load_patterns[ loadPattern ].hasOwnProperty( 'frames' ) ) structure.load_patterns[ loadPattern ].frames = {};
+      if ( !structure.load_patterns[ loadPattern ].frames.hasOwnProperty( frame ) ) structure.load_patterns[ loadPattern ].frames[ frame ] = {};
+      if ( !structure.load_patterns[ loadPattern ].frames[ frame ].hasOwnProperty( 'uniformly_distributed' ) ) structure.load_patterns[ loadPattern ].frames[ frame ][ 'uniformly_distributed' ] = {};
+      if ( !structure.load_patterns[ loadPattern ].frames[ frame ].uniformly_distributed.hasOwnProperty( system ) ) structure.load_patterns[ loadPattern ].frames[ frame ][ 'uniformly_distributed' ][ system ] = [];
+      structure.load_patterns[ loadPattern ].frames[ frame ].uniformly_distributed[ system ].push( { 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz } );
+
+      // add loads to loadPatterns
+      if ( !model.getObjectByName( 'loadPatterns' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ) ) {
+        var frames = new THREE.Group();
+        frames.name = 'frames';
+        model.getObjectByName( 'loadPatterns' ).getObjectByName( loadPattern ).add( frames );
+      }
+
+      // add loads to frame
+      // if ( !model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'loads' ) ) {
+      //   var loads = new THREE.Group();
+      //   loads.name = 'loads';
+      //   loads.visible = config[ 'load.visible' ];
+      //   model.getObjectByName( 'frames' ).getObjectByName( frame ).add( loads );
+      // }
+
+      // remove loadPattern
+      // if ( model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) ) model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'laods' ).remove( model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'laods' ).getObjectByName( loadPattern ) );
+
+      // add distributed load to model
+      var load = createGlobalLoadAtFrame( loadPattern, frame );
+      load.name = frame;
+      model.getObjectByName( 'loadPatterns' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).add( load );
+
+      resolve( "frame distributed load added" );
+    } else {
+      if ( structure.load_patterns.hasOwnProperty( loadPattern ) ) {
+        reject( new Error( "frame '" + frame + "' does not exist" ) );
+      } else {
+        reject( new Error( "load pattern '" + loadPattern + "' does not exist" ) );
+      }
+    }
+  });
+
+  return promise;
+}
+
 function setLoadVisible( visible ) {
   // set load visibile
 
-  Object.values( structure.load_patterns ).forEach( loadPattern => {
+  Object.entries( structure.load_patterns ).forEach( ( [ name, loadPattern ] ) => {
     if ( loadPattern.hasOwnProperty( 'joints' ) ) Object.keys( loadPattern.joints ).forEach( joint => model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).visible = visible );
+    if ( loadPattern.hasOwnProperty( 'frames' ) ) model.getObjectByName( 'loadPatterns' ).getObjectByName( name ).visible = visible;
     // Object.keys( loadPattern.frames ).forEach( frame => model.getObjectByName( 'freames' ).getObjectByName( frame ).getObjectByName( 'loads' ).visible = visible );
   });
 }
@@ -1958,7 +2148,7 @@ function setLoadForceScale( scale ) {
             arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' );
             arrow.getObjectByName( 'shaft' ).scale.setX( Math.abs( magnitud ) );
             arrow.getObjectByName( 'head' ).position.setX( Math.abs( magnitud ) );
-            arrow.position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( magnitud ) + config[ 'load.joints.head.height' ] ) );
+            arrow.position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( magnitud ) + config[ 'load.head.height' ] ) );
           }
         });
       });
@@ -1983,7 +2173,7 @@ function setLoadTorqueScale( scale ) {
         Object.entries( { 'x': mx, 'y': my, 'z': mz } ).forEach( ( [ axis, magnitud ] ) => {
           if ( magnitud != 0 ) {
             magnitud = scale * magnitud / 2;
-            curveShaftGeometry = new THREE.TorusBufferGeometry( Math.abs( magnitud ), config[ 'load.joints.shaft.tube' ], 8, 6, 3 * Math.PI / 2 );
+            curveShaftGeometry = new THREE.TorusBufferGeometry( Math.abs( magnitud ), config[ 'load.shaft.tube' ], 8, 6, 3 * Math.PI / 2 );
             curveShaftGeometry.rotateY( Math.PI / 2 );
 
             curveShaft = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' );
@@ -2036,8 +2226,8 @@ function setLoadHeadRadius( radius ) {
   Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
     if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
       Object.keys( loadPatternValue.joints ).forEach( joint => {
-        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'forces' ).children.forEach( force => force.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'load.joints.head.height' ], radius, radius ) );
-        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).children.forEach( torque => torque.getObjectByName( 'head' ).scale.set( config[ 'load.joints.head.height' ], radius, radius ) );
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'forces' ).children.forEach( force => force.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'load.head.height' ], radius, radius ) );
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).children.forEach( torque => torque.getObjectByName( 'head' ).scale.set( config[ 'load.head.height' ], radius, radius ) );
       });
     }
   });
