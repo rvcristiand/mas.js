@@ -142,20 +142,21 @@ var config = {
   // load
   'load.visible': true,
   'load.system': 'global',
-
-  'load.resultant.force': 0x000000,
-  'load.resultant.torque': 0x000000,
-
+  
   'load.head.radius': 0.05,
   'load.head.height': 0.3,
   'load.shaft.tube' : 0.02,
-
+  
   'load.as': 'components',
+
+  'load.resultant.force': 0x000000,
+  'load.resultant.torque': 0x000000,
   
   'load.joints.force.scale': 0.1,
   'load.joints.torque.scale': 0.02,
   
   'load.frames.force.scale': 0.5,
+  'load.frames.torque.scale': 0.5,
   
   'load.frames.transparent': true,
   'load.frames.opacity': 0.2
@@ -495,12 +496,16 @@ function init() {
   let loadFolder = gui.addFolder( "load" );
   loadFolder.add( config, 'load.visible' ).name( 'visible' ).onChange( visible => setLoadVisible( visible ) );
   loadFolder.add( config, 'load.system' ).options( [ 'global' ] ).name ( 'system' ).onChange( system => console.log( system ) );  // TODO: add 'local'
-  loadFolder.add( config, 'load.as' ).options( [ 'components', 'resultant' ] ).name( 'as' ).onChange( as => setLoadAs( as ) ); 
-  loadFolder.add( config, 'load.joints.torque.scale' ).name( 'torque' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadTorqueScale( scale ) );
+  loadFolder.add( config, 'load.as' ).options( [ 'components', 'resultant' ] ).name( 'as' ).onChange( as => setLoadAs( as ) );
   // add force folder
   let forceFolder = loadFolder.addFolder( "force" );
-  forceFolder.add( config, 'load.joints.force.scale' ).name( 'force' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadForceScale( scale ) );
+  forceFolder.add( config, 'load.joints.force.scale' ).name( 'scale' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadForceScale( scale ) );
   forceFolder.addColor( config, 'load.resultant.force' ).name( 'color' ).onChange( color => resultantForceMaterial.color = new THREE.Color( color ) );
+  // add torque folder
+  let torqueFolder = loadFolder.addFolder( "torque" );
+  torqueFolder.add( config, 'load.joints.torque.scale' ).name( 'scale' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadTorqueScale( scale ) );
+  torqueFolder.addColor( config, 'load.resultant.torque' ).name( 'color' ).onChange( color => resultantTorqueMaterial.color = new THREE.Color( color ) );
+
   // add head folder
   let headArrowLoadFolder = loadFolder.addFolder( "head" );
   headArrowLoadFolder.add( config, 'load.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setLoadHeadHeight( height ) );
@@ -2022,6 +2027,7 @@ function createLoadAtJoint( loadPattern, joint ) {
   // create a load at joint
 
   var loadAtJoint = new THREE.Group();
+  loadAtJoint.name = loadPattern
   
   var fx, fy, fz, mx, my, mz;
   fx = fy = fz = mx = my = mz = 0;
@@ -2414,9 +2420,7 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
       if ( model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).remove( model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) );
 
       // add load to model
-      var load = createLoadAtJoint( loadPattern, joint );
-      load.name = loadPattern;
-      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).add( load );
+      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).add( createLoadAtJoint( loadPattern, joint ) );
 
       resolve( "joint load added" );
     } else {
