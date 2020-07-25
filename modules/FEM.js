@@ -239,7 +239,7 @@ function init() {
   yMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.y' ] } );
   zMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.z' ] } );
 
-  foundationMaterial = { x: xMaterial, y: yMaterial, z:zMaterial };
+  foundationMaterial = { x: xMaterial, y: yMaterial, z: zMaterial };
   foundationEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );  
 
   pedestalMaterial = [ xMaterial, xMaterial, yMaterial, yMaterial, zMaterial, zMaterial ];
