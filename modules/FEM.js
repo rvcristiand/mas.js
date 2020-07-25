@@ -2604,25 +2604,11 @@ function setLoadTorqueScale( scale ) {
 function setLoadHeadHeight( height ) {
   // set load head height
 
-  var fx, fy, fz, arrow;
-
   Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
     if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
       Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => {
-        fx = fy = fz = 0;
-        loads.forEach( load => {
-          fx += load.fx;
-          fy += load.fy;
-          fz += load.fz;
-        });
-        Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => {
-          if ( magnitud != 0 ) {
-            arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' );
-            arrow.position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( config[ 'load.joints.force.scale' ] * magnitud ) + height ) );
-            arrow.getObjectByName( 'head' ).scale.setX( height );
-          }
-        });
-        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).children.forEach( torque => torque.getObjectByName( 'head' ).scale.setX( height ) );
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).children.forEach( loads => loads.children.forEach( axis => axis.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height ) ) );
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).children.forEach( load => load.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height ) );
       });
     }
   });
