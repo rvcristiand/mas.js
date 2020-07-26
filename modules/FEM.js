@@ -2544,7 +2544,7 @@ function setLoadForceScale( scale ) {
         });
 
         vector = new THREE.Vector3( fx, fy, fz );
-        magnitud = scale * vector.length() / 2;
+        magnitud = scale * vector.length();
 
         // resultant
         if ( magnitud != 0 ) {
