@@ -2606,7 +2606,7 @@ function setLoadHeadHeight( height ) {
 
   Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
     if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
-      Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => {
+      Object.keys( loadPatternValue.joints ).forEach( joint => {
         model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).children.forEach( loads => loads.children.forEach( axis => axis.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height ) ) );
         model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).children.forEach( load => load.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height ) );
       });
