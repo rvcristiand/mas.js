@@ -2630,7 +2630,7 @@ function setLoadHeadRadius( radius ) {
 function setLoadShaftTube( tube ) {
   // set load shaft tube
 
-  var fx, fy, fz, mx, my, mz, curveShaftGeometry;
+  var fx, fy, fz, mx, my, mz, curveShaft, vector, magnitud;
   
   Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
     if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
@@ -2644,20 +2644,30 @@ function setLoadShaftTube( tube ) {
           my += load.my;
           mz += load.mz;
         });
-        Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => {
-          if ( magnitud != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' ).getObjectByName( 'shaft' ).scale.set( Math.abs( config[ 'load.joints.force.scale' ] * magnitud ), tube, tube );
-        });
+
+        // components
+        Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => { if ( magnitud != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'straightShaft' ).scale.set( Math.abs( config[ 'load.joints.force.scale' ] * magnitud ), tube, tube ) } );
                   
         Object.entries( { 'x': mx, 'y': my, 'z': mz } ).forEach( ( [ axis, magnitud ] ) => {
           if ( magnitud != 0 ) {
-            magnitud = config[ 'load.joints.torque.scale'] * magnitud / 2;
-            curveShaftGeometry = new THREE.TorusBufferGeometry( Math.abs( magnitud ), tube, 8, 6, 3 * Math.PI / 2 );
-            curveShaftGeometry.rotateY( Math.PI / 2 );
-    
-            model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' ).geometry.dispose();
-            model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'curveShaft' ).geometry = curveShaftGeometry;
+            curveShaft = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'arrow' ).getObjectByName( 'curveShaft' );
+            curveShaft.geometry.dispose();
+            curveShaft.geometry = createCurveShaftGeometry( Math.abs( config[ 'load.joints.torque.scale'] * magnitud / 2 ), tube );
           }
         });
+
+        // resultant
+        vector = new THREE.Vector3( fx, fy, fz );
+        magnitud = config[ 'load.joints.force.scale' ] * vector.length();
+        if ( magnitud != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'force' ).getObjectByName( 'arrow' ).getObjectByName( 'straightShaft' ).scale.set( Math.abs( magnitud ), tube, tube );
+        
+        vector = new THREE.Vector3( mx, my, mz );
+        magnitud = config[ 'load.joints.torque.scale'] * vector.length() / 2;
+        if ( magnitud != 0 ) {
+          curveShaft = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'torque' ).getObjectByName( 'arrow' ).getObjectByName( 'curveShaft' );
+          curveShaft.geometry.dispose();
+          curveShaft.geometry = createCurveShaftGeometry( Math.abs( magnitud ), tube );
+        }
       });
     }
   });
