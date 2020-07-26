@@ -2491,9 +2491,10 @@ export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, 
 function setLoadVisible( visible ) {
   // set load visibile
 
-  Object.entries( structure.load_patterns ).forEach( ( [ name, loadPattern ] ) => {
-    if ( loadPattern.hasOwnProperty( 'joints' ) ) Object.keys( loadPattern.joints ).forEach( joint => model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).visible = visible );
-    if ( loadPattern.hasOwnProperty( 'frames' ) ) model.getObjectByName( 'loads' ).visible = visible;
+  model.getObjectByName( 'joints' ).children.forEach( joint => { if ( joint.getObjectByName( 'loads' ) ) joint.getObjectByName( 'loads' ).visible = visible });
+  model.getObjectByName( 'loads' ).visible = visible;
+
+  Object.keys( structure.load_patterns ).forEach( loadPattern => {
     // Object.keys( loadPattern.frames ).forEach( frame => model.getObjectByName( 'freames' ).getObjectByName( frame ).getObjectByName( 'loads' ).visible = visible );
   });
 }
