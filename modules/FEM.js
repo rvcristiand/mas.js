@@ -2620,8 +2620,8 @@ function setLoadHeadRadius( radius ) {
   Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
     if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
       Object.keys( loadPatternValue.joints ).forEach( joint => {
-        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'forces' ).children.forEach( force => force.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'load.head.height' ], radius, radius ) );
-        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'torques' ).children.forEach( torque => torque.getObjectByName( 'head' ).scale.set( config[ 'load.head.height' ], radius, radius ) );
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).children.forEach( loads => loads.children.forEach( axis => axis.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'load.head.height' ], radius, radius ) ) );
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).children.forEach( load => load.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'load.head.height' ], radius, radius ) );
       });
     }
   });
