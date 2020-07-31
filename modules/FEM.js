@@ -2390,7 +2390,7 @@ export function addLoadPattern( name ) {
       model.getObjectByName( 'loads' ).add( loadPattern );
 
       // add load pattern to controller
-      var str, innerHTMLStr = "<option value='" + "'>" + "</options>";
+      var str, innerHTMLStr = "";
       Object.keys( structure.load_patterns ).forEach( loadPattern => {
         str = "<option value='" + loadPattern + "'>" + loadPattern + "</options>";
         innerHTMLStr += str;
