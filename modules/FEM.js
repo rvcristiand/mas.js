@@ -23,6 +23,8 @@ var jointGeometry, wireFrameShape, straightShaftGeometry, headGeometry, restrain
 
 var sections = {};
 
+var loadPatternController;
+
 // FEM.js
 var config = {
   // background
@@ -140,6 +142,7 @@ var config = {
   'support.pin.radius': 0.3,
   
   // load
+  'load.loadPattern': '',
   'load.visible': true,
   'load.system': 'global',
   
@@ -495,6 +498,7 @@ function init() {
   // add load folder
   let loadFolder = gui.addFolder( "load" );
   loadFolder.add( config, 'load.visible' ).name( 'visible' ).onChange( visible => setLoadVisible( visible ) );
+  loadPatternController = loadFolder.add( config, 'load.loadPattern', [] ).name( 'load pattern' ).onChange( loadPattern => setVisibleLoadPattern( loadPattern ) );
   loadFolder.add( config, 'load.system' ).options( [ 'global' ] ).name ( 'system' ).onChange( system => console.log( system ) );  // TODO: add 'local'
   loadFolder.add( config, 'load.as' ).options( [ 'components', 'resultant' ] ).name( 'as' ).onChange( as => setLoadAs( as ) );
   // add force folder
@@ -2382,7 +2386,16 @@ export function addLoadPattern( name ) {
       // add load pattern to model
       var loadPattern = new THREE.Group();
       loadPattern.name = name;
+      loadPattern.visible = false;
       model.getObjectByName( 'loads' ).add( loadPattern );
+
+      // add load pattern to controller
+      var str, innerHTMLStr = "<option value='" + "'>" + "</options>";
+      Object.keys( structure.load_patterns ).forEach( loadPattern => {
+        str = "<option value='" + loadPattern + "'>" + loadPattern + "</options>";
+        innerHTMLStr += str;
+      })
+      loadPatternController.domElement.children[ 0 ].innerHTML = innerHTMLStr;
 
       resolve( "load pattern '" + name + "' was added" );
     }
@@ -2399,7 +2412,7 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
     loadPattern = loadPattern.toString();
     joint = joint.toString();
       
-    // check if loadPatter & joint exists
+    // check if loadPattern & joint exists
     if ( structure.load_patterns.hasOwnProperty( loadPattern ) && structure.joints.hasOwnProperty( joint ) ) {
       // add load to structure
 
@@ -2420,7 +2433,9 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
       if ( model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).remove( model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) );
 
       // add load to model
-      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).add( createLoadAtJoint( loadPattern, joint ) );
+      var load = createLoadAtJoint( loadPattern, joint );
+      load.visible = loadPattern == config[ 'load.loadPattern' ];
+      model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).add( load );
 
       resolve( "joint load added" );
     } else {
@@ -2498,6 +2513,9 @@ function setLoadVisible( visible ) {
     // Object.keys( loadPattern.frames ).forEach( frame => model.getObjectByName( 'freames' ).getObjectByName( frame ).getObjectByName( 'loads' ).visible = visible );
   });
 }
+
+// set visible load pattern
+function setVisibleLoadPattern( loadPattern ) { Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => { if ( loadPatternValue.hasOwnProperty( 'joints' ) ) Object.keys( loadPatternValue.joints ).forEach( joint => model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).visible = loadPatternName == loadPattern ) } ) };
 
 function setLoadAs( as ) {
   // set load as
