@@ -685,6 +685,8 @@ function createGrid( divisions, colorCenterLine, colorGrid ) {
   grid.name = 'grid';
   grid.visible = config[ 'ground.grid.visible' ];
   grid.rotation.x = Math.PI / 2;
+  grid.material.opacity = 0.25;
+  grid.material.transparent = true;
 
   return grid;
 }
