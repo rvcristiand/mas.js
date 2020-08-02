@@ -17,9 +17,8 @@ var jointMaterial, frameMaterial, frameEdgesMaterial, xMaterial, yMaterial, zMat
 var jointGeometry, wireFrameShape, straightShaftGeometry, headGeometry, restraintGeometry, foundationGeometry, foundationEdgesGeometry, pedestalGeometry, pedestalEdgesGeometry, pinGeometry, pinEdgesGeometry;
 
 // light
-// var ambientLight;
-// var hemisphereLight;
-// var directionalLight;
+var hemisphereLight;
+var directionalLight;
 
 var sections = {};
 
@@ -67,8 +66,7 @@ var config = {
   'controls.damping.enable': false,
   'controls.damping.factor': 0.05,
   
-  // 'lights.ambient.color': 0x0c0c0c,
-  
+  // lights
   // 'lights.direction.color': 0xffffff,
   // 'lights.direction.intensity': 1,
   
@@ -185,23 +183,19 @@ function init() {
   // fog
   // scene.fog = new THREE.Fog( scene.background, 1, 5000 );
 
-  // ambient light
-  // ambientLight = new THREE.AmbientLight( config.lights.ambient.color );
-  // scene.add( ambientLight );
-
   // hemisphereLight
-  // hemisphereLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
-  // hemisphereLight.color.setHSL( 0.6, 1, 0.6 );
-  // hemisphereLight.groundColor.setHSL( 0.095, 1, 0.75 );
-  // hemisphereLight.position.set( 0, 50, 0 );
-  // scene.add( hemisphereLight );
+  hemisphereLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.6 );
+  hemisphereLight.color.setHSL( 0.6, 1, 0.6 );
+  hemisphereLight.groundColor.setHSL( 0.095, 1, 0.75 );
+  hemisphereLight.position.set( 0, 0, 50 );
+  scene.add( hemisphereLight );
 
   // directionalLight
-  // directionalLight = new THREE.DirectionalLight( config.lights.direction.color, config.lights.direction.intensity );
-  // directionalLight.color.setHSL( 0.1, 1, 0.95 );
-  // directionalLight.position.set( -1, 1.75, 1 );
-  // directionalLight.position.multiplyScalar( 30 );
-  // scene.add( directionalLight );
+  directionalLight = new THREE.DirectionalLight( 0xffffff, config[ 'lights.direction.intensity' ] );  // config[ 'lights.direction.color' ]
+  directionalLight.color.setHSL( 0.1, 1, 0.95 );
+  directionalLight.position.set( -1, 1.75, 1 );
+  directionalLight.position.multiplyScalar( 30 );
+  scene.add( directionalLight );
 
   // directionalLight.castShadow = true;
 
@@ -222,7 +216,7 @@ function init() {
   webGLRenderer = new THREE.WebGLRenderer( { canvas: canvasWebGLRenderer, alpha: true, antialias: true } );
   webGLRenderer.setPixelRatio( window.devicePixelRatio );
   webGLRenderer.setSize( canvasWebGLRenderer.clientWidth, canvasWebGLRenderer.clientHeight );
-  webGLRenderer.sortObjects = false
+  webGLRenderer.sortObjects = false;
   // webGLRenderer.shadowMap.enabled = true;
   
   // create the CSS2D renderer
@@ -234,14 +228,14 @@ function init() {
   controls = createControls( config[ 'controls.rotateSpeed' ], config[ 'controls.zoomSpeed' ], config[ 'controls.panSpeed' ], config[ 'controls.screenPanning' ], config[ 'controls.damping.enable' ], config[ 'controls.damping.factor' ] );
   
   // set the materials
-  jointMaterial = new THREE.MeshBasicMaterial( { color: config[ 'joint.color' ], transparent: config[ 'joint.transparent' ], opacity: config[ 'joint.opacity' ] } );
+  jointMaterial = new THREE.MeshLambertMaterial( { color: config[ 'joint.color' ], transparent: config[ 'joint.transparent' ], opacity: config[ 'joint.opacity' ] } );
 
-  frameMaterial = new THREE.MeshBasicMaterial( { color: config[ 'frame.color' ], transparent: config[ 'frame.transparent' ], opacity: config[ 'frame.opacity' ] } );
+  frameMaterial = new THREE.MeshLambertMaterial( { color: config[ 'frame.color' ], transparent: config[ 'frame.transparent' ], opacity: config[ 'frame.opacity' ] } );
   frameEdgesMaterial = new THREE.LineBasicMaterial( { color: config[ 'frame.color' ] } ) ;
 
-  xMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.x' ] } );
-  yMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.y' ] } );
-  zMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.z' ] } );
+  xMaterial = new THREE.MeshLambertMaterial( { color: config[ 'axes.x' ] } );
+  yMaterial = new THREE.MeshLambertMaterial( { color: config[ 'axes.y' ] } );
+  zMaterial = new THREE.MeshLambertMaterial( { color: config[ 'axes.z' ] } );
 
   foundationMaterial = { x: xMaterial, y: yMaterial, z: zMaterial };
   foundationEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );  
@@ -251,12 +245,12 @@ function init() {
 
   pinEdgesMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
 
-  resultantForceMaterial = new THREE.MeshBasicMaterial( { color: config[ 'load.resultant.force' ] } );
-  resultantTorqueMaterial = new THREE.MeshBasicMaterial( { color: config[ 'load.resultant.torque' ] } );
+  resultantForceMaterial = new THREE.MeshLambertMaterial( { color: config[ 'load.resultant.force' ] } );
+  resultantTorqueMaterial = new THREE.MeshLambertMaterial( { color: config[ 'load.resultant.torque' ] } );
 
-  xLoadMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.x' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
-  yLoadMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.y' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
-  zLoadMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.z' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
+  xLoadMaterial = new THREE.MeshLambertMaterial( { color: config[ 'axes.x' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
+  yLoadMaterial = new THREE.MeshLambertMaterial( { color: config[ 'axes.y' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
+  zLoadMaterial = new THREE.MeshLambertMaterial( { color: config[ 'axes.z' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
 
   xLoadEdgesMaterial = new THREE.LineBasicMaterial( { color: config[ 'axes.x' ] } );
   yLoadEdgesMaterial = new THREE.LineBasicMaterial( { color: config[ 'axes.y' ] } );
@@ -297,7 +291,7 @@ function init() {
   pinGeometry.translate( 0, 0, -0.5 );
 
   pinEdgesGeometry = new THREE.EdgesGeometry( pinGeometry );
-
+  
   // create the model
   model = createModel();
   setModelRotation( config[ 'model.axisUpwards' ] );
@@ -383,9 +377,6 @@ function init() {
 
   // add a light folder
   // let lightsFolder = gui.addFolder( "light");
-  // add a ambiernt folder
-  // let ambientFolder = lightsFolder.addFolder( "ambient" );
-  // ambientFolder.addColor( config.lights.ambient, 'color' ).onChange( color => ambientLight.color = new THREE.Color( color ) );
 
   // add a background folder
   let backgroundFolder = gui.addFolder( "background" );
@@ -663,7 +654,7 @@ function createGround( size, divisions, color, transparent, opacity, colorCenter
   ground.add( grid );
   
   // add plane
-  var plane = new THREE.Mesh( new THREE.PlaneBufferGeometry(), new THREE.MeshBasicMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } ) );
+  var plane = new THREE.Mesh( new THREE.PlaneBufferGeometry(), new THREE.MeshLambertMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } ) ); //  1, 1, 2000, 2000 
   plane.name = 'plane';
   plane.visible = config[ 'ground.plane.visible'];
   ground.add( plane );
@@ -672,7 +663,8 @@ function createGround( size, divisions, color, transparent, opacity, colorCenter
   ground.scale.setScalar( size );
   
   // receive shadow
-  // parent.receiveShadow = true;
+
+  // plane.receiveShadow = true;
   
   return ground;
 }
@@ -1003,6 +995,8 @@ function createJoint( size ) {
   joint.name = "joint";
   joint.visible = config[ 'joint.visible' ];
   joint.scale.setScalar( size );
+  // joint.castShadow = true;
+  // joint.receiveShadow = true;
   
   return joint;
 }
@@ -1224,7 +1218,7 @@ function createFrame( length, section ) {
   // create a frame
 
   var frame = new THREE.Group();
-  var extrudeSettings = { depth: length, bevelEnabled: false };  // curveSegments: 24,
+  var extrudeSettings = { depth: length, bevelEnabled: false };
 
   // extrude wireFrameShape
   var wireFrame = new THREE.Mesh( new THREE.ExtrudeBufferGeometry( wireFrameShape, extrudeSettings ), frameMaterial );
@@ -1540,6 +1534,10 @@ function createFoundation() {
   // set size
   foundation.scale.set( config[ 'support.foundation.size' ], config[ 'support.foundation.size' ], config[ 'support.foundation.depth' ] );
 
+  // cast shadow
+  // foundation.castShadow = true;
+  // foundation.receiveShadow = true;
+
   return foundation;
 }
 
@@ -1562,6 +1560,10 @@ function createPedestal() {
 
   // set size
   pedestal.scale.setScalar( config[ 'support.pedestal.size' ] );
+
+  // cast shadow
+  // pedestal.castShadow = true;
+  // pedestal.receiveShadow = true;
 
   return pedestal;
 }
@@ -1605,6 +1607,10 @@ function createPin() {
 
   // set quaternion
   pin.quaternion.copy( model.quaternion.clone().inverse() );
+
+  // cast shadow
+  // pin.castShadow = true;
+  // pin.receiveShadow = true;
 
   return pin;
 }
