@@ -149,14 +149,14 @@ var config = {
   'load.shaft.tube' : 0.02,
   
   'load.as': 'components',
+  
+  'load.force.scale': 1,
+  'load.torque.scale': 1,
 
   'load.resultant.force': 0x000000,
   'load.resultant.torque': 0x000000,
   
-  'load.joints.force.scale': 0.1,
-  'load.joints.torque.scale': 0.02,
-  
-  'load.frames.force.scale': 0.5,
+  'load.frames.force.scale': 1,
   'load.frames.torque.scale': 0.5,
   
   'load.frames.transparent': true,
@@ -494,11 +494,11 @@ function init() {
   loadFolder.add( config, 'load.as' ).options( [ 'components', 'resultant' ] ).name( 'as' ).onChange( as => setLoadAs( as ) );
   // add force folder
   let forceFolder = loadFolder.addFolder( "force" );
-  forceFolder.add( config, 'load.joints.force.scale' ).name( 'scale' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadForceScale( scale ) );
+  forceFolder.add( config, 'load.force.scale' ).name( 'scale' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadForceScale( scale ) );
   forceFolder.addColor( config, 'load.resultant.force' ).name( 'color' ).onChange( color => resultantForceMaterial.color = new THREE.Color( color ) );
   // add torque folder
   let torqueFolder = loadFolder.addFolder( "torque" );
-  torqueFolder.add( config, 'load.joints.torque.scale' ).name( 'scale' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadTorqueScale( scale ) );
+  torqueFolder.add( config, 'load.torque.scale' ).name( 'scale' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadTorqueScale( scale ) );
   torqueFolder.addColor( config, 'load.resultant.torque' ).name( 'color' ).onChange( color => resultantTorqueMaterial.color = new THREE.Color( color ) );
 
   // add head folder
@@ -2308,7 +2308,7 @@ function createForce( magnitud, axis ) {
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var quaternion = new THREE.Quaternion();
   
-  magnitud = config[ 'load.joints.force.scale' ] * magnitud;
+  magnitud = magnitud / Math.abs( magnitud );
 
   switch ( axis ) {
     case 'resultant':
@@ -2328,8 +2328,8 @@ function createForce( magnitud, axis ) {
   }
 
   arrow.name = 'arrow';
-  if ( magnitud / Math.abs( magnitud ) < 0 ) arrow.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( -1, 0, 0 ) );
-  // arrow.position.setX( -( magnitud / Math.abs( magnitud ) ) * ( Math.abs( magnitud ) + config[ 'load.head.height' ] ) );
+  if ( magnitud < 0 ) arrow.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( -1, 0, 0 ) );
+  // arrow.position.setX( -magnitud * ( Math.abs( magnitud ) + config[ 'joint.size' ] ) );  TODO
   force.add( arrow );
   
   force.name = axis;
@@ -2348,7 +2348,7 @@ function createTorque( magnitud, axis ) {
   var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
   var quaternion = new THREE.Quaternion();
 
-  magnitud = config[ 'load.joints.torque.scale' ] * magnitud / 2;
+  magnitud = magnitud / Math.abs( magnitud );
 
   switch ( axis ) {
     case 'resultant':
@@ -2367,8 +2367,8 @@ function createTorque( magnitud, axis ) {
       break;
   }
 
-  if ( axis != 'resultant' && magnitud < 0 ) arrow.rotateY( Math.PI )
   arrow.name = 'arrow';
+  if ( axis != 'resultant' && magnitud < 0 ) arrow.rotateY( Math.PI );
   torque.add( arrow );
 
   torque.name = axis;
@@ -2444,6 +2444,9 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
       var load = createLoadAtJoint( loadPattern, joint );
       load.visible = loadPattern == config[ 'load.loadPattern' ];
       model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).add( load );
+
+      // set scale
+      setLoadForceScale( config[ 'load.force.scale' ] );
 
       resolve( "joint load added" );
     } else {
@@ -2546,11 +2549,37 @@ function setLoadAs( as ) {
 
 function setLoadForceScale( scale ) {
   // set load force scale
-
-  var fx, fy, fz, arrow, vector, magnitud;
+  var fcomp, fres, fx, fy, fz, fcomp_min, fcomp_max, fres_min, fres_max, arrow, vector, magnitud;
 
   Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
     if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
+      // calculate fcomp_min and fcomp_max
+      fcomp = [];
+      fres = [];
+      fcomp_min = fcomp_max = fres_min = fres_max = 0;
+
+      Object.values( loadPatternValue.joints ).forEach( loads => {
+        fx = fy = fz = 0;
+        loads.forEach( load => {
+          fx += load.fx;
+          fy += load.fy;
+          fz += load.fz;
+        });
+
+        if ( fx ) fcomp.push( Math.abs( fx ) );
+        if ( fy ) fcomp.push( Math.abs( fy ) );
+        if ( fz ) fcomp.push( Math.abs( fz ) );
+
+        vector = new THREE.Vector3( fx, fy, fz );
+        if ( vector.length() ) fres.push( vector.length() );
+      });
+
+      fcomp_min = Math.min( ...fcomp );
+      fcomp_max = Math.max( ...fcomp );
+
+      fres_min = Math.min( ...fres );
+      fres_max = Math.max( ...fres );
+
       Object.entries( loadPatternValue.joints ).forEach( ( [ joint, loads ] ) => {
         fx = fy = fz = 0;
         loads.forEach( load => {
@@ -2562,22 +2591,22 @@ function setLoadForceScale( scale ) {
         // components
         Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => { 
           if ( magnitud != 0 ) {
-            magnitud = scale * magnitud;
+            magnitud = scale * ( 0.25 * ( fcomp_max - Math.abs( magnitud ) ) + ( Math.abs( magnitud ) - fcomp_min ) ) / ( fcomp_max - fcomp_min );
 
             arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' );
-            arrow.getObjectByName( 'straightShaft' ).scale.setX( Math.abs( magnitud ) );
-            arrow.getObjectByName( 'head' ).position.setX( Math.abs( magnitud ) );
+            arrow.getObjectByName( 'straightShaft' ).scale.setX( magnitud );
+            arrow.getObjectByName( 'head' ).position.setX( magnitud );
           }
         });
 
         vector = new THREE.Vector3( fx, fy, fz );
-        magnitud = scale * vector.length();
+        magnitud = scale * ( 0.25 * ( fres_max - vector.length() ) + ( vector.length() - fres_min ) ) / ( fres_max - fres_min );
 
         // resultant
         if ( magnitud != 0 ) {
           arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'force' ).getObjectByName( 'arrow' );
-          arrow.getObjectByName( 'straightShaft' ).scale.setX( Math.abs( magnitud ) );
-          arrow.getObjectByName( 'head' ).position.setX( Math.abs( magnitud ) );    
+          arrow.getObjectByName( 'straightShaft' ).scale.setX( magnitud );
+          arrow.getObjectByName( 'head' ).position.setX( magnitud );
         }
       });
     }
@@ -2673,23 +2702,23 @@ function setLoadShaftTube( tube ) {
         });
 
         // components
-        Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => { if ( magnitud != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'straightShaft' ).scale.set( Math.abs( config[ 'load.joints.force.scale' ] * magnitud ), tube, tube ) } );
+        Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => { if ( magnitud != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'straightShaft' ).scale.set( Math.abs( config[ 'load.force.scale' ] * magnitud ), tube, tube ) } );
                   
         Object.entries( { 'x': mx, 'y': my, 'z': mz } ).forEach( ( [ axis, magnitud ] ) => {
           if ( magnitud != 0 ) {
             curveShaft = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'arrow' ).getObjectByName( 'curveShaft' );
             curveShaft.geometry.dispose();
-            curveShaft.geometry = createCurveShaftGeometry( Math.abs( config[ 'load.joints.torque.scale'] * magnitud / 2 ), tube );
+            curveShaft.geometry = createCurveShaftGeometry( Math.abs( config[ 'load.torque.scale'] * magnitud / 2 ), tube );
           }
         });
 
         // resultant
         vector = new THREE.Vector3( fx, fy, fz );
-        magnitud = config[ 'load.joints.force.scale' ] * vector.length();
+        magnitud = config[ 'load.force.scale' ] * vector.length();
         if ( magnitud != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'force' ).getObjectByName( 'arrow' ).getObjectByName( 'straightShaft' ).scale.set( Math.abs( magnitud ), tube, tube );
         
         vector = new THREE.Vector3( mx, my, mz );
-        magnitud = config[ 'load.joints.torque.scale'] * vector.length() / 2;
+        magnitud = config[ 'load.torque.scale'] * vector.length() / 2;
         if ( magnitud != 0 ) {
           curveShaft = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'torque' ).getObjectByName( 'arrow' ).getObjectByName( 'curveShaft' );
           curveShaft.geometry.dispose();
