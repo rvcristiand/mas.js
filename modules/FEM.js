@@ -2687,7 +2687,7 @@ function setLoadHeadRadius( radius ) {
 function setLoadShaftTube( tube ) {
   // set load shaft tube
 
-  var fx, fy, fz, mx, my, mz, curveShaft, vector, magnitud;
+  var fx, fy, fz, mx, my, mz, straightShaft, curveShaft, vector, magnitud;
   
   Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
     if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
@@ -2703,7 +2703,12 @@ function setLoadShaftTube( tube ) {
         });
 
         // components
-        Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => { if ( magnitud != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'straightShaft' ).scale.set( Math.abs( config[ 'load.force.scale' ] * magnitud ), tube, tube ) } );
+        Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => {
+          if ( magnitud != 0 ) {
+            straightShaft = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'straightShaft' );
+            straightShaft.scale.setY( tube );
+            straightShaft.scale.setZ( tube );
+          }});
                   
         Object.entries( { 'x': mx, 'y': my, 'z': mz } ).forEach( ( [ axis, magnitud ] ) => {
           if ( magnitud != 0 ) {
@@ -2715,8 +2720,11 @@ function setLoadShaftTube( tube ) {
 
         // resultant
         vector = new THREE.Vector3( fx, fy, fz );
-        magnitud = config[ 'load.force.scale' ] * vector.length();
-        if ( magnitud != 0 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'force' ).getObjectByName( 'arrow' ).getObjectByName( 'straightShaft' ).scale.set( Math.abs( magnitud ), tube, tube );
+        if ( vector.length() != 0 ) {
+          straightShaft = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'force' ).getObjectByName( 'arrow' ).getObjectByName( 'straightShaft' );
+          straightShaft.scale.setY( tube );
+          straightShaft.scale.setZ( tube );
+        }
         
         vector = new THREE.Vector3( mx, my, mz );
         magnitud = config[ 'load.torque.scale'] * vector.length() / 2;
