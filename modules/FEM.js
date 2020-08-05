@@ -2398,12 +2398,13 @@ export function addLoadPattern( name ) {
       model.getObjectByName( 'loads' ).add( loadPattern );
 
       // add load pattern to controller
-      var str, innerHTMLStr = "";
+      var str, innerHTMLStr = "<option value='" + "" + "'>" + "" + "</options>";
       Object.keys( structure.load_patterns ).forEach( loadPattern => {
         str = "<option value='" + loadPattern + "'>" + loadPattern + "</options>";
         innerHTMLStr += str;
       })
       loadPatternController.domElement.children[ 0 ].innerHTML = innerHTMLStr;
+      loadPatternController.updateDisplay();
 
       resolve( "load pattern '" + name + "' was added" );
     }
