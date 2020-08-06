@@ -2719,7 +2719,7 @@ function setLoadHeadRadius( radius ) {
 function setLoadShaftTube( tube ) {
   // set load shaft tube
 
-  var fx, fy, fz, mx, my, mz, straightShaft, curveShaft, vector, magnitud;
+  var fx, fy, fz, mx, my, mz, straightShaft, curveShaft, curveShaftGeometry, vector;
   
   Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
     if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
@@ -2745,8 +2745,9 @@ function setLoadShaftTube( tube ) {
         Object.entries( { 'x': mx, 'y': my, 'z': mz } ).forEach( ( [ axis, magnitud ] ) => {
           if ( magnitud != 0 ) {
             curveShaft = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).getObjectByName( 'torques' ).getObjectByName( axis ).getObjectByName( 'arrow' ).getObjectByName( 'curveShaft' );
+            curveShaftGeometry = createCurveShaftGeometry( curveShaft.geometry.parameters.radius, tube );
             curveShaft.geometry.dispose();
-            curveShaft.geometry = createCurveShaftGeometry( Math.abs( config[ 'load.torque.scale'] * magnitud / 2 ), tube );
+            curveShaft.geometry = curveShaftGeometry;
           }
         });
 
@@ -2759,11 +2760,11 @@ function setLoadShaftTube( tube ) {
         }
         
         vector = new THREE.Vector3( mx, my, mz );
-        magnitud = config[ 'load.torque.scale'] * vector.length() / 2;
-        if ( magnitud != 0 ) {
+        if ( vector.length() != 0 ) {
           curveShaft = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'torque' ).getObjectByName( 'arrow' ).getObjectByName( 'curveShaft' );
+          curveShaftGeometry = createCurveShaftGeometry( curveShaft.geometry.parameters.radius, tube );
           curveShaft.geometry.dispose();
-          curveShaft.geometry = createCurveShaftGeometry( Math.abs( magnitud ), tube );
+          curveShaft.geometry = curveShaftGeometry;
         }
       });
     }
