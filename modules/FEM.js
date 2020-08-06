@@ -1090,7 +1090,12 @@ function deleteJoint( name ) {
 
 function setJointVisible( visible ) { model.getObjectByName( 'joints' ).children.forEach( joint => joint.getObjectByName( 'joint' ).visible = visible ) };
 
-function setJointSize( size ) { model.getObjectByName( 'joints' ).children.forEach( joint => joint.getObjectByName( 'joint' ).scale.setScalar( size ) ) };
+function setJointSize( size ) {
+  // set joint size
+
+  model.getObjectByName( 'joints' ).children.forEach( joint => joint.getObjectByName( 'joint' ).scale.setScalar( size ) );
+  setLoadForceScale( config[ 'load.force.scale' ] );
+}
 
 function setJointLabel( visible ) { model.getObjectByName( 'joints' ).children.forEach( joint => joint.getObjectByName( 'label' ).visible = visible ) };
 
@@ -2039,7 +2044,7 @@ function createLoadAtJoint( loadPattern, joint ) {
   // create a load at joint
 
   var loadAtJoint = new THREE.Group();
-  loadAtJoint.name = loadPattern
+  loadAtJoint.name = loadPattern;
   
   var fx, fy, fz, mx, my, mz;
   fx = fy = fz = mx = my = mz = 0;
@@ -2329,7 +2334,7 @@ function createForce( magnitud, axis ) {
 
   arrow.name = 'arrow';
   if ( magnitud < 0 ) arrow.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0 ), new THREE.Vector3( -1, 0, 0 ) );
-  // arrow.position.setX( -magnitud * ( Math.abs( magnitud ) + config[ 'joint.size' ] ) );  TODO
+  arrow.position.setX( -magnitud * ( Math.abs( magnitud ) + config[ 'load.head.height' ] + config[ 'joint.size' ] ) );
   force.add( arrow );
   
   force.name = axis;
@@ -2595,11 +2600,13 @@ function setLoadForceScale( scale ) {
         // components
         Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => { 
           if ( magnitud != 0 ) {
-            magnitud = scale * ( 0.25 * ( fcomp_max - Math.abs( magnitud ) ) + ( Math.abs( magnitud ) - fcomp_min ) ) / ( fcomp_max - fcomp_min );
+            magnitud = magnitud / Math.abs( magnitud ) * scale * ( 0.25 * ( fcomp_max - Math.abs( magnitud ) ) + ( Math.abs( magnitud ) - fcomp_min ) ) / ( fcomp_max - fcomp_min );
 
             arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' );
-            arrow.getObjectByName( 'straightShaft' ).scale.setX( magnitud );
-            arrow.getObjectByName( 'head' ).position.setX( magnitud );
+            arrow.getObjectByName( 'straightShaft' ).scale.setX( Math.abs( magnitud ) );
+            arrow.getObjectByName( 'head' ).position.setX( Math.abs( magnitud ) );
+            
+            arrow.position.setX( -magnitud / Math.abs( magnitud ) * ( Math.abs( magnitud ) + config[ 'load.head.height' ] + config[ 'joint.size' ] ) );
           }
         });
 
@@ -2612,6 +2619,8 @@ function setLoadForceScale( scale ) {
           arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'force' ).getObjectByName( 'arrow' );
           arrow.getObjectByName( 'straightShaft' ).scale.setX( magnitud );
           arrow.getObjectByName( 'head' ).position.setX( magnitud );
+
+          arrow.position.setX( -( magnitud + config[ 'load.head.height' ] + config[ 'joint.size' ] ) );
         }
       });
     }
@@ -2693,11 +2702,22 @@ function setLoadTorqueScale( scale ) {
 function setLoadHeadHeight( height ) {
   // set load head height
 
+  var arrow;
+
   Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
     if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
       Object.keys( loadPatternValue.joints ).forEach( joint => {
         model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).children.forEach( loads => loads.children.forEach( axis => axis.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height ) ) );
+
+        model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).getObjectByName( 'forces' ).children.forEach( axis => {
+          arrow = axis.getObjectByName( 'arrow' );
+          arrow.position.setX( arrow.position.x / Math.abs( arrow.position.x ) * ( arrow.getObjectByName( 'straightShaft' ).scale.x + height + config[ 'joint.size' ] ) );
+        });
+
         model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).children.forEach( load => load.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.setX( height ) );
+        
+        arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'force' ).getObjectByName( 'arrow' );
+        arrow.position.setX( -( arrow.getObjectByName( 'straightShaft' ).scale.x + height + config[ 'joint.size' ] ) );
       });
     }
   });
