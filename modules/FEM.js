@@ -216,7 +216,7 @@ function init() {
   webGLRenderer = new THREE.WebGLRenderer( { canvas: canvasWebGLRenderer, alpha: true, antialias: true } );
   webGLRenderer.setPixelRatio( window.devicePixelRatio );
   webGLRenderer.setSize( canvasWebGLRenderer.clientWidth, canvasWebGLRenderer.clientHeight );
-  webGLRenderer.sortObjects = false;
+  // webGLRenderer.sortObjects = false;
   // webGLRenderer.shadowMap.enabled = true;
   
   // create the CSS2D renderer
@@ -489,7 +489,7 @@ function init() {
   // add load folder
   let loadFolder = gui.addFolder( "load" );
   loadFolder.add( config, 'load.visible' ).name( 'visible' ).onChange( visible => setLoadVisible( visible ) );
-  loadPatternController = loadFolder.add( config, 'load.loadPattern', [] ).name( 'load pattern' ).onChange( loadPattern => setVisibleLoadPattern( loadPattern ) );
+  loadPatternController = loadFolder.add( config, 'load.loadPattern', [] ).name( 'load pattern' ).onChange( loadPattern => setLoadPatternVisible( loadPattern ) );
   loadFolder.add( config, 'load.system' ).options( [ 'global' ] ).name ( 'system' ).onChange( system => console.log( system ) );  // TODO: add 'local'
   loadFolder.add( config, 'load.as' ).options( [ 'components', 'resultant' ] ).name( 'as' ).onChange( as => setLoadAs( as ) );
   // add force folder
@@ -2138,26 +2138,17 @@ function createGlobalLoadAtFrame( loadPattern, frame ) {
   forces.name = 'forces';
   components.add( forces );
   
-  var force;
-  
-  if ( fx != 0 ) {
-    force = new THREE.Group();
-    force.name = 'x';
-    force.add( createGlobalUniformlyDistributedForceAtFrame( frame, fx, 'x' ) );
-    forces.add( force );
-  }
-  if ( fy != 0 ) {
-    force = new THREE.Group();
-    force.name = 'y';
-    force.add( createGlobalUniformlyDistributedForceAtFrame( frame, fy, 'y' ) );
-    forces.add( force );
-  }
-  if ( fz != 0 ) {
-    force = new THREE.Group();
-    force.name = 'z';
-    force.add( createGlobalUniformlyDistributedForceAtFrame( frame, fz, 'z' ) );
-    forces.add( force );
-  }
+  if ( fx != 0 ) forces.add( createGlobalUniformlyDistributedForceAtFrame( frame, fx, 'x' ) );
+  if ( fy != 0 ) forces.add( createGlobalUniformlyDistributedForceAtFrame( frame, fy, 'y' ) );
+  if ( fz != 0 ) forces.add( createGlobalUniformlyDistributedForceAtFrame( frame, fz, 'z' ) );
+
+  var torques = new THREE.Group();
+  torques.name = 'torques';
+  components.add( torques );
+
+  if ( mx != 0 ) torques.add( createGlobalUniformlyDistributedTorqueAtFrame( frame, mx, 'x' ) );
+  if ( my != 0 ) torques.add( createGlobalUniformlyDistributedTorqueAtFrame( frame, my, 'y' ) );
+  if ( mz != 0 ) torques.add( createGlobalUniformlyDistributedTorqueAtFrame( frame, mz, 'z' ) );
 
   // create resultant force
   // var resultant = new THREE.Group();
@@ -2177,9 +2168,8 @@ function createGlobalUniformlyDistributedForceAtFrame( frame, magnitud, axis ) {
   // create a uniformly distributed force at frame
 
   var uniformlyDistributed = new THREE.Group();
-  uniformlyDistributed.name = 'uniformlyDistributed';
+  uniformlyDistributed.name = axis;
   
-  magnitud = config[ 'load.frames.force.scale' ] * magnitud;
   frame = model.getObjectByName( 'frames' ).getObjectByName( frame );
   
   var vector = new THREE.Vector3( 1, 0, 0 ).applyQuaternion( frame.quaternion );
@@ -2220,7 +2210,7 @@ function createUniformlyDistributedLongitudinalForce( frame, magnitud, axis ) {
   var init = magnitud < 0 ? 1: 0;
   var i = init;
 
-  for( i; i < quantite_arrows + init; i++ ) {
+  for ( i; i < quantite_arrows + init; i++ ) {
     arrow = createStraightArrow( material, shaft, config[ 'load.shaft.tube' ], config[ 'load.head.height' ], config[ 'load.head.radius' ] );
     arrow.name = 'arrrow_' + String( i - init );
     arrow.rotateZ( magnitud < 0 ? Math.PI: 0 );
@@ -2399,7 +2389,7 @@ export function addLoadPattern( name ) {
       // add load pattern to model
       var loadPattern = new THREE.Group();
       loadPattern.name = name;
-      loadPattern.visible = false;
+      loadPattern.visible = name == config[ 'load.loadPattern' ];
       model.getObjectByName( 'loads' ).add( loadPattern );
 
       // add load pattern to controller
@@ -2407,7 +2397,7 @@ export function addLoadPattern( name ) {
       Object.keys( structure.load_patterns ).forEach( loadPattern => {
         str = "<option value='" + loadPattern + "'>" + loadPattern + "</options>";
         innerHTMLStr += str;
-      })
+      });
       loadPatternController.domElement.children[ 0 ].innerHTML = innerHTMLStr;
       loadPatternController.updateDisplay();
 
@@ -2526,16 +2516,29 @@ export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, 
 function setLoadVisible( visible ) {
   // set load visibile
 
-  model.getObjectByName( 'joints' ).children.forEach( joint => { if ( joint.getObjectByName( 'loads' ) ) joint.getObjectByName( 'loads' ).visible = visible });
+  model.getObjectByName( 'joints' ).children.filter( joint => joint.getObjectByName( 'loads' ) ).forEach( joint => joint.getObjectByName( 'loads' ).visible = visible );
   model.getObjectByName( 'loads' ).visible = visible;
 
-  Object.keys( structure.load_patterns ).forEach( loadPattern => {
-    // Object.keys( loadPattern.frames ).forEach( frame => model.getObjectByName( 'freames' ).getObjectByName( frame ).getObjectByName( 'loads' ).visible = visible );
-  });
+  // Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
+    // if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
+      
+      // Object.keys( loadPattern.frames ).forEach( frame => model.getObjectByName( 'freames' ).getObjectByName( frame ).getObjectByName( 'loads' ).visible = visible );
+    // }
+  // });
 }
 
-// set visible load pattern
-function setVisibleLoadPattern( loadPattern ) { Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => { if ( loadPatternValue.hasOwnProperty( 'joints' ) ) Object.keys( loadPatternValue.joints ).forEach( joint => model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).visible = loadPatternName == loadPattern ) } ) };
+function setLoadPatternVisible( loadPattern ) {
+  // set visible load pattern
+
+  Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
+    if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
+      Object.keys( loadPatternValue.joints ).forEach( joint => model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).visible = loadPatternName == loadPattern );
+    }
+    if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
+      model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).visible = loadPatternName == loadPattern;
+    }
+  });
+}
 
 function setLoadAs( as ) {
   // set load as
