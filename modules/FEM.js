@@ -2229,7 +2229,7 @@ function createUniformlyDistributedTransversalForce( frame, magnitud, axis ) {
 
   var load, loadGeometry, loadEdges, loadEdgesGeometry;
 
-  magnitud = config[ 'load.frames.force.scale' ] * magnitud;
+  magnitud = magnitud / Math.abs( magnitud );
 
   let p1, p2;
   p1 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].j ).position.clone();
@@ -2478,7 +2478,7 @@ export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, 
       if ( !structure.load_patterns[ loadPattern ].frames[ frame ].uniformly_distributed.hasOwnProperty( system ) ) structure.load_patterns[ loadPattern ].frames[ frame ][ 'uniformly_distributed' ][ system ] = [];
       structure.load_patterns[ loadPattern ].frames[ frame ].uniformly_distributed[ system ].push( { 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz } );
 
-      // add loads to loads
+      // add frame to loads
       if ( !model.getObjectByName( 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ) ) {
         var frames = new THREE.Group();
         frames.name = 'frames';
@@ -2499,6 +2499,9 @@ export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, 
 
       // add distributed load to model
       model.getObjectByName( 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).add( createGlobalLoadAtFrame( loadPattern, frame ) );
+
+      // set force scale
+      setLoadForceScale( config[ 'load.force.scale' ] );
 
       resolve( "frame distributed load added" );
     } else {
@@ -2561,8 +2564,9 @@ function setLoadAs( as ) {
 
 function setLoadForceScale( scale ) {
   // set load force scale
-  var fcomp, fres, fx, fy, fz, fcomp_min, fcomp_max, fres_min, fres_max, arrow, vector, magnitud;
+  var fcomp, fres, fx, fy, fz, fcomp_min, fcomp_max, fres_min, fres_max, arrow, transversal, vector, magnitud;
 
+  // joints
   Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
     if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
       // calculate fcomp_min and fcomp_max
@@ -2624,6 +2628,85 @@ function setLoadForceScale( scale ) {
           arrow.getObjectByName( 'head' ).position.setX( magnitud );
 
           arrow.position.setX( -( magnitud + config[ 'load.head.height' ] + config[ 'joint.size' ] ) );
+        }
+      });
+    }
+
+    // frames
+    if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
+      // calculate fcomp_min and fcomp_max
+      fcomp = [];
+      fres = [];
+      fcomp_min = fcomp_max = fres_min = fres_max = 0;
+
+      Object.values( loadPatternValue.frames ).forEach( loads => {
+        // uniformly distributed
+        if ( loads.hasOwnProperty( 'uniformly_distributed' ) ) {
+          // global
+          if ( loads.uniformly_distributed.hasOwnProperty( 'global' ) ) {
+            fx = fy = fz = 0;
+
+            loads.uniformly_distributed.global.forEach( load => {
+              fx += load.fx;
+              fy += load.fy;
+              fz += load.fz;
+            });
+            
+            if ( fx ) fcomp.push( Math.abs( fx ) );
+            if ( fy ) fcomp.push( Math.abs( fy ) );
+            if ( fz ) fcomp.push( Math.abs( fz ) );
+  
+            vector = new THREE.Vector3( fx, fy, fz );
+            if ( vector.length() ) fres.push( vector.length() );
+          }
+        }
+      });
+
+      fcomp_min = Math.min( ...fcomp );
+      fcomp_max = Math.max( ...fcomp );
+
+      fres_min = Math.min( ...fres );
+      fres_max = Math.max( ...fres );
+
+      Object.entries( loadPatternValue.frames ).forEach( ( [ frame, loads ] ) => {
+        // uniformly distributed
+        if ( loads.hasOwnProperty( 'uniformly_distributed' ) ) {
+          // global
+          if ( loads.uniformly_distributed.hasOwnProperty( 'global' ) ) {
+            fx = fy = fz = 0;
+
+            loads.uniformly_distributed.global.forEach( load => {
+              fx += load.fx;
+              fy += load.fy;
+              fz += load.fz;
+            });
+
+            // components
+            Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => { 
+              if ( magnitud != 0 ) {
+                magnitud = magnitud / Math.abs( magnitud ) * scale * ( 0.4 * ( fcomp_max - Math.abs( magnitud ) ) + ( Math.abs( magnitud ) - fcomp_min ) ) / ( fcomp_max - fcomp_min );
+    
+                // longitudinal
+                if ( model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' ) ) {
+                  transversal = model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' );
+                  transversal.scale.setComponent( { 'x': 0, 'y': 1, 'z': 2 }[ axis ], Math.abs( magnitud ) );
+                }
+              }
+            });
+    
+            // vector = new THREE.Vector3( fx, fy, fz );
+            
+            // // resultant
+            // if ( vector.length() != 0 ) {
+            //   magnitud = scale * ( 0.25 * ( fres_max - vector.length() ) + ( vector.length() - fres_min ) ) / ( fres_max - fres_min );
+              
+            //   arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'force' ).getObjectByName( 'arrow' );
+            //   arrow.getObjectByName( 'straightShaft' ).scale.setX( magnitud );
+            //   arrow.getObjectByName( 'head' ).position.setX( magnitud );
+    
+            //   arrow.position.setX( -( magnitud + config[ 'load.head.height' ] + config[ 'joint.size' ] ) );
+            // }
+          }
         }
       });
     }
