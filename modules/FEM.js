@@ -2199,13 +2199,10 @@ function createUniformlyDistributedLongitudinalForce( frame, magnitud, axis ) {
   var arrow;
   var material = axis == 'x' ? xMaterial: axis == 'y' ? yMaterial: zMaterial;
 
-  magnitud = config[ 'load.frames.force.scale' ] * magnitud;
-
   var length = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].k ).position.clone().sub( model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].j ).position ).length();
-  var quantite_arrows = Math.min( Math.max( Math.floor( Math.abs( magnitud ) ), 1 ), Math.floor( length / config[ 'load.head.height' ] ) );
+  var quantite_arrows = Math.max( 1, Math.floor( 1.5 * length ) );
   var step = length / quantite_arrows;
-  var shaft = Math.min( step - config[ 'load.head.height' ], Math.abs( magnitud ) );
-  var space = Math.max( step - ( config[ 'load.head.height' ] + shaft ), 0 );
+  var shaft = Math.max( 0, step - config[ 'load.head.height' ] );
   
   var init = magnitud < 0 ? 1: 0;
   var i = init;
@@ -2214,7 +2211,7 @@ function createUniformlyDistributedLongitudinalForce( frame, magnitud, axis ) {
     arrow = createStraightArrow( material, shaft, config[ 'load.shaft.tube' ], config[ 'load.head.height' ], config[ 'load.head.radius' ] );
     arrow.name = 'arrrow_' + String( i - init );
     arrow.rotateZ( magnitud < 0 ? Math.PI: 0 );
-    arrow.position.setX( -length / 2 + i * step + ( magnitud / Math.abs( magnitud ) ) * ( space / 2 ) );
+    arrow.position.setX( -length / 2 + i * step );
     longitudinal.add( arrow );
   }
   
