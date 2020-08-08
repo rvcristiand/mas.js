@@ -248,9 +248,9 @@ function init() {
   resultantForceMaterial = new THREE.MeshLambertMaterial( { color: config[ 'load.resultant.force' ] } );
   resultantTorqueMaterial = new THREE.MeshLambertMaterial( { color: config[ 'load.resultant.torque' ] } );
 
-  xLoadMaterial = new THREE.MeshLambertMaterial( { color: config[ 'axes.x' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
-  yLoadMaterial = new THREE.MeshLambertMaterial( { color: config[ 'axes.y' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
-  zLoadMaterial = new THREE.MeshLambertMaterial( { color: config[ 'axes.z' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
+  xLoadMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.x' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
+  yLoadMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.y' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
+  zLoadMaterial = new THREE.MeshBasicMaterial( { color: config[ 'axes.z' ], transparent: config[ 'load.frames.transparent'], opacity: config[ 'load.frames.opacity' ], side: THREE.DoubleSide } );
 
   xLoadEdgesMaterial = new THREE.LineBasicMaterial( { color: config[ 'axes.x' ] } );
   yLoadEdgesMaterial = new THREE.LineBasicMaterial( { color: config[ 'axes.y' ] } );
