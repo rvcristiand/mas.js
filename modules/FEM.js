@@ -2880,6 +2880,12 @@ function setLoadShaftTube( tube ) {
         }
       });
     }
+    if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
+      Object.keys( loadPatternValue.frames ).forEach( frame => model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).children.filter( force => force.getObjectByName( 'longitudinal' ) ).forEach( force => force.getObjectByName( 'longitudinal' ).children.forEach( arrow => {
+        arrow.getObjectByName( 'straightShaft' ).scale.setY( tube );
+        arrow.getObjectByName( 'straightShaft' ).scale.setZ( tube );
+      })));
+    }
   });
 }
 
