@@ -2824,6 +2824,7 @@ function setLoadHeadRadius( radius ) {
         model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).children.forEach( load => load.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'load.head.height' ], radius, radius ) );
       });
     }
+    if ( loadPatternValue.hasOwnProperty( 'frames' ) ) Object.keys( loadPatternValue.frames ).forEach( frame => model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).children.filter( force => force.getObjectByName( 'longitudinal' ) ).forEach( force => force.getObjectByName( 'longitudinal' ).children.forEach( arrow => arrow.getObjectByName( 'head' ).scale.set( config[ 'load.head.height' ], config[ 'load.head.radius' ], config[ 'load.head.radius' ] ) ) ) );
   });
 }
 
