@@ -2803,6 +2803,14 @@ function setLoadHeadHeight( height ) {
         arrow.position.setX( -( arrow.getObjectByName( 'straightShaft' ).scale.x + height + config[ 'joint.size' ] ) );
       });
     }
+    if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
+      Object.keys( loadPatternValue.frames ).forEach( frame => {
+        model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).remove( model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).getObjectByName( frame ) );
+        model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).add( createGlobalLoadAtFrame( loadPatternName, frame ) );
+      });
+
+      setLoadForceScale( config[ 'load.force.scale' ] );
+    }
   });
 }
 
