@@ -2165,7 +2165,7 @@ function createGlobalLoadAtFrame( loadPattern, frame ) {
 }
 
 function createGlobalUniformlyDistributedForceAtFrame( frame, magnitud, axis ) {
-  // create a uniformly distributed force at frame
+  // create a global uniformly distributed force at frame
 
   var uniformlyDistributed = new THREE.Group();
   uniformlyDistributed.name = axis;
@@ -2183,6 +2183,39 @@ function createGlobalUniformlyDistributedForceAtFrame( frame, magnitud, axis ) {
   }
 
   uniformlyDistributed.position.copy( frame.position );
+
+  return uniformlyDistributed;
+}
+
+function createGlobalUniformlyDistributedTorqueAtFrame( frame, magnitud, axis ) {
+  // create a global uniformly distributed torque at frame
+
+  var uniformlyDistributed = new THREE.Group();
+  uniformlyDistributed.name = axis;
+
+  var arrow;
+  var material = axis == 'x' ? xMaterial: axis == 'y' ? yMaterial: zMaterial;
+
+  var vector = new THREE.Vector3( 1, 1, 1 ).normalize();
+  var quaternion = new THREE.Quaternion();
+  quaternion.setFromAxisAngle( vector, { 'x': 0, 'y': 2 * Math.PI / 3, 'z': 4 * Math.PI / 3 }[ axis ] );
+
+  var length = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].k ).position.clone().sub( model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].j ).position ).length();
+  var quantite_arrows = Math.max( 1, Math.floor( 1.5 * length ) );
+  var step = length / quantite_arrows;
+
+  for ( var i = 0; i < quantite_arrows; i++ ) {
+    arrow = createCurveArrow( material, Math.abs( magnitud ) / 2, config[ 'load.shaft.tube'], config[ 'load.head.height' ], config[ 'load.head.radius' ] );
+    arrow.name = 'arrow_' + String( i );
+    arrow.quaternion.copy( model.getObjectByName( 'frames' ).getObjectByName( frame ).quaternion.clone().conjugate() );
+    arrow.quaternion.multiply( quaternion );
+    if ( magnitud < 0 ) arrow.rotateY( Math.PI );
+    arrow.position.setX( -length / 2 + i * step + 1 / 2 * step );
+    uniformlyDistributed.add( arrow );
+  }
+
+  uniformlyDistributed.quaternion.copy( model.getObjectByName( 'frames' ).getObjectByName( frame ).quaternion );
+  uniformlyDistributed.position.copy( model.getObjectByName( 'frames' ).getObjectByName( frame ).position );
 
   return uniformlyDistributed;
 }
