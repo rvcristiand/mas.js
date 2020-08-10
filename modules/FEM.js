@@ -2176,16 +2176,13 @@ function createGlobalUniformlyDistributedForceAtFrame( frame, magnitud, axis ) {
   
   if ( 1 - Math.abs( vector.dot( new THREE.Vector3( axis == 'x' ? 1: 0, axis == 'y' ? 1: 0, axis == 'z' ? 1: 0 ) ) ) < 0.003 ) {
     // longitudinal
-    var longitudinal = createUniformlyDistributedLongitudinalForce( frame.name, magnitud, axis );
-    longitudinal.position.copy( frame.position );
-    longitudinal.quaternion.copy( frame.quaternion );
-    uniformlyDistributed.add( longitudinal );
+    uniformlyDistributed.add( createUniformlyDistributedLongitudinalForce( frame.name, magnitud, axis ) );
   } else {
     // transversal
-    var transversal = createUniformlyDistributedTransversalForce( frame.name, magnitud, axis );
-    transversal.position.copy( frame.position );
-    uniformlyDistributed.add( transversal );
+    uniformlyDistributed.add( createUniformlyDistributedTransversalForce( frame.name, magnitud, axis ) );
   }
+
+  uniformlyDistributed.position.copy( frame.position );
 
   return uniformlyDistributed;
 }
@@ -2214,6 +2211,8 @@ function createUniformlyDistributedLongitudinalForce( frame, magnitud, axis ) {
     arrow.position.setX( -length / 2 + i * step );
     longitudinal.add( arrow );
   }
+
+  longitudinal.quaternion.copy( model.getObjectByName( 'frames' ).getObjectByName( frame ).quaternion );
   
   return longitudinal;
 }
@@ -2226,13 +2225,11 @@ function createUniformlyDistributedTransversalForce( frame, magnitud, axis ) {
 
   var load, loadGeometry, loadEdges, loadEdgesGeometry;
 
-  magnitud = magnitud / Math.abs( magnitud );
-
   let p1, p2;
   p1 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].j ).position.clone();
   p2 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].k ).position.clone();
 
-  var averague = p1.clone().add( p2 ).multiplyScalar( 0.5 );
+  var averague = model.getObjectByName( 'frames' ).getObjectByName( frame ).position.clone();
   p1.sub( averague );
   p2.sub( averague );
 
@@ -2685,8 +2682,8 @@ function setLoadForceScale( scale ) {
     
                 // longitudinal
                 if ( model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' ) ) {
-                  transversal = model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' );
-                  transversal.scale.setComponent( { 'x': 0, 'y': 1, 'z': 2 }[ axis ], Math.abs( magnitud ) );
+                  model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).remove( model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' ) );
+                  model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).add( createUniformlyDistributedTransversalForce( frame, magnitud, axis ) );
                 }
               }
             });
