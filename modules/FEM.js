@@ -60,7 +60,7 @@ var config = {
   // controls
   'controls.rotateSpeed': 1,
   'controls.zoomSpeed': 1.2,
-  'controls.panSpeed': 0.3,
+  'controls.panSpeed': 1,
   'controls.screenPanning': true,
   
   'controls.damping.enable': false,
@@ -614,6 +614,7 @@ function createModel() {
   // create the model
 
   var model = new THREE.Group();
+  model.name = "model";
 
   // add axes
   var axes = createAxes( config[ 'model.axes.shaft.length' ], config[ 'model.axes.shaft.radius'], config[ 'model.axes.head.height'], config[ 'model.axes.head.radius'] );
@@ -2086,11 +2087,11 @@ function createLoadAtJoint( loadPattern, joint ) {
   resultant.visible = config[ 'load.as' ] == 'resultant';
   loadAtJoint.add( resultant );
 
-  var vector;
+  var vector, force, torque;
   
   vector = new THREE.Vector3( fx, fy, fz );
   if ( vector.length() != 0 ) {
-    var force = createForce( vector.length(), 'resultant' );
+    force = createForce( vector.length(), 'resultant' );
     force.name = 'force';
     force.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0), vector.normalize() );
     resultant.add( force );
@@ -2098,7 +2099,7 @@ function createLoadAtJoint( loadPattern, joint ) {
 
   vector = new THREE.Vector3( mx, my, mz );
   if ( vector.length() != 0 ) {
-    var torque = createTorque( vector.length(), 'resultant' );
+    torque = createTorque( vector.length(), 'resultant' );
     torque.name = 'torque';
     torque.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0 ), vector.normalize() );
     resultant.add( torque );
@@ -2170,7 +2171,7 @@ function createGlobalUniformlyDistributedForceAtFrame( frame, magnitud, axis ) {
   var uniformlyDistributed = new THREE.Group();
   uniformlyDistributed.name = axis;
   
-  frame = model.getObjectByName( 'frames' ).getObjectByName( frame );
+  frame = model.children.find( obj => obj.name == 'frames' ).getObjectByName( frame );
   
   var vector = new THREE.Vector3( 1, 0, 0 ).applyQuaternion( frame.quaternion );
   
@@ -2207,15 +2208,15 @@ function createGlobalUniformlyDistributedTorqueAtFrame( frame, magnitud, axis ) 
   for ( var i = 0; i < quantite_arrows; i++ ) {
     arrow = createCurveArrow( material, Math.abs( magnitud ) / 2, config[ 'load.shaft.tube'], config[ 'load.head.height' ], config[ 'load.head.radius' ] );
     arrow.name = 'arrow_' + String( i );
-    arrow.quaternion.copy( model.getObjectByName( 'frames' ).getObjectByName( frame ).quaternion.clone().conjugate() );
+    arrow.quaternion.copy( model.children.find( obj => obj.name == "frames" ).getObjectByName( frame ).quaternion.clone().conjugate() );
     arrow.quaternion.multiply( quaternion );
     if ( magnitud < 0 ) arrow.rotateY( Math.PI );
     arrow.position.setX( -length / 2 + i * step + 1 / 2 * step );
     uniformlyDistributed.add( arrow );
   }
 
-  uniformlyDistributed.quaternion.copy( model.getObjectByName( 'frames' ).getObjectByName( frame ).quaternion );
-  uniformlyDistributed.position.copy( model.getObjectByName( 'frames' ).getObjectByName( frame ).position );
+  uniformlyDistributed.quaternion.copy( model.children.find( obj => obj.name == "frames" ).getObjectByName( frame ).quaternion );
+  uniformlyDistributed.position.copy( model.children.find( obj => obj.name == "frames" ).getObjectByName( frame ).position );
 
   return uniformlyDistributed;
 }
@@ -2245,7 +2246,7 @@ function createUniformlyDistributedLongitudinalForce( frame, magnitud, axis ) {
     longitudinal.add( arrow );
   }
 
-  longitudinal.quaternion.copy( model.getObjectByName( 'frames' ).getObjectByName( frame ).quaternion );
+  longitudinal.quaternion.copy( model.children.find( obj => obj.name == "frames" ).getObjectByName( frame ).quaternion );
   
   return longitudinal;
 }
@@ -2262,7 +2263,7 @@ function createUniformlyDistributedTransversalForce( frame, magnitud, axis ) {
   p1 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].j ).position.clone();
   p2 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].k ).position.clone();
 
-  var averague = model.getObjectByName( 'frames' ).getObjectByName( frame ).position.clone();
+  var averague = model.children.find( obj => obj.name == "frames" ).getObjectByName( frame ).position.clone();
   p1.sub( averague );
   p2.sub( averague );
 
@@ -2417,7 +2418,7 @@ export function addLoadPattern( name ) {
       var loadPattern = new THREE.Group();
       loadPattern.name = name;
       loadPattern.visible = name == config[ 'load.loadPattern' ];
-      model.getObjectByName( 'loads' ).add( loadPattern );
+      model.children.find( obj => obj.name == "loads" ).add( loadPattern );
 
       // add load pattern to controller
       var str, innerHTMLStr = "<option value='" + "" + "'>" + "" + "</options>";
@@ -2506,10 +2507,10 @@ export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, 
       structure.load_patterns[ loadPattern ].frames[ frame ].uniformly_distributed[ system ].push( { 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz } );
 
       // add frame to loads
-      if ( !model.getObjectByName( 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ) ) {
+      if ( !model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).getObjectByName( 'frames' ) ) {
         var frames = new THREE.Group();
         frames.name = 'frames';
-        model.getObjectByName( 'loads' ).getObjectByName( loadPattern ).add( frames );
+        model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).add( frames );
       }
 
       // add loads to frame
@@ -2521,11 +2522,11 @@ export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, 
       // }
 
       // remove loadPattern
-      if ( model.getObjectByName( 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).getObjectByName( frame ) ) model.getObjectByName( 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).remove( model.getObjectByName( 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).getObjectByName( frame ) );
+      if ( model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).getObjectByName( frame ) ) model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).remove( model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).getObjectByName( frame ) );
       // if ( model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) ) model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'laods' ).remove( model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'laods' ).getObjectByName( loadPattern ) );
 
       // add distributed load to model
-      model.getObjectByName( 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).add( createGlobalLoadAtFrame( loadPattern, frame ) );
+      model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).add( createGlobalLoadAtFrame( loadPattern, frame ) );
 
       // set force scale
       setLoadForceScale( config[ 'load.force.scale' ] );
@@ -2547,7 +2548,7 @@ function setLoadVisible( visible ) {
   // set load visibile
 
   model.getObjectByName( 'joints' ).children.filter( joint => joint.getObjectByName( 'loads' ) ).forEach( joint => joint.getObjectByName( 'loads' ).visible = visible );
-  model.getObjectByName( 'loads' ).visible = visible;
+  model.children.find( obj => obj.name == 'loads' ).visible = visible;
 
   // Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
     // if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
@@ -2565,7 +2566,7 @@ function setLoadPatternVisible( loadPattern ) {
       Object.keys( loadPatternValue.joints ).forEach( joint => model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).visible = loadPatternName == loadPattern );
     }
     if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
-      model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).visible = loadPatternName == loadPattern;
+      model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPatternName ).visible = loadPatternName == loadPattern;
     }
   });
 }
@@ -2582,7 +2583,7 @@ function setLoadAs( as ) {
     }
     if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
       Object.keys( loadPatternValue.frames ).forEach( frame => {
-        model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'components' ).visible = as == 'components';
+        model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'components' ).visible = as == 'components';
         // model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'resultant' ).visible = as == 'resltant';
       });
     }
@@ -2634,7 +2635,11 @@ function setLoadForceScale( scale ) {
         // components
         Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => { 
           if ( magnitud != 0 ) {
-            magnitud = magnitud / Math.abs( magnitud ) * scale * ( 0.25 * ( fcomp_max - Math.abs( magnitud ) ) + ( Math.abs( magnitud ) - fcomp_min ) ) / ( fcomp_max - fcomp_min );
+            if ( fcomp.length == 1 ) {
+              magnitud = scale;
+            } else {
+              magnitud = magnitud / Math.abs( magnitud ) * scale * ( 0.25 * ( fcomp_max - Math.abs( magnitud ) ) + ( Math.abs( magnitud ) - fcomp_min ) ) / ( fcomp_max - fcomp_min );
+            }
 
             arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'arrow' );
             arrow.getObjectByName( 'straightShaft' ).scale.setX( Math.abs( magnitud ) );
@@ -2648,7 +2653,11 @@ function setLoadForceScale( scale ) {
         
         // resultant
         if ( vector.length() != 0 ) {
-          magnitud = scale * ( 0.25 * ( fres_max - vector.length() ) + ( vector.length() - fres_min ) ) / ( fres_max - fres_min );
+          if ( fres.length == 1 ) {
+            magnitud = scale;
+          } else {
+            magnitud = scale * ( 0.25 * ( fres_max - vector.length() ) + ( vector.length() - fres_min ) ) / ( fres_max - fres_min );
+          }
           
           arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'force' ).getObjectByName( 'arrow' );
           arrow.getObjectByName( 'straightShaft' ).scale.setX( magnitud );
@@ -2714,9 +2723,9 @@ function setLoadForceScale( scale ) {
                 magnitud = magnitud / Math.abs( magnitud ) * scale * ( 0.4 * ( fcomp_max - Math.abs( magnitud ) ) + ( Math.abs( magnitud ) - fcomp_min ) ) / ( fcomp_max - fcomp_min );
     
                 // longitudinal
-                if ( model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' ) ) {
-                  model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).remove( model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' ) );
-                  model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).add( createUniformlyDistributedTransversalForce( frame, magnitud, axis ) );
+                if ( model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' ) ) {
+                  model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).remove( model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' ) );
+                  model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).add( createUniformlyDistributedTransversalForce( frame, magnitud, axis ) );
                 }
               }
             });
@@ -2835,8 +2844,8 @@ function setLoadHeadHeight( height ) {
     }
     if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
       Object.keys( loadPatternValue.frames ).forEach( frame => {
-        model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).remove( model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).getObjectByName( frame ) );
-        model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).add( createGlobalLoadAtFrame( loadPatternName, frame ) );
+        model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).remove( model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).getObjectByName( frame ) );
+        model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).add( createGlobalLoadAtFrame( loadPatternName, frame ) );
       });
 
       setLoadForceScale( config[ 'load.force.scale' ] );
@@ -2854,7 +2863,7 @@ function setLoadHeadRadius( radius ) {
         model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).children.forEach( load => load.getObjectByName( 'arrow' ).getObjectByName( 'head' ).scale.set( config[ 'load.head.height' ], radius, radius ) );
       });
     }
-    if ( loadPatternValue.hasOwnProperty( 'frames' ) ) Object.keys( loadPatternValue.frames ).forEach( frame => model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).children.filter( force => force.getObjectByName( 'longitudinal' ) ).forEach( force => force.getObjectByName( 'longitudinal' ).children.forEach( arrow => arrow.getObjectByName( 'head' ).scale.set( config[ 'load.head.height' ], config[ 'load.head.radius' ], config[ 'load.head.radius' ] ) ) ) );
+    if ( loadPatternValue.hasOwnProperty( 'frames' ) ) Object.keys( loadPatternValue.frames ).forEach( frame => model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).children.filter( force => force.getObjectByName( 'longitudinal' ) ).forEach( force => force.getObjectByName( 'longitudinal' ).children.forEach( arrow => arrow.getObjectByName( 'head' ).scale.set( config[ 'load.head.height' ], config[ 'load.head.radius' ], config[ 'load.head.radius' ] ) ) ) );
   });
 }
 
@@ -2911,7 +2920,7 @@ function setLoadShaftTube( tube ) {
       });
     }
     if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
-      Object.keys( loadPatternValue.frames ).forEach( frame => model.getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).children.filter( force => force.getObjectByName( 'longitudinal' ) ).forEach( force => force.getObjectByName( 'longitudinal' ).children.forEach( arrow => {
+      Object.keys( loadPatternValue.frames ).forEach( frame => model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).children.filter( force => force.getObjectByName( 'longitudinal' ) ).forEach( force => force.getObjectByName( 'longitudinal' ).children.forEach( arrow => {
         arrow.getObjectByName( 'straightShaft' ).scale.setY( tube );
         arrow.getObjectByName( 'straightShaft' ).scale.setZ( tube );
       })));
