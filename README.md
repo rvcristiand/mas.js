@@ -1,69 +1,95 @@
 # FEM.js
+
 Model Civil Engineering Structures with [FEM.js](rvcristiand.github.com/FEM.js).
 
 ## Getting Started
-You can use [FEM.js](rvcristiand.github.com/FEM.js) online !
 
-Alternatively, you can run it in your local machine. These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+You can use [FEM.js](rvcristiand.github.com/FEM.js) online! Just click [here](https://rvcristiand.github.io/FEM.js/).
+
+Alternatively, you can run it from a local machine. The following instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Prerequisites
-You need a Web Browser and run a locar server. [Git](https://git-scm.com/) is optional.
+
+You need a Web Browser and run a local server. [Git](https://git-scm.com/) is optional.
 
 #### Get a copy of FEM.js
-Clone with or download this repository.
+
+Fork, clone or download this repository.
 
 #### Web Browser
-Use the browser you want. I use _Google Chrome_.
+
+Use the browser you want. We recommend _Firefox_ or _Google Chrome_.
 
 #### Local server
-You can run a local server with using _python_. If you have _python 2_, you can use
+
+You can run a local server with using _python_. If you have _python 2_, you can run the command
+
 ```
 python -m SimpleHTTPServer
 ```
+
 in the folder root.
 
-If you have _python 3_, you can use
+If you have _python 3_, run the command
+
 ```
 python3 -m http.server
 ```
 
-#### Instalatling
-If you have already a local host running, you can open the _index.html_ file to test the program.
+#### Installing
+
+If you have already a local host running on your machine, you can open the _index.html_ file to test the program.
 
 ## API
 
 Details about the functions provides by FEM.js.
 
 ### Functions
----
-#### loadModel(filename)
-Load a model.
-- filename: filename.
 
-#### addJoint(x, y, z)
-Add a joint to the model at position (x, y, z).
-- x: coordinate x.
-- y: coordinate y.
-- z: coordinate z.
 
-#### addFrame(name, j, k)
-Add a frame to the model with _j_ as the near joint and _k_ as the far joint.
-- name: name of the frame.
-- j: near joint.
-- k: far joint.
+- Load a model.
 
-#### manyJoints(radius, quantite)
-Add many joints to the model at random positions inside a sphere.
-- radius: sphere's radius.
-- quantite: quantite joints.
+  `open("filename.json")`
 
-#### manyFrames(radius, quantite)
-Add many frames to the model at random positions inside a sphere.
-- radius: sphere's radius.
-- quantite: quantite frames.
+  - filename.json: input file.
+
+- Add a joint to the model at position (_x_, _y_, _z_).
+
+  `addJoint(x, y, z)`
+
+  - _x_: coordinate x.
+  - _y_: coordinate y.
+  - _z_: coordinate z.
+
+- Add a frame to the model with _j_ as the near joint and _k_ as the far joint.
+
+  `addFrame(name, j, k)`
+
+  - name: name of the frame.
+  - _j_: near joint.
+  - _k_: far joint.
+
+- Add many joints to the model at random positions inside a sphere.
+
+  `manyJoints(radius, number)`
+
+  - radius: sphere's radius.
+  - number: number of joints.
+
+- Add many frames to the model at random positions inside a sphere.
+
+  `manyFrames(radius, number)`
+
+  - radius: sphere's radius.
+  - number: number frames.
 
 ## Built with
+
+* JavaScript
+* CSS
+* html
 * [three.js](https://threejs.org/)
 
 ## Authors
-* **Cristian Ramirez** - [rvcristiand](https://scienti.minciencias.gov.co/cvlac/visualizador/generarCurriculoCv.do?cod_rh=0000122390)
+
+* __Cristian Ramirez__ - [rvcristiand](https://scienti.minciencias.gov.co/cvlac/visualizador/generarCurriculoCv.do?cod_rh=0000122390)
