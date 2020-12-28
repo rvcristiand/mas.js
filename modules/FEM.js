@@ -1438,6 +1438,13 @@ function createSupport( ux, uy, uz, rx, ry, rz ) {
 
   var support = new THREE.Group();
 
+  if ( typeof ux != "boolean" ) { ux = ( ux === 'true' ? true : false )};
+  if ( typeof uy != "boolean" ) { uy = ( uy === 'true' ? true : false )};
+  if ( typeof uz != "boolean" ) { uz = ( uz === 'true' ? true : false )};
+  if ( typeof rx != "boolean" ) { rx = ( rx === 'true' ? true : false )};
+  if ( typeof ry != "boolean" ) { ry = ( ry === 'true' ? true : false )};
+  if ( typeof rz != "boolean" ) { rz = ( rz === 'true' ? true : false )};
+
   // create analytical support
   var analytical = new THREE.Group();
 
