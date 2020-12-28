@@ -1735,6 +1735,40 @@ export function addSupport( joint, ux, uy, uz, rx, ry, rz ) {
   return promise;
 }
 
+export function removeSupport( name ) {
+  // remove a support
+
+  var promise = new Promise(( resolve, reject ) => {
+    // only strings accepted as name
+    name = name.toString();
+
+    if ( structure.supports.hasOwnProperty( name ) ) {
+      deleteSupport( name );
+      
+      resolve( "support '" + name + "' was removed" );
+    } else {
+      reject( new Error( "support '" + name + "' does not exist" ) );
+    }
+  })
+  return promise;
+}
+
+function deleteSupport( name ) {
+  // delete a support
+
+  // only strings accepted as name
+  name = name.toString();
+
+  // get the support
+  var support = model.getObjectByName( 'joints' ).getObjectByName( name ).getObjectByName( 'support' );
+  
+  // remove support of the scene
+  model.getObjectByName( 'joints' ).getObjectByName( name ).remove( support );
+
+  // remove support from structure
+  delete structure.supports[ name ];
+}
+
 function setSupportMode( mode ) {
   // set support mode
 

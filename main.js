@@ -14,6 +14,22 @@ var autocomplete = document.getElementById( "autocomplete" );
 
 // set the functions
 
+// addSupport
+terminal.add_function('addSupport', {
+  func: FEM.addSupport,
+  successful: function ( name ) {
+    return "support " + name + " was added";
+  }
+});
+
+// removeSupport
+terminal.add_function( 'removeSupport', {
+  func: FEM.removeSupport,
+  successful: name => {
+    return "support '" + name + "' was removed";
+  }
+});
+
 // addFrame
 terminal.add_function('addFrame', {
   func: FEM.addFrame,
