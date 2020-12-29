@@ -2477,6 +2477,39 @@ export function addLoadPattern( name ) {
   return promise;
 }
 
+export function removeLoadPattern( name ) {
+  // remove a load pattern
+
+  var promise = new Promise ( ( resolve, reject ) => {
+    if ( structure.load_patterns.hasOwnProperty( name ) ) {
+      deleteLoadPattern( name );
+
+      resolve( "load pattern '" + name + "' was removed" );
+    } else {
+      reject( new Error( "load pattern'" + name + "' does not exist" ) );
+    }
+  });
+
+  return promise;
+}
+
+function deleteLoadPattern( name ) {
+  // delete a load pattern
+
+  // only strings accepted as name
+  name = name.toString();
+
+  // get the load pattern
+  var load_pattern = model.children.find( obj => obj.name == 'loads' ).getObjectByName( name );
+
+  // remove load pattern to model
+  model.children.find( obj => obj.name == "loads" ).remove( load_pattern );
+  
+  // remove load pattern from structure
+  delete structure.load_patterns[ name ];
+}
+
+
 export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
   // add a load at joint
 

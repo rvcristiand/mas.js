@@ -14,6 +14,22 @@ var autocomplete = document.getElementById( "autocomplete" );
 
 // set the functions
 
+// addLoadPattern
+terminal.add_function('addLoadPattern', {
+  func: FEM.addLoadPattern,
+  successful: function ( name ) {
+    return "load pattern '" + name + "' was added";
+  }
+});
+
+// removeLoadPattern
+terminal.add_function('removeLoadPattern', {
+  func: FEM.removeLoadPattern,
+  succesful: function ( name ) {
+    return "load pattern '" + name + "' was removed";
+  }
+});
+
 // addSupport
 terminal.add_function('addSupport', {
   func: FEM.addSupport,
