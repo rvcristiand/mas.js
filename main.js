@@ -14,6 +14,11 @@ var autocomplete = document.getElementById( "autocomplete" );
 
 // set the functions
 
+// addLoadAtJoint
+terminal.add_function( 'addLoadAtJoint', {
+  func: FEM.addLoadAtJoint
+});
+
 // addLoadPattern
 terminal.add_function('addLoadPattern', {
   func: FEM.addLoadPattern,

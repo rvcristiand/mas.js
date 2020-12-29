@@ -2100,6 +2100,8 @@ function createLoadAtJoint( loadPattern, joint ) {
     mz += load.mz;
   });
 
+  console.log( fx, fy, fz, mx, my, mz );
+
   // create components forces
   var components = new THREE.Group();
   components.name = 'components';
@@ -2517,7 +2519,15 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
     // only strings accepted as name
     loadPattern = loadPattern.toString();
     joint = joint.toString();
-      
+
+    // only numbers accepted as values
+    fx = fx ? fx : 0;
+    fy = fy ? fy : 0;
+    fz = fz ? fz : 0;
+    mx = mx ? mx : 0;
+    my = my ? my : 0;
+    mz = mz ? mz : 0;
+
     // check if loadPattern & joint exists
     if ( structure.load_patterns.hasOwnProperty( loadPattern ) && structure.joints.hasOwnProperty( joint ) ) {
       // add load to structure
@@ -2549,7 +2559,7 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
       // set torque scale
       setLoadTorqueScale( config[ 'load.torque.scale' ] );
 
-      resolve( "joint load added" );
+      resolve( "load added to joint '" + joint + "' in load pattern '" + loadPattern + "'" );
     } else {
       if ( structure.load_patterns.hasOwnProperty( loadPattern ) ) {
         reject( new Error( "joint '" + joint + "' does not exist" ) );
@@ -2560,6 +2570,47 @@ export function addLoadAtJoint( loadPattern, joint, fx, fy, fz, mx, my, mz ) {
   });
 
   return promise;
+}
+
+export function removeLoadsAtJoint( loadPattern, joint ) {
+  // remove loads at joint
+
+  var promise = new Promise( ( resolve, reject ) => {
+    if ( structure.load_patterns.hasOwnProperty( loadPattern ) && structure.joints.hasOwnProperty( joint ) ) {
+      deleteLoadsAtJoint( loadPattern, joint );
+
+      resolve( "loads at joint '" + joint + "' in load pattern '" + loadPattern + "' were removed" );
+    } else {
+      if ( structure.load_patterns.hasOwnProperty( loadPattern ) ) {
+        reject( new Error( "joint '" + joint + "' does not exist."))
+      } else {
+        reject( new Error( "load pattern '" + loadPattern + "' does not exist" ) );
+      }
+    }
+  });
+}
+
+function deleteLoadsAtJoint( loadPattern, joint ) {
+  // delete loads at joint
+
+  // only strings accepted as name
+  loadPattern = loadPattern.toString();
+  joint = joint.toString();
+
+  // remove loads from structure
+  if ( structure.load_patterns[ loadPattern ].joints && structure.load_patterns[ loadPattern ].joints[ joint ] ) delete structure.load_patterns[ loadPattern ].joints[ joint ];
+  
+  // remove loadPattern
+  if ( model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ) && model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) ) model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).remove( model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) );
+
+  // remove loads to joint
+  if ( model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ) && model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).children.length < 1 ) model.getObjectByName( 'joints' ).getObjectByName( joint ).remove( model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( loads ) );  
+
+  // set force scale
+  setLoadForceScale( config[ 'load.force.scale' ] );
+
+  // set torque scale
+  setLoadTorqueScale( config[ 'load.torque.scale' ] );
 }
 
 export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, fx, fy, fz, mx, my, mz ) {
