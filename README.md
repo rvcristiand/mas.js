@@ -1,10 +1,10 @@
 # FEM.js
 
-Model Civil Engineering Structures with [FEM.js](rvcristiand.github.com/FEM.js).
+Model Civil Engineering Structures with [FEM.js](https://rvcristiand.github.io/FEM.js).
 
 ## Getting Started
 
-You can use [FEM.js](rvcristiand.github.com/FEM.js) online! Just click [here](https://rvcristiand.github.io/FEM.js/).
+You can use [FEM.js](https://rvcristiand.github.io/FEM.js) online! Just click [here](https://rvcristiand.github.io/FEM.js/).
 
 Alternatively, you can run it from a local machine. The following instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
