@@ -3,8 +3,8 @@ var scene, camera, controls;
 var webGLRenderer, CSS2DRenderer;
 
 // html
-var canvasWebGLRenderer = document.getElementById( "canvas" );
-var canvasCSS2DRenderer = document.getElementById( "labels" );
+var canvasWebGLRenderer = document.querySelector( ".canvas" );
+var canvasCSS2DRenderer = document.querySelector( ".labels" );
 
 // controls
 var stats, gui;
@@ -351,7 +351,7 @@ function init() {
 
   // create the stats
   stats = new Stats();
-  document.getElementById( "Stats-output" ).appendChild( stats.domElement );
+  document.querySelector( ".Stats-output" ).appendChild( stats.domElement );
 
   // create the dat gui
   gui = new dat.GUI();

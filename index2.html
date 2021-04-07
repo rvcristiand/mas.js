@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title>FEM.js</title>
+
+    <!-- three.js -->
+    <script src="./libs/three.js"></script>
+    <script src="./libs/CSS2DRenderer.js"></script>
+    <script src="./libs/OrbitControls.js"></script>
+    <!-- <script src="./libs/Projector.js"></script> -->
+
+    <!-- dat gui and stats -->
+    <script src="./libs/dat.gui.min.js"></script>
+    <script src="./libs/stats.js"></script>
+
+    <!-- Style -->
+    <link rel="stylesheet" href="./css/style.css" />
+
+    <!-- Font Awesome JS -->
+    <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/solid.js" integrity="sha384-tzzSw1/Vo+0N5UhStP3bvwWPq+uvzCMfrN1fEFe+xBmv1C/AtVX5K0uZtmcHitFZ" crossorigin="anonymous"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/fontawesome.js" integrity="sha384-6OIrr52G08NpOFSZdxxz1xdNSndlD4vdcf/q2myIUVO0VsqaGHJsB0RaBE01VTOY" crossorigin="anonymous"></script>
+    <!-- Font Inconsolata -->
+    <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <script type="module" src="main.js"></script>
+
+    <!-- <link rel="shortcut icon" href="#" /> -->
+
+  </head>
+
+  <body>
+    <div id="wrapper" class="wrapper">
+
+      <!-- Navbar to show the project name and user links -->
+      <div class="header">
+        <!-- <div class="logo-container"> -->
+        <!--   <img src="./img/logo.svg" alt="."/> -->
+        <!--   <p class="logo-name">FEM.js</p> -->
+        <!-- </div> -->
+        <!-- <div class="project-info"> -->
+        <!--   <p>[ Nompre del proyecto ]</p> -->
+        <!-- </div> -->
+        <!-- <nav> -->
+        <!--   <ul class="nav-links"> -->
+        <!--     <li><a class="nav-link" href="#">Projects</a></li> -->
+        <!--     <li><a class="nav-link" href="#"><i class="fas fa-bell"></i></a></li> -->
+        <!--     <li><a class="nav-link" href="#"><i class="fas fa-user"></i></a></li> -->
+        <!--   </ul> -->
+        <!-- </nav> -->
+      </div>
+
+      <!-- Contains all the UI itself -->
+      <div class="main">
+
+        <!-- A space to show the project tree and object properties -->
+        <div class="sidebar">
+          <!-- <div class="project-tree"> -->
+          <!--   <p>Project tree:</p> -->
+          <!-- </div> -->
+          <!-- <div class="object-properties"> -->
+          <!--   <p>Object properties:</p> -->
+          <!-- </div> -->
+        </div>
+
+        <menu>
+          <!-- <ul class="menu-links"> -->
+            <!-- <li><a class="menu-link" href="#"><i class="fas fa-circle"></i></a></li> -->
+            <!-- <li><a class="menu-link" href="#"><i class="fas fa-dot-circle"></i></a></li> -->
+            <!-- <li><a class="menu-link" href="#"><i class="fas fa-chart-line"></i></a></li> -->
+            <!-- <li><a class="menu-link" href="#"><i class="fas fa-hand-spock"></i></a></li> -->
+            <!-- <li><a class="menu-link" href="#"><i class="fas fa-lemon"></i></a></li> -->
+            <!-- <li><a class="menu-link" href="#"><i class="fas fa-cloud"></i></a></li> -->
+            <!-- <li><a class="menu-link" href="#"><i class="fas fa-arrow-left"></i></a></li> -->
+            <!-- <li><a class="menu-link" href="#"><i class="fas fa-arrow-up"></i></a></li> -->
+            <!-- <li><a class="menu-link" href="#"><i class="fas fa-arrow-right"></i></a></li> -->
+            <!-- <li><a class="menu-link" href="#"><i class="fas fa-arrow-down"></i></a></li> -->
+          <!-- </ul> -->
+        </menu>
+
+        <!-- This is where the model will be shown -->
+        <div class="renderer-output" id="renderer-output">
+          <!-- <canvas id="canvas"></canvas> -->
+          <!-- <div id="labels"></div> -->
+        </div>
+
+        <!-- <div class="stats" id="Stats-output"></div> -->
+
+      </main>
+
+      <div id="console" class="console">
+        <!-- <div id="output" class="output"> -->
+        <!--   <p id="log" class="log remove-message">Hi !</p> -->
+        <!-- </div> -->
+
+        <!-- <div id="terminal" class="terminal"> -->
+        <!--   <span id="prompt" class="prompt" autocomplete="false">:</span> -->
+        <!--   <input id="command-line" class="command-line" type="text" autocomplete="off"> -->
+        <!--   <div id="autocomplete" class="autocomplete"></div> -->
+        <!-- </div> -->
+      </div>
+    </div>
+
+  </body>
+</html>
