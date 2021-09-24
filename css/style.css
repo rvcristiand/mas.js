@@ -24,7 +24,7 @@
   font-size: 16px;
   background-color: var(--back0);
   display: grid;
-  grid-template-rows: 40px auto auto 30px 0px;
+  grid-template-rows: 40px auto auto 40px;
   grid-template-columns: 15vw auto 0px;
   gap: 0px 0px;
   justify-items: stretch;
@@ -47,6 +47,7 @@
 
 .logo-name {
   font-size: 20px;
+  font-weight: 700;
   color: var(--principal);
   padding: 0px 16px;
 }
