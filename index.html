@@ -14,8 +14,8 @@
     <!-- <script src="./libs/Projector.js"></script> -->
 
     <!-- dat gui and stats -->
-    <script src="./libs/dat.gui.min.js"></script>
-    <script src="./libs/stats.js"></script>
+    <!-- <script src="./libs/dat.gui.min.js"></script> -->
+    <!-- <script src="./libs/stats.js"></script> -->
 
     <!-- Style -->
     <link rel="stylesheet" href="./css/style.css" />
@@ -23,8 +23,11 @@
     <!-- Font Awesome JS -->
     <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/solid.js" integrity="sha384-tzzSw1/Vo+0N5UhStP3bvwWPq+uvzCMfrN1fEFe+xBmv1C/AtVX5K0uZtmcHitFZ" crossorigin="anonymous"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/fontawesome.js" integrity="sha384-6OIrr52G08NpOFSZdxxz1xdNSndlD4vdcf/q2myIUVO0VsqaGHJsB0RaBE01VTOY" crossorigin="anonymous"></script>
-    <!-- Font Inconsolata -->
-    <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- Fonts -->
+    <!-- Inconsolata -->
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@700&display=swap" rel="stylesheet"> -->
+    <!-- Lato -->
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400&display=swap" rel="stylesheet">
 
     <script type="module" src="main.js"></script>
@@ -39,6 +42,11 @@
       <!-- Navbar to show the project name and user links -->
       <div class="header">
         <div class="logo-container">
+	  <div id="button">
+            <button type="button" id="sidebarCollapse" class="myButton">
+              <i class="fas fa-align-left"></i>
+            </button>
+	  </div>
           <p class="logo-name">FEM.js</p>
         </div>
         <div class="project-info">
@@ -54,7 +62,7 @@
       </div>
 
       <!-- A space to show the project tree and object properties -->
-      <div class="sidebar">
+      <div id="sidebar" class="sidebar">
         <div class="project-tree">
           <p class="subtitle">Objects:</p>
           <ul>
@@ -96,14 +104,13 @@
           <li><a class="menu-link" href="#"><i class="fas fa-arrow-down"></i></a></li>
         </ul>
       </div>
-
+      
       <!-- This is where the model will be shown -->
       <div class="renderer-output" id="renderer-output">
         <canvas id="canvas"></canvas>
         <div id="labels"></div>
         <div class="stats" id="Stats-output"></div>
       </div>
-
 
       <div class="footer" id="footer">
         <div id="console" class="console">
@@ -120,8 +127,6 @@
           <p><script> document.write(new Date().toLocaleDateString()); </script></p>
         </div>
       </div>
-
     </div>
-
   </body>
 </html>

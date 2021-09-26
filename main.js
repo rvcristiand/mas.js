@@ -1,5 +1,6 @@
 import * as terminal from "./modules/terminal.js";
 import * as FEM from "./modules/FEM.js";
+import * as ui from "./modules/ui.js"
 
 
 // scene

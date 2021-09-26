@@ -25,14 +25,14 @@
   background-color: var(--back0);
   display: grid;
   grid-template-rows: 40px auto auto 40px;
-  grid-template-columns: 15vw auto 0px;
+  grid-template-columns: 15vw auto auto;
   gap: 0px 0px;
   justify-items: stretch;
   align-items: stretch;
 }
 
 .header {
-  grid-area: 1 / 1 / 2 / 3;
+  grid-area: 1 / 1 / 2 / 4;
   background-color: var(--back2);
   color: var(--text);
   z-index: 1;
@@ -43,13 +43,13 @@
 .logo-container {
   flex: 1;
   display: flex;
+  font-size: 20px;
 }
 
 .logo-name {
-  font-size: 20px;
   font-weight: 700;
   color: var(--principal);
-  padding: 0px 16px;
+  padding: 0px 16px;  
 }
 
 .project-info {
@@ -75,12 +75,20 @@
 }
 
 .sidebar {
-  grid-area: 2 / 1 / 4 / 2;
+    /* position: absolute; */
+    /* top: 0px; */
   background-color: var(--back1);
   color: var(--text);
   display: flex;
   flex-direction: column;
+  z-index: 1;
+  grid-area: 2 / 1 / 4 / 2;
+  visibility: hidden;
   /* margin-bottom: 3px; */
+}
+
+#sidebar.active {
+    visibility: visible;
 }
 
 .subtitle {
@@ -128,7 +136,7 @@
 }
 
 .renderer-output {
-  grid-area: 2 / 2 / 4 / 3;
+  grid-area: 2 / 1 / 4 / 4;
   /* position: absolute; */
   /* left: 0px; */
   /* top: 0px; */
@@ -137,6 +145,7 @@
   grid-template-columns: auto;
   align-items: stretch;
   justify-items: stretch;
+  /* z-index: 2; */
 }
 
 #canvas {
@@ -175,12 +184,30 @@
 }
 
 .footer {
-  grid-area: 4 / 1 / 5 / 3;
+  grid-area: 4 / 1 / 5 / 4;
   background-color: var(--back0);
   opacity: 0.5;
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.myButton {
+	background-color:var(--black0); /* #44c767 */
+	/* border-radius:28px; */
+	border:1px solid var(--black2); /* #18ab29 */
+	/* display:inline-block; */
+	cursor:pointer;
+	color: var(--principal);
+	/* font-family:Arial; */
+	font-size:20px;
+	padding:0px 0px 0px 16px; /* 31px */
+	text-decoration:none;
+	text-shadow:0px 1px 0px #2f6627;
+}
+.myButton:hover {
+    color: var(--text);
+    /* background-color:var(--text);/\* #5cbf2 *\/ */
 }
 
 .console {
