@@ -65,7 +65,7 @@ planeFolder.add( config, 'ground.plane.opacity' ).name( 'opacity' ).min( 0 ).max
 let gridFolder = groundFolder.addFolder( "grid" );
 gridFolder.add( config, 'ground.grid.visible' ).name( 'visible' ).onChange( visible => setGridVisible( visible ) );
 gridFolder.add( config, 'ground.grid.divisions' ).name( 'divisions' ).min( 0 ).max( 100 ).step( 5 ).onChange( divisions => setGridDivisions( divisions ) );
-gridFolder.addColor( config, 'ground.grid.major' ).name( 'major' ).onChange( color => setGridMajor( color ) );
+gridFolder.addColor( config, 'ground.grid.light.major' ).name( 'major' ).onChange( color => setGridMajor( color ) );
 gridFolder.addColor( config, "ground.grid.minor" ).name( 'menor' ).onChange( color => setGridMenor( color ) );
 
 // add axes folder

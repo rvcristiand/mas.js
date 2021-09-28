@@ -1,8 +1,10 @@
 export default
 {
     // background
-    'background.topColor': '#555555',
-    'background.bottomColor': '#000000',
+    'background.light.topColor': '#f9f9f9',
+    'background.light.bottomColor': '#e9e9e9',
+    'background.dark.topColor': '#101010',
+    'background.dark.bottomColor': '#595959',
     
     // model
     'model.axisUpwards': 'y',
@@ -54,14 +56,17 @@ export default
     'ground.size': 20,
     
     'ground.plane.visible': true,
-    'ground.plane.color': '#1F3119',
+    'ground.plane.light.color': '#3c3c3c',
+    'ground.plane.dark.color': '#dbdbdb',
     'ground.plane.transparent': true,
-    'ground.plane.opacity': 0.5,
+    'ground.plane.opacity': 0.3,
     
     'ground.grid.visible': true,
     'ground.grid.divisions': 20,
-    'ground.grid.major': 0xff0000,
-    'ground.grid.minor': 0xffffff,
+    'ground.grid.light.major': 0xff0000,
+    'ground.grid.dark.major': 0xff0000,
+    'ground.grid.light.minor': 0x000000,
+    'ground.grid.dark.minor': 0xffffff,
     
     // joint
     'joint.visible': true,

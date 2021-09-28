@@ -40,23 +40,25 @@
     <div id="wrapper" class="wrapper">
 
       <!-- Navbar to show the project name and user links -->
-      <div class="header">
+      <div id="header" class="header">
         <div class="logo-container">
 	  <div id="button">
             <button type="button" id="sidebarCollapse" class="myButton">
-              <i class="fas fa-align-left"></i>
+              <i class="fas fa-bars"></i>
             </button>
 	  </div>
-          <p class="logo-name">FEM.js</p>
+          <!-- <p class="logo-name">FEM.js</p> -->
         </div>
         <div class="project-info">
-          <p>[ Nompre del proyecto ]</p>
+          <input type="text" placeholder="project name"></input>
         </div>
         <div class="user-links">
           <ul class="nav-links">
-            <li><a class="nav-link" href="#">Projects</a></li>
-            <li><a class="nav-link" href="#"><i class="fas fa-bell"></i></a></li>
-            <li><a class="nav-link" href="#"><i class="fas fa-user"></i></a></li>
+	    <li><a id="dark-mode" class="nav-link" href="#"><i class="fas fa-moon"></i></a></li>
+            <li><a id="settings" class="nav-link" href="#"><i class="fas fa-cog"></i></a></li>
+            <!-- <li><a class="nav-link" href="#">Projects</a></li> -->
+            <!-- <li><a class="nav-link" href="#"><i class="fas fa-bell"></i></a></li> -->
+            <!-- <li><a class="nav-link" href="#"><i class="fas fa-user"></i></a></li> -->
           </ul>
         </div>
       </div>
@@ -90,42 +92,72 @@
         </div>
       </div>
 
-      <div class="menu">
-        <ul class="menu-links">
-          <li><a class="menu-link" href="#"><i class="fas fa-circle"></i></a></li>
-          <li><a class="menu-link" href="#"><i class="fas fa-dot-circle"></i></a></li>
-          <li><a class="menu-link" href="#"><i class="fas fa-chart-line"></i></a></li>
-          <li><a class="menu-link" href="#"><i class="fas fa-hand-spock"></i></a></li>
-          <li><a class="menu-link" href="#"><i class="fas fa-lemon"></i></a></li>
-          <li><a class="menu-link" href="#"><i class="fas fa-cloud"></i></a></li>
-          <li><a class="menu-link" href="#"><i class="fas fa-arrow-left"></i></a></li>
-          <li><a class="menu-link" href="#"><i class="fas fa-arrow-up"></i></a></li>
-          <li><a class="menu-link" href="#"><i class="fas fa-arrow-right"></i></a></li>
-          <li><a class="menu-link" href="#"><i class="fas fa-arrow-down"></i></a></li>
-        </ul>
+
+      <!-- A space to show the settings -->
+      <div id="sidebar-settings" class="sidebar right">
+        <div class="project-tree">
+          <p class="subtitle">Objects:</p>
+          <ul>
+            <li>Node 1</li>
+            <li>Node 2</li>
+            <li>Node 3</li>
+            <li>Node 4</li>
+            <li>Frame 1</li>
+            <li>Frame 2</li>
+            <li>Frame 3</li>
+            <li>Frame 4</li>
+          </ul>
+        </div>
+        <div class="object-properties">
+          <p class="subtitle">Properties:</p>
+          <ul>
+            <li>Label: Node 3</li>
+            <li>x: 0.00</li>
+            <li>y: 3.50</li>
+            <li>z: 8.25</li>
+            <li>Fx: 0.00</li>
+            <li>Fy: 200.00</li>
+            <li>Fz: 150.50</li>
+          </ul>
+        </div>
       </div>
+
+      <!-- <div class="menu"> -->
+      <!--   <ul class="menu-links"> -->
+      <!--     <li><a class="menu-link" href="#"><i class="fas fa-circle"></i></a></li> -->
+      <!--     <li><a class="menu-link" href="#"><i class="fas fa-dot-circle"></i></a></li> -->
+      <!--     <li><a class="menu-link" href="#"><i class="fas fa-chart-line"></i></a></li> -->
+      <!--     <li><a class="menu-link" href="#"><i class="fas fa-hand-spock"></i></a></li> -->
+      <!--     <li><a class="menu-link" href="#"><i class="fas fa-lemon"></i></a></li> -->
+      <!--     <li><a class="menu-link" href="#"><i class="fas fa-cloud"></i></a></li> -->
+      <!--     <li><a class="menu-link" href="#"><i class="fas fa-arrow-left"></i></a></li> -->
+      <!--     <li><a class="menu-link" href="#"><i class="fas fa-arrow-up"></i></a></li> -->
+      <!--     <li><a class="menu-link" href="#"><i class="fas fa-arrow-right"></i></a></li> -->
+      <!--     <li><a class="menu-link" href="#"><i class="fas fa-arrow-down"></i></a></li> -->
+      <!--   </ul> -->
+      <!-- </div> -->
       
       <!-- This is where the model will be shown -->
       <div class="renderer-output" id="renderer-output">
         <canvas id="canvas"></canvas>
         <div id="labels"></div>
-        <div class="stats" id="Stats-output"></div>
+        <!-- <div class="stats" id="Stats-output"></div> -->
       </div>
 
       <div class="footer" id="footer">
-        <div id="console" class="console">
-          <div id="terminal" class="terminal">
-            <span id="prompt" class="prompt" autocomplete="false">:</span>
-            <input id="command-line" class="command-line" type="text" autocomplete="off">
-            <div id="autocomplete" class="autocomplete"></div>
-          </div>
-          <div id="output" class="output">
-            <p id="log" class="log remove-message">Hi !</p>
-          </div>
-        </div>
-        <div class="date">
-          <p><script> document.write(new Date().toLocaleDateString()); </script></p>
-        </div>
+	<div id="console" class="console">
+	  <div id="terminal" class="terminal">
+	    <span id="prompt" class="prompt" autocomplete="false">:</span>
+	    <input id="command-line" class="command-line" type="text" autocomplete="off">
+	    <div id="autocomplete" class="autocomplete"></div>
+	  </div>
+	  <div id="output" class="output">
+	    <p id="log" class="log remove-message">Hi !</p>
+	  </div>
+	</div>
+        <!-- <div class="date"> -->
+        <!--   <p><script> document.write(new Date().toLocaleDateString()); </script></p> -->
+        <!-- </div> -->
       </div>
     </div>
   </body>

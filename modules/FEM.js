@@ -27,7 +27,7 @@ function init() {
   if ( json ) for ( let [ key, value ] of Object.entries( json.remembered[ json.preset ][ '0' ] ) ) config[ key ] = value; */
   
   // set the background
-  setBackgroundColor( config[ 'background.topColor' ], config[ 'background.bottomColor' ] );
+  setBackgroundColor( config[ 'background.light.topColor' ], config[ 'background.light.bottomColor' ] );
   
   // create the scene
   scene = new THREE.Scene();
@@ -156,7 +156,7 @@ function init() {
   scene.add( model );
   
   // create the ground
-  var ground = createGround( config[ 'ground.size' ], config[ 'ground.grid.divisions' ], config[ 'ground.plane.color' ], config[ 'ground.plane.transparent' ], config[ 'ground.plane.opacity' ], config[ 'ground.grid.major' ], config[ 'ground.grid.minor' ] );
+  var ground = createGround( config[ 'ground.size' ], config[ 'ground.grid.divisions' ], config[ 'ground.plane.light.color' ], config[ 'ground.plane.transparent' ], config[ 'ground.plane.opacity' ], config[ 'ground.grid.light.major' ], config[ 'ground.grid.light.minor' ] );
   scene.add( ground );
   
   // create the structure
@@ -353,7 +353,9 @@ function createGround( size, divisions, color, transparent, opacity, colorCenter
   ground.add( grid );
   
   // add plane
-  var plane = new THREE.Mesh( new THREE.PlaneBufferGeometry(), new THREE.MeshLambertMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } ) ); //  1, 1, 2000, 2000 
+
+    var plane = new THREE.Mesh( new THREE.PlaneBufferGeometry(), new THREE.MeshBasicMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } ) ); // new THREE.MeshLambertMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } )//  1, 1, 2000, 2000 
+    // var plane = new THREE.Mesh( new THREE.PlaneBufferGeometry(), new THREE.MeshLambertMaterial( { color: color, transparent: transparent, opacity: opacity, side: THREE.DoubleSide } ) ); //  1, 1, 2000, 2000 
   plane.name = 'plane';
   plane.visible = config[ 'ground.plane.visible'];
   ground.add( plane );
@@ -452,7 +454,7 @@ function loadJSON( json ) {
   return promise;
 }
 
-function setBackgroundColor( top, bottom ) { canvasWebGLRenderer.style.backgroundImage = "linear-gradient(" + top + ", " + bottom + ")" };
+export function setBackgroundColor( top, bottom ) { canvasWebGLRenderer.style.backgroundImage = "linear-gradient(" + top + ", " + bottom + ")" };
 
 function setGroundVisible( visible ) { scene.getObjectByName( 'ground' ).visible = visible };
 
@@ -460,7 +462,7 @@ function setGroundSize( size ) { scene.getObjectByName( 'ground' ).scale.setScal
 
 function setPlaneVisible( visible ) { scene.getObjectByName( 'ground' ).getObjectByName( 'plane' ).visible = visible };
 
-function setPlaneColor( color ) { scene.getObjectByName( 'ground' ).getObjectByName( 'plane' ).material.color = new THREE.Color( color ) };
+export function setPlaneColor( color ) { scene.getObjectByName( 'ground' ).getObjectByName( 'plane' ).material.color = new THREE.Color( color ) };
 
 function setPlaneTransparent( transparent ) { scene.getObjectByName( 'ground' ).getObjectByName( 'plane' ).material.transparent = transparent };
 
@@ -475,6 +477,14 @@ function setGridDivisions( divisions ) {
 
   ground.remove( ground.getObjectByName( 'grid' ) );
   ground.add( createGrid( divisions, config[ 'ground.grid.major' ], config[ 'ground.grid.minor' ] ) );
+}
+
+export function setGrid( major, minor ) {
+    // set grid
+    var ground = scene.getObjectByName( 'ground' );
+
+    ground.remove( ground.getObjectByName( 'grid' ) );
+    ground.add( createGrid( config[ 'ground.grid.divisions' ], major, minor ) );
 }
 
 function setGridMajor( color ) {
