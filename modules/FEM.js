@@ -26,8 +26,16 @@ function init() {
   /*   var json = JSON.parse( localStorage.getItem( window.location.href + '.gui' ) );
   if ( json ) for ( let [ key, value ] of Object.entries( json.remembered[ json.preset ][ '0' ] ) ) config[ key ] = value; */
   
-  // set the background
-  setBackgroundColor( config[ 'background.light.topColor' ], config[ 'background.light.bottomColor' ] );
+    // set the background
+    // load config //
+    var theme = localStorage.getItem( 'theme' ) || 'light';
+    var isLight = theme == 'light';
+
+    // background
+    var topColor = isLight ? config[ 'background.light.topColor' ] : config[ 'background.dark.topColor' ];
+    var bottomColor = isLight ? config[ 'background.light.bottomColor' ] : config[ 'background.dark.bottomColor' ];
+
+    setBackgroundColor( topColor, bottomColor );
   
   // create the scene
   scene = new THREE.Scene();

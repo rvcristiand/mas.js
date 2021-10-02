@@ -54,8 +54,8 @@
         </div>
         <div class="user-links">
           <ul class="nav-links">
-	    <li><a id="dark-mode" class="nav-link" href="#"><i class="fas fa-moon"></i></a></li>
-            <li><a id="settings" class="nav-link" href="#"><i class="fas fa-cog"></i></a></li>
+	    <li><a id="dark-mode" class="nav-link"><i class="fas fa-moon"></i></a></li> <!-- href="#" -->
+            <li><a id="settings" class="nav-link"><i class="fas fa-cog"></i></a></li> <!-- href="#" -->
             <!-- <li><a class="nav-link" href="#">Projects</a></li> -->
             <!-- <li><a class="nav-link" href="#"><i class="fas fa-bell"></i></a></li> -->
             <!-- <li><a class="nav-link" href="#"><i class="fas fa-user"></i></a></li> -->
@@ -144,17 +144,20 @@
         <!-- <div class="stats" id="Stats-output"></div> -->
       </div>
 
+      <div id="autocomplete" class="autocomplete"></div>
+
+      <div id="output" class="output">
+	<p id="log" class="log remove-message">Hi !</p>
+      </div>
+
       <div class="footer" id="footer">
-	<div id="console" class="console">
-	  <div id="terminal" class="terminal">
-	    <span id="prompt" class="prompt" autocomplete="false">:</span>
-	    <input id="command-line" class="command-line" type="text" autocomplete="off">
-	    <div id="autocomplete" class="autocomplete"></div>
-	  </div>
-	  <div id="output" class="output">
-	    <p id="log" class="log remove-message">Hi !</p>
-	  </div>
+	<div id="terminal" class="terminal">
+	  <span id="prompt" class="prompt" autocomplete="false">:</span>
+	  <input id="command-line" class="command-line" type="text" autocomplete="off">
 	</div>
+
+	<!-- <div id="console" class="console"> -->
+	<!-- </div> -->
         <!-- <div class="date"> -->
         <!--   <p><script> document.write(new Date().toLocaleDateString()); </script></p> -->
         <!-- </div> -->
