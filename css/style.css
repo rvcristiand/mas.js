@@ -1,7 +1,7 @@
 :root {
     --back0: #121212;
     --back1: #e9e9e9;
-    --back2: #dbdbdb;
+    --back2: 219, 219, 219;
     --text: #101010;
     --text2: #b0b0b0;
     --success: #38ab5d;
@@ -12,7 +12,7 @@
 .dark-mode {
     --back0: #121212;
     --back1: #6e6e6e;
-    --back2: #3c3c3c;
+    --back2: 60, 60, 60;
     --text: #f9f9f9;
     --text2: #b0b0b0;
     --success: #38ab5d;
@@ -48,7 +48,7 @@ body {
 .header {
     grid-area: 1 / 1 / 2 / 3;
     z-index: 9999;
-    background-color: var(--back2);
+    background-color: rgb(var(--back2));
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -152,7 +152,7 @@ input::placeholder {
 .object-properties {
     flex: 1;
     padding: 8px;
-    border-top: 2px solid var(--back2);
+    border-top: 2px solid rgb(var(--back2));
 }
 
 /* .menu { */
@@ -314,7 +314,7 @@ input::placeholder {
     /* background-color: var(--back0); */
     /* opacity: 0.5; */
 
-    background-color: var(--back2);
+    background-color: rgba(var(--back2), 0.5);
     color: var(--text);
     /* align-self: flex-end; */
     /* grid-template-columns:  auto; */
@@ -404,7 +404,7 @@ input::placeholder {
 }
 
 .option {
-    border: 2px solid var(--back2);
+    border: 2px solid rgb(var(--back2));
     color: var(--text);
   padding: 9px;
   margin: 0 4px;
