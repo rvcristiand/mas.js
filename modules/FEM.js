@@ -12,6 +12,9 @@ var stats, gui;
 // model
 var structure, model;
 
+// APIpyFEM
+var ulrAPIpyFEM = 'http://127.0.0.1:5000/';
+
 // scene
 var jointMaterial, frameMaterial, frameEdgesMaterial, xMaterial, yMaterial, zMaterial, foundationMaterial, foundationEdgesMaterial, pedestalMaterial, pedestalEdgesMaterial, pinEdgesMaterial, resultantForceMaterial, resultantTorqueMaterial, xLoadMaterial, xLoadEdgesMaterial, yLoadMaterial, yLoadEdgesMaterial, zLoadMaterial, zLoadEdgesMaterial;
 var jointGeometry, wireFrameShape, straightShaftGeometry, headGeometry, restraintGeometry, foundationGeometry, foundationEdgesGeometry, pedestalGeometry, pedestalEdgesGeometry, pinGeometry, pinEdgesGeometry;
@@ -28,7 +31,7 @@ var loadPatternController;
 var config = {
   // background
   'background.topColor': '#000000',
-  'background.bottomColor': '#282828',
+  'background.bottomColor': '#ffffff',
   
   // model
   'model.axisUpwards': 'y',
@@ -77,7 +80,7 @@ var config = {
   
   // ground
   'ground.visible': true,
-  'ground.size': 20,
+  'ground.size': 50,
   
   'ground.plane.visible': false,
   'ground.plane.color': 0x000000,
@@ -95,16 +98,16 @@ var config = {
   'joint.color': 0xffff00,
   'joint.transparent': true,
   'joint.opacity': 1,
-  'joint.label': false,
+  'joint.label': true,
   
   // frame
   'frame.visible': true,
   'frame.view': 'extrude',
-  'frame.size': 0.02,
+  'frame.size': 0.2,
   'frame.color': 0xff00ff,
   'frame.transparent': true,
   'frame.opacity': 0.5,
-  'frame.label': false,
+  'frame.label': true,
   
   'frame.axes.visible': true,
   'frame.axes.size': 1,
@@ -119,16 +122,16 @@ var config = {
   'support.visible': true,
   'support.mode': 'space',
   
-  'support.analytical.size': 1,
+  'support.analytical.size': 5,
   
-  'support.analytical.head.radius': 0.04,
-  'support.analytical.head.height': 0.3,
+  'support.analytical.head.radius': 1,
+  'support.analytical.head.height': 3,
   
-  'support.analytical.shaft.tube' : 0.04,
-  'support.analytical.straightShaft.length': 1,
+  'support.analytical.shaft.tube' : 0.5,
+  'support.analytical.straightShaft.length': 5,
   'support.analytical.curveShaft.radius': 1,
   
-  'support.analytical.restraint.radius': 0.1,
+  'support.analytical.restraint.radius': 1,
   'support.analytical.restraint.thickness': 0.01,
   
   'support.foundation.size': 0.5,
@@ -365,7 +368,7 @@ function init() {
   // add axes folder
   let axesModelFolder = modelFolder.addFolder( "axes" );
   axesModelFolder.add( config, 'model.axes.visible' ).name( 'visible' ).onChange( visible => model.getObjectByName( 'axes' ).visible = visible );
-  axesModelFolder.add( config, 'model.axes.size' ).name( 'size' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( size => model.getObjectByName( 'axes' ).scale.setScalar( size ) );
+  axesModelFolder.add( config, 'model.axes.size' ).name( 'size' ).min( 0.1 ).max( 10 ).step( 0.01 ).onChange( size => model.getObjectByName( 'axes' ).scale.setScalar( size ) );
   // add head folder
   let headAxesModel = axesModelFolder.addFolder( "head" );
   headAxesModel.add( config, 'model.axes.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( head => setAxesHeadHeight( model.getObjectByName( 'axes' ), head ) );
@@ -460,17 +463,17 @@ function init() {
   let analyticalSupportFolder = supportFolder.addFolder( "analytical" );
   // add head folder
   let headArrowSupportFolder = analyticalSupportFolder.addFolder( "head" );
-  headArrowSupportFolder.add( config, 'support.analytical.head.height' ).name( 'height' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( height => setAnalyticalHeadHeightSupport( height ) );
-  headArrowSupportFolder.add( config, 'support.analytical.head.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalHeadRadiusSupport( radius ) );
+  headArrowSupportFolder.add( config, 'support.analytical.head.height' ).name( 'height' ).min( 0.01 ).max( 10 ).step( 0.01 ).onChange( height => setAnalyticalHeadHeightSupport( height ) );
+  headArrowSupportFolder.add( config, 'support.analytical.head.radius' ).name( 'radius' ).min( 0.01 ).max( 10 ).step( 0.01 ).onChange( radius => setAnalyticalHeadRadiusSupport( radius ) );
   // add shaft folder
   let shaftArrowSupportFolder = analyticalSupportFolder.addFolder( "shaft" );
-  shaftArrowSupportFolder.add( config, 'support.analytical.straightShaft.length' ).name( 'length' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( length => setAnalyticalShaftLengthSupport( length ) );
-  shaftArrowSupportFolder.add( config, 'support.analytical.curveShaft.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalShaftRadiusSupport( radius ) );
-  shaftArrowSupportFolder.add( config, 'support.analytical.shaft.tube' ).name( 'tube' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( tube => setAnalyticalShaftTubeSupport( tube ) );
+  shaftArrowSupportFolder.add( config, 'support.analytical.straightShaft.length' ).name( 'length' ).min( 0.01 ).max( 10 ).step( 0.01 ).onChange( length => setAnalyticalShaftLengthSupport( length ) );
+  shaftArrowSupportFolder.add( config, 'support.analytical.curveShaft.radius' ).name( 'radius' ).min( 0.01 ).max( 10 ).step( 0.01 ).onChange( radius => setAnalyticalShaftRadiusSupport( radius ) );
+  shaftArrowSupportFolder.add( config, 'support.analytical.shaft.tube' ).name( 'tube' ).min( 0.001 ).max( 1 ).step( 0.001 ).onChange( tube => setAnalyticalShaftTubeSupport( tube ) );
   // add restraint folder
   let restrainArrowSupportFolder = analyticalSupportFolder.addFolder( "restraint" );
-  restrainArrowSupportFolder.add( config, 'support.analytical.restraint.radius' ).name( 'radius' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( radius => setAnalyticalRestrainRadiusSupport( radius ) );
-  restrainArrowSupportFolder.add( config, 'support.analytical.restraint.thickness' ).name( 'thickness' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( thickness => setAnalyticalRestrainThicknessSupport( thickness ) );
+  restrainArrowSupportFolder.add( config, 'support.analytical.restraint.radius' ).name( 'radius' ).min( 0.01 ).max( 10 ).step( 0.01 ).onChange( radius => setAnalyticalRestrainRadiusSupport( radius ) );
+  restrainArrowSupportFolder.add( config, 'support.analytical.restraint.thickness' ).name( 'thickness' ).min( 0.01 ).max( 10 ).step( 0.01 ).onChange( thickness => setAnalyticalRestrainThicknessSupport( thickness ) );
   
   // add space folder
   let spaceSupportFolder = supportFolder.addFolder( "space" );
@@ -3052,5 +3055,16 @@ function setLoadShaftTube( tube ) {
     }
   });
 }
+
+export function solve() {
+    // solve model with APIpyFEM
+    var response = fetch(ulrAPIpyFEM, structure)
+	.then(resolve => resolve.json())
+	.then(json => 
+    
+
+    return response
+}
+
 
 window.addEventListener( "resize", onResize, false );

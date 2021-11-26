@@ -11,8 +11,12 @@ var log = document.getElementById( "log" );
 var command_line = document.getElementById( "command-line" );
 var autocomplete = document.getElementById( "autocomplete" );
 
-
 // set the functions
+
+// solve()
+terminal.add_function( 'solve', {
+    func: FEM.solve
+});
 
 // addLoadAtJoint
 terminal.add_function( 'addLoadAtJoint', {
@@ -169,7 +173,7 @@ terminal.add_function( "getStructure", { func: FEM.getStructure, successful: "" 
 terminal.add_function( "getLoadPatterns", { func: FEM.getLoadPatterns, successful: "" } );
 
 // default command
-command_line.value = "open(" + '"' + "example_3.json" + '"' + ")";
+command_line.value = "open(" + '"' + "pc.json" + '"' + ")";
 
 // focus terminal
 terminal.give_focus();

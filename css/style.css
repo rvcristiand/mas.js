@@ -90,6 +90,7 @@ body {
 }
 
 .joint, .frame {
+  font-size: 18px;
   color: #FFF;
   font-family: sans-serif;
   padding: 2px;
