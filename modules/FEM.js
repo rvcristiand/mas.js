@@ -608,7 +608,7 @@ function onResize() {
 }
 
 // FEM.js
-function createStructure() { return { joints: {}, materials: {}, sections: {}, frames: {}, supports: {}, load_patterns: {} } };
+function createStructure() { return { materials: {}, sections: {}, joints: {}, frames: {}, supports: {}, load_patterns: {}, displacements: {} } };
 
 function createModel() {
   // create the model
@@ -742,7 +742,10 @@ export function open( filename ) {
 		  }
 	      });
         });
-      });
+	});
+
+	// add joint displacements
+	Object.entries( json.displacements ).forEach( ( [ load_pattern, joint_displacements ] ) => addLoadPatternDisplacements( load_pattern, joint_displacements ) );
 
 	// 
 
@@ -3120,5 +3123,24 @@ function setLoadShaftTube( tube ) {
     }
   });
 }
+
+function addLoadPatternDisplacements( load_pattern, joint_displacements ) {
+    // add load pattern's displacements
+
+    var promise = new Promise( ( resolve, reject ) => {
+	// only strings accepted as name
+	load_pattern = load_pattern.toString();
+
+	// check if load_pattern exists
+	if ( structure.load_patterns.hasOwnProperty( load_pattern ) ) {
+	    // add load pattern displacements to structure
+	    if ( !structure.displacements.hasOwnProperty( load_pattern ) ) structure.displacements[ load_pattern ] = {};
+	    Object.entries( joint_displacements ).forEach( ( [ joint, joint_displacement ] ) => {
+		if ( structure.joints.hasOwnProperty( joint ) ) structure.displacements[ load_pattern ][ joint ] = joint_displacement;
+	    } );
+	}
+    } );
+}
+
 
 window.addEventListener( "resize", onResize, false );
