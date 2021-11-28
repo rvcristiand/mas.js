@@ -169,7 +169,7 @@ terminal.add_function( "getStructure", { func: FEM.getStructure, successful: "" 
 terminal.add_function( "getLoadPatterns", { func: FEM.getLoadPatterns, successful: "" } );
 
 // default command
-command_line.value = "open(" + '"' + "example_3.json" + '"' + ")";
+command_line.value = "open(" + '"' + "space_frame.json" + '"' + ")";
 
 // focus terminal
 terminal.give_focus();

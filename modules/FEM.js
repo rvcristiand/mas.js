@@ -722,19 +722,29 @@ export function open( filename ) {
       if ( json.hasOwnProperty( 'joints' ) ) Object.entries( json.joints ).forEach( ( [ name, joint ] ) => { addJoint( name, joint.x, joint.y, joint.z ) } );
 
       // add frames
-      if ( json.hasOwnProperty( 'frames' ) ) Object.entries( json.frames ).forEach( ( [ name, frame ] ) => { addFrame( name, frame.j, frame.k, frame.material, frame.section ) } );
+      if ( json.hasOwnProperty( 'frames' ) ) Object.entries( json.frames ).forEach( ( [ name, frame ] ) => { addFrame( name, frame.joint_j, frame.joint_k, frame.material, frame.section ) } );
 
       // add suports
       if ( json.hasOwnProperty( 'supports' ) ) Object.entries( json.supports ).forEach( ( [ name, support ] ) => { addSupport( name, support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) } );
 
       // add load patterns
-      Object.entries( json.load_patterns ).forEach( ( [ name, load_pattern] ) => {
+	Object.entries( json.load_patterns ).forEach( ( [ name, load_pattern] ) => {
         addLoadPattern( name );
         if ( load_pattern.hasOwnProperty( 'joints' ) ) Object.entries( load_pattern.joints ).forEach( ( [ joint, pointLoads ] ) => pointLoads.forEach( pointLoad => addLoadAtJoint( name, joint, pointLoad.fx, pointLoad.fy, pointLoad.fz, pointLoad.mx, pointLoad.my, pointLoad.mz ) ) );
-        if ( load_pattern.hasOwnProperty( 'frames' ) ) Object.entries( load_pattern.frames ).forEach( ( [ frame, load_types ] ) => {
-          if ( load_types.hasOwnProperty( 'uniformly_distributed' ) ) Object.entries( load_types.uniformly_distributed ).forEach( ( [ system, loads ] ) => loads.forEach( load => addUniformlyDistributedLoadAtFrame( name, frame, system, load.fx, load.fy, load.fz, load.mx, load.my, load.mz ) ) );
+          // if ( load_pattern.hasOwnProperty( 'frames' ) )
+	  Object.entries( load_pattern.frames ).forEach( ( [ frame, loads] ) => {  // load_types
+	      loads.forEach( load => {
+		  switch ( load.type ) {
+		  case "DistributedLoad":
+		      addUniformlyDistributedLoadAtFrame( name, frame, load.system, load.fx, load.fy, load.fz, load.mx, load.my, load.mz );
+		      break;
+		      // Object.entries( load_types.uniformly_distributed ).forEach( ( [ system, loads ] ) => loads.forEach(  ) );		      
+		  }
+	      });
         });
       });
+
+	// 
 
       return "the '" + filename + "' model has been loaded";
     });
@@ -745,7 +755,7 @@ export function open( filename ) {
 function loadJSON( json ) {
   // load json
 
-  var promise = fetch( json + "?nocache=" + new Date().getTime() )
+  var promise = fetch( 'examples/' + json + "?nocache=" + new Date().getTime() )
     .then( response => { 
       if ( !response.ok ) throw new Error( 'Network response was not ok' );
       return response.json();
@@ -1293,7 +1303,7 @@ export function addFrame( name, j, k, material, section ) {
       // check if joints, material and section exits
       if ( structure.joints.hasOwnProperty( j ) && structure.joints.hasOwnProperty( k ) && structure.materials.hasOwnProperty( material ) && structure.sections.hasOwnProperty( section ) ) {
         // add frame to structure
-        structure.frames[ name ] = { j: j, k: k, material: material, section: section };
+        structure.frames[ name ] = { joint_j: j, joint_k: k, material: material, section: section };
     
         // get frame's joints
         j = model.getObjectByName( 'joints' ).getObjectByName( j );
@@ -2151,6 +2161,43 @@ function createLoadAtJoint( loadPattern, joint ) {
   return loadAtJoint;
 }
 
+function createLocalLoadAtFrame( loadPattern, frame ) {
+    // create a local load at frame
+
+    var loadAtFrame = new THREE.Group();
+    loadAtFrame.name = frame;
+
+    var fx, fy, fz, mx, my, mz;
+    fx = fy = fz = mx = my = mz = 0;
+
+    // uniformly distributed
+    structure.load_patterns[ loadPattern ].frames[ frame ].forEach( load => {
+    	if ( load.type = 'DistributedLoad' ) {
+    	    fx += load.fx !== undefined ? load.fx : 0;
+    	    fy += load.fy !== undefined ? load.fy : 0;
+    	    fz += load.fz !== undefined ? load.fz : 0;
+    	    mx += load.mx !== undefined ? load.mx : 0;
+    	    my += load.my !== undefined ? load.my : 0;
+    	    mz += load.mz !== undefined ? load.mz : 0;
+    	}
+    } );
+    
+    // create components forces
+    var components = new THREE.Group();
+    components.name = 'components';
+    components.visible = config[ 'load.as' ] == 'components';
+    loadAtFrame.add( components );
+
+    var forces = new THREE.Group();
+    forces.name = 'forces';
+    components.add( forces );
+
+    if ( fx != 0 ) forces.add( createLocalUniformlyDistributedForceAtFrame( frame, fx, 'x' ) );
+    if ( fy != 0 ) forces.add( createLocalUniformlyDistributedForceAtFrame( frame, fy, 'y' ) );
+    if ( fz != 0 ) forces.add( createLocalUniformlyDistributedForceAtFrame( frame, fz, 'z' ) );
+
+    return loadAtFrame;
+}
 function createGlobalLoadAtFrame( loadPattern, frame ) {
   // create a global load at frame
 
@@ -2208,6 +2255,26 @@ function createGlobalLoadAtFrame( loadPattern, frame ) {
   return loadAtFrame;
 }
 
+function createLocalUniformlyDistributedForceAtFrame( frame, magnitud, axis ) {
+    // create a local uniformly distributed force at frame
+
+    var uniformlyDistributed = new THREE.Group();
+    uniformlyDistributed.name = axis;
+
+    frame = model.children.find( obj => obj.name == 'frames' ).getObjectByName( frame );
+
+    if ( axis == 'x' ) {
+	// longitudinal	
+	uniformlyDistributed.add( createUniformlyDistributedLongitudinalForce( frame.name, magnitud, axis ) );
+    } else {
+	// transversal
+	uniformlyDistributed.add( createUniformlyDistributedTransversalForce( frame.name, magnitud, axis ) );
+    }
+
+    uniformlyDistributed.position.copy( frame.position );
+
+    return uniformlyDistributed;
+}
 function createGlobalUniformlyDistributedForceAtFrame( frame, magnitud, axis ) {
   // create a global uniformly distributed force at frame
 
@@ -2273,7 +2340,7 @@ function createUniformlyDistributedLongitudinalForce( frame, magnitud, axis ) {
   var arrow;
   var material = axis == 'x' ? xMaterial: axis == 'y' ? yMaterial: zMaterial;
 
-  var length = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].k ).position.clone().sub( model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].j ).position ).length();
+  var length = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].joint_k ).position.clone().sub( model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].joint_j ).position ).length();
   var quantite_arrows = Math.max( 1, Math.floor( 1.5 * length ) );
   var step = length / quantite_arrows;
   var shaft = Math.max( 0, step - config[ 'load.head.height' ] );
@@ -2303,8 +2370,8 @@ function createUniformlyDistributedTransversalForce( frame, magnitud, axis ) {
   var load, loadGeometry, loadEdges, loadEdgesGeometry;
 
   let p1, p2;
-  p1 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].j ).position.clone();
-  p2 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].k ).position.clone();
+  p1 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].joint_j ).position.clone();
+  p2 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].joint_k ).position.clone();
 
   var averague = model.children.find( obj => obj.name == "frames" ).getObjectByName( frame ).position.clone();
   p1.sub( averague );
@@ -2455,7 +2522,7 @@ export function addLoadPattern( name ) {
       reject( new Error( "load pattern's name '" + name + "' already extis" ) );
     } else {
       // add load pattern to structure
-      structure.load_patterns[ name ] = {};
+	structure.load_patterns[ name ] = { 'name': name };
 
       // add load pattern to model
       var loadPattern = new THREE.Group();
@@ -2626,10 +2693,8 @@ export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, 
       // add load to structure
 
       if ( !structure.load_patterns[ loadPattern ].hasOwnProperty( 'frames' ) ) structure.load_patterns[ loadPattern ].frames = {};
-      if ( !structure.load_patterns[ loadPattern ].frames.hasOwnProperty( frame ) ) structure.load_patterns[ loadPattern ].frames[ frame ] = {};
-      if ( !structure.load_patterns[ loadPattern ].frames[ frame ].hasOwnProperty( 'uniformly_distributed' ) ) structure.load_patterns[ loadPattern ].frames[ frame ][ 'uniformly_distributed' ] = {};
-      if ( !structure.load_patterns[ loadPattern ].frames[ frame ].uniformly_distributed.hasOwnProperty( system ) ) structure.load_patterns[ loadPattern ].frames[ frame ][ 'uniformly_distributed' ][ system ] = [];
-      structure.load_patterns[ loadPattern ].frames[ frame ].uniformly_distributed[ system ].push( { 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz } );
+      if ( !structure.load_patterns[ loadPattern ].frames.hasOwnProperty( frame ) ) structure.load_patterns[ loadPattern ].frames[ frame ] = [];
+	structure.load_patterns[ loadPattern ].frames[ frame ].push( { 'type': 'DistributedLoad', 'load_pattern': loadPattern, 'frame': frame, 'system': system, 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz } );
 
       // add frame to loads
       if ( !model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).getObjectByName( 'frames' ) ) {
@@ -2650,8 +2715,11 @@ export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, 
       if ( model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).getObjectByName( frame ) ) model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).remove( model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).getObjectByName( frame ) );
       // if ( model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) ) model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'laods' ).remove( model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'laods' ).getObjectByName( loadPattern ) );
 
-      // add distributed load to model
-      model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).add( createGlobalLoadAtFrame( loadPattern, frame ) );
+	// add distributed load to model
+	if ( system == 'local' ) {
+	    model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).add( createLocalLoadAtFrame( loadPattern, frame ) );
+	}
+	// model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).add( createGlobalLoadAtFrame( loadPattern, frame ) );p
 
       // set force scale
       setLoadForceScale( config[ 'load.force.scale' ] );
