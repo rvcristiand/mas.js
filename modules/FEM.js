@@ -23,6 +23,8 @@ var directionalLight;
 var sections = {};
 
 var loadPatternController;
+var internal_forcesController;
+var displacementsController;
 
 // FEM.js
 var config = {
@@ -142,7 +144,7 @@ var config = {
   // load
   'load.loadPattern': '',
   'load.visible': true,
-  'load.system': 'global',
+  'load.system': 'local',
   
   'load.head.radius': 0.05,
   'load.head.height': 0.3,
@@ -150,7 +152,7 @@ var config = {
   
   'load.as': 'components',
   
-  'load.force.scale': 1,
+  'load.force.scale': 0.2,
   'load.torque.scale': 1,
 
   'load.resultant.force': 0x000000,
@@ -160,7 +162,18 @@ var config = {
   'load.frames.torque.scale': 0.5,
   
   'load.frames.transparent': true,
-  'load.frames.opacity': 0.2
+  'load.frames.opacity': 0.2,
+
+    // internal forces
+    'internal_forces.visible': false,
+    'internal_forces.load_pattern': '',
+    'internal_forces.action': '',
+    'internal_forces.scale': 0.05,
+    
+    // displacements
+    'displacements.visible': false,
+    'displacements.load_pattern': '',
+    'displacements.scale': 10
 };
 
 function init() {
@@ -423,7 +436,7 @@ function init() {
 
   // add a joint folder
   let jointFolder = gui.addFolder( "joint" );
-  jointFolder.add( config, 'joint.visible' ).name( 'visible' ).onChange( visible => setJointVisible( visible ) );
+    jointFolder.add( config, 'joint.visible' ).name( 'visible' ).onChange( visible => setJointVisible( visible ) ).listen();
   jointFolder.add( config, "joint.size" ).name( 'size' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( size => setJointSize( size ) );
   jointFolder.add( config, 'joint.label' ).name( 'label' ).onChange( visible => setJointLabel( visible ) );
   jointFolder.addColor( config, "joint.color" ).name( 'color' ).onChange( color => setJointColor( color ) );
@@ -432,8 +445,8 @@ function init() {
 
   // add a frame folder
   let frameFolder = gui.addFolder( "frame" );
-  frameFolder.add( config, 'frame.visible' ).name( 'visible' ).onChange( visible => setFrameVisible( visible ) );
-  frameFolder.add( config, 'frame.view', [ 'wireframe', 'extrude' ] ).name( 'view' ).onChange( view  =>  setFrameView( view ) );
+    frameFolder.add( config, 'frame.visible' ).name( 'visible' ).onChange( visible => setFrameVisible( visible ) ).listen();
+    frameFolder.add( config, 'frame.view', [ 'wireframe', 'extrude' ] ).name( 'view' ).onChange( view  =>  setFrameView( view ) ).listen();
   frameFolder.add( config, 'frame.size' ).name( 'size' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( size => setFrameSize( size ) );
   frameFolder.add( config, 'frame.label' ).name( 'label' ).onChange( visible => model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'label' ).visible = ( visible && config[ 'frame.visible' ] ) ) );
   frameFolder.addColor( config, 'frame.color' ).name( 'color' ).onChange( color => frameMaterial.color = frameEdgesMaterial.color = new THREE.Color( color ) );
@@ -488,10 +501,23 @@ function init() {
 
   // add load folder
   let loadFolder = gui.addFolder( "load" );
-  loadFolder.add( config, 'load.visible' ).name( 'visible' ).onChange( visible => setLoadVisible( visible ) );
-  loadPatternController = loadFolder.add( config, 'load.loadPattern', [] ).name( 'load pattern' ).onChange( loadPattern => setLoadPatternVisible( loadPattern ) );
-  loadFolder.add( config, 'load.system' ).options( [ 'global' ] ).name ( 'system' ).onChange( system => console.log( system ) );  // TODO: add 'local'
-  loadFolder.add( config, 'load.as' ).options( [ 'components', 'resultant' ] ).name( 'as' ).onChange( as => setLoadAs( as ) );
+    loadFolder.add( config, 'load.visible' ).name( 'visible' ).onChange( visible => {
+	// set loads visible
+	setLoadVisible( visible );
+
+	// update controller
+	if ( visible ) config[ 'internal_forces.visible' ] = false;
+	if ( visible ) config[ 'displacements.visible' ] = false;
+    }).listen();
+    loadPatternController = loadFolder.add( config, 'load.loadPattern', [] ).name( 'load pattern' ).onChange( loadPattern => {
+	// set load pattern visible
+	setLoadPatternVisible( loadPattern );
+
+	// set load pattern force scale
+	setLoadForceScale( config[ 'load.force.scale' ] );
+    } );
+  // loadFolder.add( config, 'load.system' ).options( [ 'global' ] ).name ( 'system' ).onChange( system => console.log( system ) );  // TODO: add 'local'
+  // loadFolder.add( config, 'load.as' ).options( [ 'components', 'resultant' ] ).name( 'as' ).onChange( as => setLoadAs( as ) );
   // add force folder
   let forceFolder = loadFolder.addFolder( "force" );
   forceFolder.add( config, 'load.force.scale' ).name( 'scale' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadForceScale( scale ) );
@@ -508,6 +534,97 @@ function init() {
   // add shaft folder
   let shaftArrowLoadFolder = loadFolder.addFolder( "shaft" );
   shaftArrowLoadFolder.add( config, 'load.shaft.tube' ).name( 'tube' ).min( 0.001 ).max( 0.1 ).step( 0.001 ).onChange( tube => setLoadShaftTube( tube ) );
+
+    // add internal forces folder
+    let internalForcesFolder = gui.addFolder( 'internal forces' );
+    internalForcesFolder.add( config, 'internal_forces.visible' ).name( 'visible' ).onChange( visible => {
+	// turn on joints
+	if ( visible ) setJointVisible( true );
+
+	// turn on frames
+	if ( visible ) setFrameVisible( true );
+
+	// set frame view to wireframe
+	if ( visible ) setFrameView( 'wireframe' );
+
+	// turn off loads
+	if ( visible ) setLoadVisible( false );
+
+	// turn off deformed structure
+	if ( visible ) model.getObjectByName( 'deformed structure' ).visible = false;
+
+	// turn on internal forces
+	model.getObjectByName( 'internal forces' ).visible = visible;
+
+	// update controller
+	if ( visible ) config[ 'joint.visible' ] = true;
+	if ( visible ) config[ 'frame.visible' ] = true;
+	if ( visible ) config[ 'frame.view' ] = 'wireframe';
+	if ( visible ) config[ 'load.visible' ] = false;
+	if ( visible ) config[ 'displacements.visible' ] = false;
+    }).listen();
+    internal_forcesController = internalForcesFolder.add( config, 'internal_forces.load_pattern', [] ).name( 'load pattern' ).onChange( load_pattern => {
+	setLoadPatternInternalForces( load_pattern, config[ 'internal_forces.scale' ] );
+    } );
+
+    internalForcesFolder.add( config, 'internal_forces.action', [ 'fx', 'fy', 'fz', 'mx', 'my', 'mz' ] ).name( 'action' ).onChange( action => { // [ 'P', 'Vy', 'Vz', 'T', 'My', 'Mz' ]
+	// switch ( action ) {
+	// case 'P':
+	//     action = 'fx';
+	//     break;
+	// case 'Vy':
+	//     action = 'fy';
+	//     break;
+	// case 'Vz':
+	//     action = 'fz';
+	//     break;
+	// case 'T':
+	//     action = 'mx';
+	//     break;
+	// case 'My':
+	//     action = 'my';
+	//     break;
+	// case 'Mz':
+	//     action = 'mz';
+	//     break;
+	// }
+	// console.log( action );
+	setInternalForcesAction( action );
+    } );
+    internalForcesFolder.add( config, 'internal_forces.scale' ).name( 'scale' ).min( 0.005 ).max( 1 ).step( 0.001 ).onChange( scale => {
+	setLoadPatternInternalForces( config[ 'internal_forces.load_pattern' ], scale );
+    } );
+
+    // add displacements folder
+    let displacementsFolder = gui.addFolder( 'displacements' );
+    displacementsFolder.add( config, 'displacements.visible' ).name( 'visible' ).onChange( visible => {
+	// turn off joints
+	if ( visible ) setJointVisible( false );
+
+	// turn off loads
+	if ( visible ) setLoadVisible( false );
+
+	// turn off internal forces
+	if ( visible ) model.getObjectByName( 'internal forces' ).visible = false;
+
+	// toggle frames visible
+	setFrameVisible( !visible );
+
+	// set deformed structure visible
+	model.getObjectByName( 'deformed structure' ).visible = visible;
+
+	// update controller
+	if ( visible ) config[ 'joint.visible' ] = false;
+	if ( visible ) config[ 'load.visible' ] = false;
+	if ( visible ) config[ 'internal_forces.visible' ] = false;
+	config[ 'frame.visible' ] = !visible;
+    } ).listen();
+    displacementsController = displacementsFolder.add( config, 'displacements.load_pattern', [] ).name( 'load pattern' ).onChange( load_pattern => {
+    	setLoadPatternDisplacements( load_pattern, config[ 'displacements.scale' ] );
+    } );
+    displacementsFolder.add( config, 'displacements.scale' ).name( 'scale' ).min( 10 ).max( 1000 ).step( 10 ).onChange( scale => {
+	setLoadPatternDisplacements( config[ 'displacements.load_pattern' ], scale );
+    } );
 
   render();
 }
@@ -608,10 +725,33 @@ function onResize() {
 }
 
 // FEM.js
-function createStructure() { return { materials: {}, sections: {}, joints: {}, frames: {}, supports: {}, load_patterns: {}, displacements: {} } };
+function createStructure() {
+    let structure = {
+	materials: {},
+	sections: {},
+	joints: {},
+	frames: {},
+	supports: {},
+	load_patterns: {},
+	displacements: {},
+	internal_forces: {},
+	internal_displacements: {}
+    };
+
+    return structure;
+}
 
 function createModel() {
-  // create the model
+    // create the model
+
+    // model
+    // -joints
+    // -frames
+    // -loads
+    // -internal forces
+    // -deformed structure
+    // --joints
+    // --deformed frames
 
   var model = new THREE.Group();
   model.name = "model";
@@ -639,6 +779,28 @@ function createModel() {
   loads.name = 'loads';
   loads.visible = config[ 'load.visible' ];
   model.add( loads );
+
+    // add internal forces
+    var internalForces = new THREE.Group();
+    internalForces.name = 'internal forces';
+    internalForces.visible = config[ 'internal_forces.visible' ];
+    model.add( internalForces );
+
+    // add deformed structure
+    var deformedStructure = new THREE.Group();
+    deformedStructure.name = 'deformed structure';
+    deformedStructure.visible = config[ 'displacements.visible' ];
+    model.add( deformedStructure );
+
+    // add deformed joints
+    var deformedJoints = new THREE.Group();
+    deformedJoints.name = 'joints';
+    deformedStructure.add( deformedJoints );
+
+    // add deformed frames
+    var deformedFrames = new THREE.Group();
+    deformedFrames.name = 'deformed frames';
+    deformedStructure.add( deformedFrames );
 
   return model;
 }
@@ -697,57 +859,93 @@ export function open( filename ) {
       model.getObjectByName( 'joints' ).children = [];
       model.getObjectByName( 'frames' ).children = [];
       model.getObjectByName( 'loads' ).children = [];
+	model.getObjectByName( 'internal forces' ).children = [];
+	model.getObjectByName( 'deformed structure' ).getObjectByName( 'joints' ).children = [];
+	model.getObjectByName( 'deformed structure' ).getObjectByName( 'deformed frames' ).children = [];
 
       // create structure
       structure = createStructure();
       
       // add materials
-      if ( json.hasOwnProperty( 'materials' ) ) Object.entries( json.materials ).forEach( ( [ name, material ] ) => { addMaterial( name, material.E, material.G ) } );
+	if ( json.hasOwnProperty( 'materials' ) ) {
+	    Object.values( json.materials ).forEach( material => {
+		addMaterial( material.name, material.E, material.G );
+	    } );
+	}
 
       // add sections
       if ( json.hasOwnProperty( 'sections' ) ) {
-        Object.entries( json.sections ).forEach( ( [ name, section ] ) => {
+        Object.values( json.sections ).forEach( section => {
           switch ( section.type ) {
             case "Section":
-              addSection( name );
+              addSection( section.name );
               break;
             case "RectangularSection":
-              addRectangularSection( name, section.width, section.height );
+              addRectangularSection( section.name, section.width, section.height );
               break;
           }
-        });
+        } );
       }
 
       // add joints
-      if ( json.hasOwnProperty( 'joints' ) ) Object.entries( json.joints ).forEach( ( [ name, joint ] ) => { addJoint( name, joint.x, joint.y, joint.z ) } );
+	if ( json.hasOwnProperty( 'joints' ) ) {
+	    Object.values( json.joints ).forEach( joint => {
+		addJoint( joint.name, joint.x, joint.y, joint.z );
+	    } );
+	}
 
       // add frames
-      if ( json.hasOwnProperty( 'frames' ) ) Object.entries( json.frames ).forEach( ( [ name, frame ] ) => { addFrame( name, frame.joint_j, frame.joint_k, frame.material, frame.section ) } );
+	if ( json.hasOwnProperty( 'frames' ) ) {
+	    Object.values( json.frames ).forEach( frame => {
+		addFrame( frame.name, frame.joint_j, frame.joint_k, frame.material, frame.section );
+	    } );
+	}
 
       // add suports
-      if ( json.hasOwnProperty( 'supports' ) ) Object.entries( json.supports ).forEach( ( [ name, support ] ) => { addSupport( name, support.ux, support.uy, support.uz, support.rx, support.ry, support.rz ) } );
+	if ( json.hasOwnProperty( 'supports' ) ) {
+	    Object.values( json.supports ).forEach( support => {
+		addSupport( support.joint, support.ux, support.uy, support.uz, support.rx, support.ry, support.rz );
+	    } );
+	}
 
       // add load patterns
-	Object.entries( json.load_patterns ).forEach( ( [ name, load_pattern] ) => {
-        addLoadPattern( name );
-        if ( load_pattern.hasOwnProperty( 'joints' ) ) Object.entries( load_pattern.joints ).forEach( ( [ joint, pointLoads ] ) => pointLoads.forEach( pointLoad => addLoadAtJoint( name, joint, pointLoad.fx, pointLoad.fy, pointLoad.fz, pointLoad.mx, pointLoad.my, pointLoad.mz ) ) );
+	Object.values( json.load_patterns ).forEach( load_pattern => {
+            addLoadPattern( load_pattern.name );
+
+            if ( load_pattern.hasOwnProperty( 'joints' ) ) {
+		Object.values( load_pattern.joints ).forEach( pointLoads => {
+		    pointLoads.forEach( pointLoad => {
+			addLoadAtJoint( pointLoad.load_pattern, pointLoad.joint, pointLoad.fx, pointLoad.fy, pointLoad.fz, pointLoad.mx, pointLoad.my, pointLoad.mz );
+		    } );
+		} );
+	    }
           // if ( load_pattern.hasOwnProperty( 'frames' ) )
-	  Object.entries( load_pattern.frames ).forEach( ( [ frame, loads] ) => {  // load_types
+	    Object.values( load_pattern.frames ).forEach( loads => {  // load_types
 	      loads.forEach( load => {
 		  switch ( load.type ) {
 		  case "DistributedLoad":
-		      addUniformlyDistributedLoadAtFrame( name, frame, load.system, load.fx, load.fy, load.fz, load.mx, load.my, load.mz );
+		      addUniformlyDistributedLoadAtFrame( load.load_pattern, load.frame, load.system, load.fx, load.fy, load.fz, load.mx, load.my, load.mz );
 		      break;
 		      // Object.entries( load_types.uniformly_distributed ).forEach( ( [ system, loads ] ) => loads.forEach(  ) );		      
 		  }
-	      });
-        });
-	});
+	      } );
+            } );
+	} );
 
 	// add joint displacements
-	Object.entries( json.displacements ).forEach( ( [ load_pattern, joint_displacements ] ) => addLoadPatternDisplacements( load_pattern, joint_displacements ) );
+	Object.entries( json.displacements ).forEach( ( [ load_pattern, joint_displacements ] ) => {
+	    addLoadPatternDisplacements( load_pattern, joint_displacements );
+	} );
 
-	// 
+	// add internal forces
+	Object.entries( json.internal_forces ).forEach( ( [ load_pattern, internal_forces ] ) => {
+	    addLoadPatternInternalForces( load_pattern, internal_forces );
+	} );
+
+	// add internal displacements
+	Object.entries( json.internal_displacements ).forEach( ( [ load_pattern, internal_displacements ] ) => {
+	    addLoadPatternInternalDisplacements( load_pattern, internal_displacements );
+	} );
 
       return "the '" + filename + "' model has been loaded";
     });
@@ -756,13 +954,22 @@ export function open( filename ) {
 }
 
 function loadJSON( json ) {
-  // load json
-
-  var promise = fetch( 'examples/' + json + "?nocache=" + new Date().getTime() )
-    .then( response => { 
-      if ( !response.ok ) throw new Error( 'Network response was not ok' );
-      return response.json();
-    });
+    // load json
+    var promise = fetch( json + "?nocache=" + new Date().getTime() )
+	.then( response => {
+	    if ( !response.ok ) {
+		if ( response.status == '404' ) {
+		    throw new Error( 'File not found' );
+		} else {
+		    throw new Error( response.statusText );
+		}
+	    }
+	    return response.json();
+	} );
+	// .catch(e => {
+	//     console.log(e);
+	//     throw new Error( e ); //console.error(e)
+	// });
 
   return promise;
 }
@@ -1033,6 +1240,9 @@ export function addJoint( name, x, y, z ) {
       // add joint to structure
       structure.joints[ name ] = { x: x, y: y, z: z };
 
+	x = x ? x : 0;
+	y = y ? y : 0;
+	z = z ? z : 0;
       // parent
       var parent = new THREE.Group();
       parent.name = name;
@@ -1052,6 +1262,17 @@ export function addJoint( name, x, y, z ) {
       label.visible = config[ 'joint.label' ];
       label.position.set( 0.5, 0.5, 0.5 );
       joint.add( label );
+
+	// add joint to deformed structure
+	// parent
+	parent = new THREE.Group();
+	parent.name = name;
+	parent.position.set( x, y, z );
+	model.getObjectByName( 'deformed structure' ).getObjectByName( 'joints' ).add( parent );
+
+	// joint
+	joint = createJoint( config[ 'joint.size' ] );
+	parent.add( joint );
 
       resolve( "joint '" + name + "' was added" );
     }
@@ -1109,6 +1330,10 @@ function setJointSize( size ) {
 
   model.getObjectByName( 'joints' ).children.forEach( joint => joint.getObjectByName( 'joint' ).scale.setScalar( size ) );
   setLoadForceScale( config[ 'load.force.scale' ] );
+    // deformed structure
+    model.getObjectByName( 'deformed structure' ).getObjectByName( 'joints' ).children.forEach( parent => {
+	parent.getObjectByName( 'joint' ).scale.setScalar( size );
+    } );
 }
 
 function setJointLabel( visible ) { model.getObjectByName( 'joints' ).children.forEach( joint => joint.getObjectByName( 'label' ).visible = visible ) };
@@ -1282,6 +1507,35 @@ function createFrame( length, section ) {
   return frame;
 }
 
+function createDeformedFrame( points, length ) {  // name, length, load_pattern
+    // create deformed frame
+
+    var closedSpline = new THREE.CatmullRomCurve3( points );
+    closedSpline.curveType = 'catmullrom';
+    // closedSpline.closed = true;
+
+    const extrudeSettings = {
+	steps: 100,
+	bevelEnabled: false,
+	extrudePath: closedSpline
+    };
+
+    var deformedFrame = new THREE.Mesh( new THREE.ExtrudeBufferGeometry( new THREE.Shape().arc( 0, 0, config[ 'frame.size' ] ), extrudeSettings ), frameMaterial );
+    deformedFrame.name = 'deformed frame';
+    // deformedFrame.scale.set( 1, config[ 'frame.size' ], config[ 'frame.size' ] );
+    // model.getObjectByName( 'deformed frames' ).add( deformedFrame );
+
+    // x local along frame
+    // deformedFrame.quaternion.copy( new THREE.Quaternion().setFromAxisAngle( new THREE.Vector3( 1, 1, 1 ).normalize(), 2 * Math.PI / 3 ) );
+    // extrudeFrame.quaternion.copy( quaternion );
+    // wireFrame.quaternion.copy( quaternion );
+
+    // middle frame at origin
+    deformedFrame.position.copy( new THREE.Vector3( -length / 2, 0, 0 ) );
+
+    return deformedFrame;
+}
+
 export function addFrame( name, j, k, material, section ) {
   // add a frame
   
@@ -1314,9 +1568,10 @@ export function addFrame( name, j, k, material, section ) {
     
         // calculate local axis
         var x_local =  k.position.clone().sub( j.position );
-    
+	  var length = x_local.length();
+
         // create frame
-        var frame = createFrame( x_local.length(), structure.frames[ name ].section );
+        var frame = createFrame( length, structure.frames[ name ].section );
         frame.name = name;
         frame.position.copy( x_local.clone().multiplyScalar(0.5).add( j.position ) );
         frame.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0 ), x_local.clone().normalize() );
@@ -1338,7 +1593,25 @@ export function addFrame( name, j, k, material, section ) {
         
         // add frame to scene
         model.getObjectByName( 'frames' ).add( frame );
-      
+
+	  // create deformed frame
+	  parent = new THREE.Group();  // createDeformedFrame( name, length );
+	  parent.name = name;
+	  parent.position.copy( frame.position );
+	  parent.quaternion.copy( frame.quaternion );
+
+	  // deformed frame
+	  parent.add( createDeformedFrame( [ new THREE.Vector3( ), new THREE.Vector3( length, 0, 0 ) ], length ) );
+
+	  // add parent to deformed frames
+	  model.getObjectByName( 'deformed structure' ).getObjectByName( 'deformed frames' ).add( parent );
+
+        // create frame
+        // var frame = createFrame( length, structure.frames[ name ].section );
+        // frame.name = name;
+        // frame.position.copy( x_local.clone().multiplyScalar(0.5).add( j.position ) );
+        // frame.quaternion.setFromUnitVectors( new THREE.Vector3( 1, 0, 0 ), x_local.clone().normalize() );
+
         resolve( "frame '" + name + "' was added" );
       } else {
         if ( !structure.joints.hasOwnProperty( j ) ) reject( new Error("joint '" + j + "' does not exits" ) );
@@ -1421,7 +1694,9 @@ function setFrameVisible( visible ) {
 
   model.getObjectByName( 'frames' ).visible = visible;
   visible = visible && config[ 'frame.label' ];
-  model.getObjectByName( 'frames' ).children.forEach( frame => frame.getObjectByName( 'label' ).visible = visible );
+    model.getObjectByName( 'frames' ).children.forEach( frame => {
+	frame.getObjectByName( 'label' ).visible = visible;
+    } );
 }
 
 function setFrameSize( size ) {
@@ -2275,6 +2550,8 @@ function createLocalUniformlyDistributedForceAtFrame( frame, magnitud, axis ) {
     }
 
     uniformlyDistributed.position.copy( frame.position );
+    uniformlyDistributed.quaternion.copy( frame.quaternion );
+    if ( axis == 'z' ) uniformlyDistributed.rotateX( Math.PI / 2 );
 
     return uniformlyDistributed;
 }
@@ -2372,31 +2649,19 @@ function createUniformlyDistributedTransversalForce( frame, magnitud, axis ) {
 
   var load, loadGeometry, loadEdges, loadEdgesGeometry;
 
-  let p1, p2;
+    let p1, p2, lenght;
   p1 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].joint_j ).position.clone();
   p2 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].joint_k ).position.clone();
+    length = p2.sub( p1 ).length();
 
-  var averague = model.children.find( obj => obj.name == "frames" ).getObjectByName( frame ).position.clone();
-  p1.sub( averague );
-  p2.sub( averague );
+    p1 = new THREE.Vector3( -length / 2 );
+    p2 = new THREE.Vector3( length / 2 );
 
   var p3, p4;
   p3 = p2.clone();
   p4 = p1.clone();
-  switch ( axis ) {
-    case 'x':
-      p3.x -= magnitud;
-      p4.x -= magnitud;
-      break;
-    case 'y':
       p3.y -= magnitud;
       p4.y -= magnitud;
-      break;
-    case 'z':
-      p3.z -= magnitud;
-      p4.z -= magnitud;
-      break;
-  }
 
   var positions = [];
   positions.push( p1.x, p1.y, p1.z );
@@ -2407,7 +2672,7 @@ function createUniformlyDistributedTransversalForce( frame, magnitud, axis ) {
   positions.push( p1.x, p1.y, p1.z );
   
   loadGeometry = new THREE.BufferGeometry();
-  loadGeometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array( positions ), 3) );
+  loadGeometry.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array( positions ), 3 ) );
 
   loadEdgesGeometry = new THREE.EdgesGeometry( loadGeometry );
   
@@ -2513,6 +2778,148 @@ function createTorque( magnitud, axis ) {
   return torque;
 }
 
+// internal forces
+function createInternalForcesAtFrame( frame, internal_forces ) {
+    // create a internal forces at frame
+
+    var internalForcesAtFrame = new THREE.Group();
+    internalForcesAtFrame.name = frame;
+    internalForcesAtFrame.position.copy( model.getObjectByName( 'frames' ).getObjectByName( frame ).position );
+    internalForcesAtFrame.quaternion.copy( model.getObjectByName( 'frames' ).getObjectByName( frame ).quaternion );
+
+    // fx
+    var fx = createInternalForceAtFrame( frame, internal_forces[ 'fx' ], 'x', xLoadMaterial, xLoadEdgesMaterial );
+    fx.name = 'fx';
+    internalForcesAtFrame.add( fx );
+
+    // fy
+    var fy = createInternalForceAtFrame( frame, internal_forces[ 'fy' ], 'y', yLoadMaterial, yLoadEdgesMaterial );
+    fy.name = 'fy';
+    internalForcesAtFrame.add( fy );
+
+    // fz
+    var fz = createInternalForceAtFrame( frame, internal_forces[ 'fz' ], 'z', zLoadMaterial, zLoadEdgesMaterial );
+    fz.name = 'fz';
+    fz.rotateX( Math.PI / 2 );
+    internalForcesAtFrame.add( fz );
+
+    // mx
+    var mx = createInternalForceAtFrame( frame, internal_forces[ 'mx' ], 'y', xLoadMaterial, xLoadEdgesMaterial );
+    mx.name = 'mx';
+    internalForcesAtFrame.add( mx );
+
+    // my
+    let internal_force = [];
+    internal_forces[ 'my' ].forEach( value => internal_force.push( -value ) );
+    var my = createInternalForceAtFrame( frame, internal_force, 'z', yLoadMaterial, yLoadEdgesMaterial );
+    my.name = 'my';
+    my.rotateX( Math.PI / 2 );
+    internalForcesAtFrame.add( my );
+
+    // mz
+    internal_force = [];
+    internal_forces[ 'mz' ].forEach( value => internal_force.push( -value ) );
+    var mz = createInternalForceAtFrame( frame, internal_force, 'y', zLoadMaterial, zLoadEdgesMaterial );
+    mz.name = 'mz';
+    internalForcesAtFrame.add( mz );
+
+    // set visible action
+    internalForcesAtFrame.children.forEach( action => {
+	action.visible = action.name == config[ 'internal_forces.action' ];
+    } );
+
+    return internalForcesAtFrame;
+}
+
+function createInternalForceAtFrame( frame, internal_force, axis, material, edgesMaterial ) {
+    // create a internal force at frame
+
+    var internalForceAtFrame = new THREE.Group();
+
+    let internalForceShape, load, loadGeometry, loadEdges, loadEdgesGeometry;
+
+    // if no internal force
+    if ( !internal_force.every( value => value ) ) return internalForceAtFrame;
+
+    // calculate frame length
+    let p1, p2, length;
+    p1 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].joint_j ).position.clone();
+    p2 = model.getObjectByName( 'joints' ).getObjectByName( structure.frames[ frame ].joint_k ).position.clone();
+    length = p2.clone().sub( p1 ).length();
+
+    // divide internal force values when change from positive to negative and viceverse
+    let numValues = internal_force.length;
+    let composed_function = [];
+    let group_values = [ [ -length/2, internal_force[0] ] ];
+    let signo = internal_force[0] < 0 ? 'negativo': 'positivo';
+    let signo_value;
+
+    let peso;
+    let x;
+    let value;
+
+    for ( let i = 1; i < numValues; i++ ) {
+	peso = i / ( numValues - 1 );
+	x = -length/2 * ( 1 - peso ) + length/2 * peso;
+
+	// round values
+	signo_value = internal_force[i] < 0 ? 'negativo': 'positivo';
+
+	if ( signo_value == signo ){
+	    group_values.push( [ x, internal_force[i] ] );
+	} else {
+	    composed_function.push( group_values );
+	    signo = signo_value;
+	    group_values = [ [x, internal_force[i] ] ];
+	}
+    }
+
+    composed_function.push( group_values );
+
+    // plot composed function
+    let internalForceShapes = [];
+
+    for ( let i = 0; i < composed_function.length; i++ ) {
+	if ( composed_function[ i ].length < 2 ) break;  // TODO: find a better solution
+	if ( composed_function[ i ].every( value => Math.abs( value ) < 0.000001 ) ) break;
+	numValues = composed_function[i].length;
+
+	internalForceShape = new THREE.Shape();
+
+	internalForceShape.moveTo( composed_function[i][0][0], 0 );
+	composed_function[i].forEach( ( [ x, y ] ) => internalForceShape.lineTo( x, y ) );
+
+	internalForceShape.lineTo( composed_function[i][numValues-1][0], 0 );
+
+	loadGeometry = new THREE.ShapeGeometry( internalForceShape )
+	loadEdgesGeometry = new THREE.EdgesGeometry( loadGeometry );
+
+	switch ( axis ) {
+	case 'x':
+    	    load = new THREE.Mesh( loadGeometry, material );
+    	    loadEdges = new THREE.LineSegments( loadEdgesGeometry, edgesMaterial );
+    	    break;
+	case 'y':
+    	    load = new THREE.Mesh( loadGeometry, material );
+    	    loadEdges = new THREE.LineSegments( loadEdgesGeometry, edgesMaterial );
+    	    break;
+	case 'z':
+    	    load = new THREE.Mesh( loadGeometry, material );
+    	    loadEdges = new THREE.LineSegments( loadEdgesGeometry, edgesMaterial );
+    	    break;
+	}
+	load.name = 'load';
+	loadEdges.name = 'edges';
+	load.add( loadEdges );
+	internalForceAtFrame.add( load );
+    }
+
+    // end graphic at far joint
+    // positions.push( length/2, 0, 0 );
+
+    return internalForceAtFrame;
+}
+
 export function addLoadPattern( name ) {
   // add a load pattern
 
@@ -2522,7 +2929,7 @@ export function addLoadPattern( name ) {
 
     // check if load pattern's name already exits
     if ( structure.load_patterns.hasOwnProperty( name) ) {
-      reject( new Error( "load pattern's name '" + name + "' already extis" ) );
+      reject( new Error( "load pattern's name '" + name + "' already exist" ) );
     } else {
       // add load pattern to structure
 	structure.load_patterns[ name ] = { 'name': name };
@@ -2700,10 +3107,10 @@ export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, 
 	structure.load_patterns[ loadPattern ].frames[ frame ].push( { 'type': 'DistributedLoad', 'load_pattern': loadPattern, 'frame': frame, 'system': system, 'fx': fx, 'fy': fy, 'fz': fz, 'mx': mx, 'my': my, 'mz': mz } );
 
       // add frame to loads
-      if ( !model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).getObjectByName( 'frames' ) ) {
+	if ( !model.children.find( obj => obj.name == "loads" ).children.find( obj => obj.name == loadPattern ).getObjectByName( 'frames' ) ) {
         var frames = new THREE.Group();
         frames.name = 'frames';
-        model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).add( frames );
+          model.children.find( obj => obj.name == "loads" ).children.find( obj => obj.name == loadPattern ).add( frames );
       }
 
       // add loads to frame
@@ -2715,17 +3122,17 @@ export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, 
       // }
 
       // remove loadPattern
-      if ( model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).getObjectByName( frame ) ) model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).remove( model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).getObjectByName( frame ) );
+	if ( model.children.find( obj => obj.name == "loads" ).children.find( obj => obj.name == loadPattern ).getObjectByName( 'frames' ).getObjectByName( frame ) ) model.children.find( obj => obj.name == 'loads' ).children.find( obj => obj.name == loadPattern ).getObjectByName( 'frames' ).remove( model.children.find( obj => obj.name == 'loads' ).children.find( obj => obj.name == loadPattern ).getObjectByName( 'frames' ).getObjectByName( frame ) );
       // if ( model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'loads' ).getObjectByName( loadPattern ) ) model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'laods' ).remove( model.getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'laods' ).getObjectByName( loadPattern ) );
 
 	// add distributed load to model
 	if ( system == 'local' ) {
-	    model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).add( createLocalLoadAtFrame( loadPattern, frame ) );
+	    model.children.find( obj => obj.name == "loads" ).children.find( obj => obj.name == loadPattern ).getObjectByName( 'frames' ).add( createLocalLoadAtFrame( loadPattern, frame ) );
 	}
 	// model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPattern ).getObjectByName( 'frames' ).add( createGlobalLoadAtFrame( loadPattern, frame ) );p
 
       // set force scale
-      setLoadForceScale( config[ 'load.force.scale' ] );
+      // setLoadForceScale( config[ 'load.force.scale' ] );
 
       resolve( "frame distributed load added" );
     } else {
@@ -2743,6 +3150,9 @@ export function addUniformlyDistributedLoadAtFrame( loadPattern, frame, system, 
 function setLoadVisible( visible ) {
   // set load visibile
 
+    // turn off internal forces
+    if ( visible )  model.getObjectByName( 'internal forces' ).visible = false;
+
   model.getObjectByName( 'joints' ).children.filter( joint => joint.getObjectByName( 'loads' ) ).forEach( joint => joint.getObjectByName( 'loads' ).visible = visible );
   model.children.find( obj => obj.name == 'loads' ).visible = visible;
 
@@ -2756,15 +3166,16 @@ function setLoadVisible( visible ) {
 
 function setLoadPatternVisible( loadPattern ) {
   // set visible load pattern
-
   Object.entries( structure.load_patterns ).forEach( ( [ loadPatternName, loadPatternValue ] ) => {
     if ( loadPatternValue.hasOwnProperty( 'joints' ) ) {
       Object.keys( loadPatternValue.joints ).forEach( joint => model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).visible = loadPatternName == loadPattern );
     }
     if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
-      model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPatternName ).visible = loadPatternName == loadPattern;
+	model.children.find( obj => obj.name == 'loads' ).children.find( obj => obj.name == loadPatternName ).visible = loadPatternName == loadPattern;
     }
   });
+    // model.children.forEach( obj => console.log( obj.name, obj.visible ) );
+    // model.children.find( obj => obj.name == 'loads' ).children.forEach( load_pattern => console.log( load_pattern.name, load_pattern.visible ) );
 }
 
 function setLoadAs( as ) {
@@ -2864,84 +3275,102 @@ function setLoadForceScale( scale ) {
       });
     }
 
-    // frames
-    if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
-      // calculate fcomp_min and fcomp_max
-      fcomp = [];
-      fres = [];
-      fcomp_min = fcomp_max = fres_min = fres_max = 0;
+      // frames
+      Object.values( structure.load_patterns ).filter( load_pattern => load_pattern.hasOwnProperty( 'frames' ) ).forEach( load_pattern => {
+	  Object.entries( load_pattern.frames ).forEach( ( [ frame, loads ] ) => {
+	      var fy, fz;
+	      fy = fz = 0;
 
-      Object.values( loadPatternValue.frames ).forEach( loads => {
-        // uniformly distributed
-        if ( loads.hasOwnProperty( 'uniformly_distributed' ) ) {
-          // global
-          if ( loads.uniformly_distributed.hasOwnProperty( 'global' ) ) {
-            fx = fy = fz = 0;
+	      for ( const load of loads ) {
+    	      	  fx += load.fx !== undefined ? load.fx : 0;
+    	      	  fy += load.fy !== undefined ? load.fy : 0;
+    	      	  fz += load.fz !== undefined ? load.fz : 0;
+	      }
 
-            loads.uniformly_distributed.global.forEach( load => {
-              fx += load.fx;
-              fy += load.fy;
-              fz += load.fz;
-            });
+	      model.children.find( obj => obj.name == 'loads' ).children.find( obj => obj.name == load_pattern.name ).getObjectByName( 'frames' ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).children.forEach( force => {
+		  if ( force.name == 'y' ) force.scale.setY( -scale * fy );
+		  if ( force.name == 'z' ) force.scale.setY( -scale * fz );
+	      } );
+	  } );
+      } );
+
+    // if ( loadPatternValue.hasOwnProperty( 'frames' ) ) {
+    // // calculate fcomp_min and fcomp_max
+    //   fcomp = [];
+    //   fres = [];
+    //   fcomp_min = fcomp_max = fres_min = fres_max = 0;
+
+    //   Object.values( loadPatternValue.frames ).forEach( loads => {
+    //     // uniformly distributed
+    //     if ( loads.hasOwnProperty( 'uniformly_distributed' ) ) {
+    //       // global
+    //       if ( loads.uniformly_distributed.hasOwnProperty( 'global' ) ) {
+    //         fx = fy = fz = 0;
+
+    //         loads.uniformly_distributed.global.forEach( load => {
+    //           fx += load.fx;
+    //           fy += load.fy;
+    //           fz += load.fz;
+    //         });
             
-            if ( fx ) fcomp.push( Math.abs( fx ) );
-            if ( fy ) fcomp.push( Math.abs( fy ) );
-            if ( fz ) fcomp.push( Math.abs( fz ) );
-  
-            vector = new THREE.Vector3( fx, fy, fz );
-            if ( vector.length() ) fres.push( vector.length() );
-          }
-        }
-      });
+    //         if ( fx ) fcomp.push( Math.abs( fx ) );
+    //         if ( fy ) fcomp.push( Math.abs( fy ) );
+    //         if ( fz ) fcomp.push( Math.abs( fz ) );
 
-      fcomp_min = Math.min( ...fcomp );
-      fcomp_max = Math.max( ...fcomp );
+    //         vector = new THREE.Vector3( fx, fy, fz );
+    //         if ( vector.length() ) fres.push( vector.length() );
+    //       }
+    //     }
+    //   });
 
-      fres_min = Math.min( ...fres );
-      fres_max = Math.max( ...fres );
+    //   fcomp_min = Math.min( ...fcomp );
+    //   fcomp_max = Math.max( ...fcomp );
 
-      Object.entries( loadPatternValue.frames ).forEach( ( [ frame, loads ] ) => {
-        // uniformly distributed
-        if ( loads.hasOwnProperty( 'uniformly_distributed' ) ) {
-          // global
-          if ( loads.uniformly_distributed.hasOwnProperty( 'global' ) ) {
-            fx = fy = fz = 0;
+    //   fres_min = Math.min( ...fres );
+    //   fres_max = Math.max( ...fres );
 
-            loads.uniformly_distributed.global.forEach( load => {
-              fx += load.fx;
-              fy += load.fy;
-              fz += load.fz;
-            });
+    //   Object.entries( loadPatternValue.frames ).forEach( ( [ frame, loads ] ) => {
+    //     // uniformly distributed
+    //     if ( loads.hasOwnProperty( 'uniformly_distributed' ) ) {
+    //       // global
+    //       if ( loads.uniformly_distributed.hasOwnProperty( 'global' ) ) {
+    //         fx = fy = fz = 0;
 
-            // components
-            Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => { 
-              if ( magnitud != 0 ) {
-                magnitud = magnitud / Math.abs( magnitud ) * scale * ( 0.4 * ( fcomp_max - Math.abs( magnitud ) ) + ( Math.abs( magnitud ) - fcomp_min ) ) / ( fcomp_max - fcomp_min );
+    //         loads.uniformly_distributed.global.forEach( load => {
+    //           fx += load.fx;
+    //           fy += load.fy;
+    //           fz += load.fz;
+    //         });
+
+    //         // components
+    //         Object.entries( { 'x': fx, 'y': fy, 'z': fz } ).forEach( ( [ axis, magnitud ] ) => { 
+    //           if ( magnitud != 0 ) {
+    //             magnitud = magnitud / Math.abs( magnitud ) * scale * ( 0.4 * ( fcomp_max - Math.abs( magnitud ) ) + ( Math.abs( magnitud ) - fcomp_min ) ) / ( fcomp_max - fcomp_min );
     
-                // longitudinal
-                if ( model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' ) ) {
-                  model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).remove( model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' ) );
-                  model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).add( createUniformlyDistributedTransversalForce( frame, magnitud, axis ) );
-                }
-              }
-            });
+    //             // longitudinal
+    //             if ( model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' ) ) {
+    //               model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).remove( model.children.find( obj => obj.name == 'loads' ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).getObjectByName( 'transversal' ) );
+    //               model.children.find( obj => obj.name == "loads" ).getObjectByName( loadPatternName ).getObjectByName( frame ).getObjectByName( 'components' ).getObjectByName( 'forces' ).getObjectByName( axis ).add( createUniformlyDistributedTransversalForce( frame, magnitud, axis ) );
+    //             }
+    //           }
+    //         });
     
-            // vector = new THREE.Vector3( fx, fy, fz );
+    //         // vector = new THREE.Vector3( fx, fy, fz );
             
-            // // resultant
-            // if ( vector.length() != 0 ) {
-            //   magnitud = scale * ( 0.25 * ( fres_max - vector.length() ) + ( vector.length() - fres_min ) ) / ( fres_max - fres_min );
+    //         // // resultant
+    //         // if ( vector.length() != 0 ) {
+    //         //   magnitud = scale * ( 0.25 * ( fres_max - vector.length() ) + ( vector.length() - fres_min ) ) / ( fres_max - fres_min );
               
-            //   arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'force' ).getObjectByName( 'arrow' );
-            //   arrow.getObjectByName( 'straightShaft' ).scale.setX( magnitud );
-            //   arrow.getObjectByName( 'head' ).position.setX( magnitud );
+    //         //   arrow = model.getObjectByName( 'joints' ).getObjectByName( joint ).getObjectByName( 'loads' ).getObjectByName( loadPatternName ).getObjectByName( 'resultant' ).getObjectByName( 'force' ).getObjectByName( 'arrow' );
+    //         //   arrow.getObjectByName( 'straightShaft' ).scale.setX( magnitud );
+    //         //   arrow.getObjectByName( 'head' ).position.setX( magnitud );
     
-            //   arrow.position.setX( -( magnitud + config[ 'load.head.height' ] + config[ 'joint.size' ] ) );
-            // }
-          }
-        }
-      });
-    }
+    //         //   arrow.position.setX( -( magnitud + config[ 'load.head.height' ] + config[ 'joint.size' ] ) );
+    //         // }
+    //       }
+    //     }
+    //   });
+    // }
   });
 }
 
@@ -3124,6 +3553,141 @@ function setLoadShaftTube( tube ) {
   });
 }
 
+function addLoadPatternInternalForces( load_pattern, internal_forces ){
+    // add load pattern's internal forces
+
+    var promise = new Promise( ( resolve, reject ) => {
+	// only strings accepted as name
+	load_pattern = load_pattern.toString();
+
+	// check if load_pattern exits
+	if ( structure.load_patterns.hasOwnProperty( load_pattern ) ) {
+	    // add load pattern's internal forces to structure
+	    structure.internal_forces[ load_pattern ] = {};
+
+	    // add internal forces
+	    Object.entries( internal_forces ).forEach( ( [ frame, internal_force ] ) => {
+		if ( structure.frames.hasOwnProperty( frame ) )	{
+		    structure.internal_forces[ load_pattern ][ frame ] = internal_force;
+		} else {
+		    reject( new Error( "frame '" + frame + "' does not exits" ) );
+		}
+	    } );
+
+	    // add internal forces' load pattern to model
+	    if ( model.getObjectByName( 'internal forces' ).getObjectByName( load_pattern ) ) model.getObjectByName( 'internal forces' ).remove( model.getObjectByName( 'internal force' ).getObjectByName( load_pattern ) );
+
+	    var internalForces = new THREE.Group();
+	    internalForces.name = load_pattern;
+	    internalForces.visible = load_pattern == config[ 'internal_forces.load_pattern' ];
+
+	    Object.entries( structure.internal_forces[ load_pattern ] ).forEach( ( [ frame, internal_forces ] ) => {
+	    	internalForces.add( createInternalForcesAtFrame( frame, internal_forces ) );
+	    } );
+
+	    model.getObjectByName( 'internal forces' ).add( internalForces );
+
+	    // add internal forces to controller
+	    var str, innerHTMLStr = "<option value'" + "" + "'>" + "" + "</options>";
+	    Object.keys( structure.internal_forces ).forEach( load_pattern => {
+		str = "<option value='" + load_pattern + "'>" + load_pattern + "</options>";
+		innerHTMLStr += str;
+	    } );
+	    internal_forcesController.domElement.children[ 0 ].innerHTML = innerHTMLStr;
+	    displacementsController.updateDisplay();
+	} else {
+	    reject( new Error( "load pattern '" + load_pattern + "' does not exists" ) );
+	}
+    } );
+
+    return promise;
+}
+
+function addLoadPatternInternalDisplacements( load_pattern, internal_displacements ){
+    // add load pattern's internal displacements
+
+    var promise = new Promise( ( resolve, reject ) => {
+	// only strings accepted as name
+	load_pattern = load_pattern.toString();
+
+	// check if load_pattern exits
+	if ( structure.load_patterns.hasOwnProperty( load_pattern ) ) {
+	    // add load pattern's internal displacements to structure
+	    if ( !structure.internal_displacements.hasOwnProperty( load_pattern ) ) structure.internal_displacements[ load_pattern ] = {};
+
+	    // add internal displacements
+	    Object.entries( internal_displacements ).forEach( ( [ frame, internal_displacement ] ) => {
+		if ( structure.frames.hasOwnProperty( frame ) ) {
+		    structure.internal_displacements[ load_pattern ][ frame ] = internal_displacement;
+		} else {
+		    reject( new Error( "frame '" + frame + "' does not exits" ) );
+		}
+	    } );
+	}
+    } );
+
+    // add displacements to controller
+    var str, innerHTMLStr = "<option value'" + "" + "'>" + "" + "</options>";
+    Object.keys( structure.internal_displacements ).forEach( load_pattern => {
+	str = "<option value='" + load_pattern + "'>" + load_pattern + "</options>";
+	innerHTMLStr += str;
+    } );
+    displacementsController.domElement.children[ 0 ].innerHTML = innerHTMLStr;
+    displacementsController.updateDisplay();
+
+    return promise;
+}
+
+function setInternalForcesAction( action ) {
+    // set internal forces action
+
+    var promise = new Promise( ( resolve, reject ) => {
+	model.getObjectByName( 'internal forces' ).children.forEach( loadPattern => {
+	    loadPattern.children.forEach( frame => {
+		frame.children.forEach( internalForce => {
+		    internalForce.visible = internalForce.name == config[ 'internal_forces.action' ];
+		} );
+	    } );
+	} );
+    } );
+
+    return promise;
+}
+
+function setLoadPatternInternalForces( load_pattern, scale ) {
+    // set load pattern internal forces
+
+    var promise = new Promise( ( resolve, reject ) => {
+	// only strings accepted as name
+	load_pattern = load_pattern.toString();
+
+	model.getObjectByName( 'internal forces' ).children.forEach( internal_forces => internal_forces.visible = internal_forces.name == load_pattern );
+
+	var joint, internal_forces;
+	// check if load_pattern internal forces exist
+	if ( structure.internal_forces.hasOwnProperty( load_pattern ) ) {
+	    model.getObjectByName( 'internal forces' ).getObjectByName( load_pattern ).children.forEach( frame => {
+	    	frame.getObjectByName( 'fx' ).scale.setY( scale );
+	    	frame.getObjectByName( 'fy' ).scale.setY( scale );
+	    	frame.getObjectByName( 'fz' ).scale.setY( scale );
+	    	frame.getObjectByName( 'mx' ).scale.setY( scale );
+	    	frame.getObjectByName( 'my' ).scale.setY( scale );
+	    	frame.getObjectByName( 'mz' ).scale.setY( scale );
+	    } );
+	}
+	// else {
+	// }
+
+	// check if load_pattern internal forces exist
+	// if ( structure.internal_)
+    } );
+
+}
+function setLoadPatternDisplacementsVisible( visible ) {
+    // set load pattern's displacements visible
+
+}
+
 function addLoadPatternDisplacements( load_pattern, joint_displacements ) {
     // add load pattern's displacements
 
@@ -3134,12 +3698,104 @@ function addLoadPatternDisplacements( load_pattern, joint_displacements ) {
 	// check if load_pattern exists
 	if ( structure.load_patterns.hasOwnProperty( load_pattern ) ) {
 	    // add load pattern displacements to structure
-	    if ( !structure.displacements.hasOwnProperty( load_pattern ) ) structure.displacements[ load_pattern ] = {};
+	    structure.displacements[ load_pattern ] = {};
+
+	    // add joint displacements
 	    Object.entries( joint_displacements ).forEach( ( [ joint, joint_displacement ] ) => {
-		if ( structure.joints.hasOwnProperty( joint ) ) structure.displacements[ load_pattern ][ joint ] = joint_displacement;
+		if ( structure.joints.hasOwnProperty( joint ) ) {
+		    structure.displacements[ load_pattern ][ joint ] = joint_displacement;
+		} else {
+		    reject( new Error( "joint '" + joint + "' does not exist" ) );
+		}
 	    } );
+	} else {
+	    reject( new Error( "load pattern '" + load_pattern + "' does not exist" ) );
 	}
     } );
+
+    // add displacements to controller
+    // var str, innerHTMLStr = "<option value'" + "" + "'>" + "" + "</options>";
+    // Object.keys( structure.displacements ).forEach( load_pattern => {
+    // 	str = "<option value='" + load_pattern + "'>" + load_pattern + "</options>";
+    // 	innerHTMLStr += str;
+    // });
+    // displacementsController.domElement.children[ 0 ].innerHTML = innerHTMLStr;
+    // displacementsController.updateDisplay();
+
+    return promise
+}
+
+function setLoadPatternDisplacements( load_pattern, scale ) {
+    // set load pattern displacements
+
+    var promise = new Promise( ( resolve, reject ) => {
+	// only strings accepted as name
+	load_pattern = load_pattern.toString();
+
+	var joint, displacements;
+	// check if load_pattern displacements exist
+	if ( structure.displacements.hasOwnProperty( load_pattern ) ) {
+	    // move joints
+	    model.getObjectByName( 'deformed structure' ).getObjectByName( 'joints' ).children.forEach( parent => {
+	    	displacements = structure.displacements[ load_pattern ][ parent.name ];
+	    	displacements = new THREE.Vector3( displacements.ux, displacements.uy, displacements.uz );
+
+	    	joint = parent.getObjectByName( 'joint' );
+	    	joint.position.copy( displacements.multiplyScalar( config[ 'displacements.scale' ] ) );
+	    } );
+	} else {
+	    if ( load_pattern ) reject( new Error( "load pattern displacements '" + load_pattern + "' does not exist" ) );
+	}
+
+	// check if load_pattern displacements exits
+	if ( structure.internal_displacements.hasOwnProperty( load_pattern ) ) {
+	    // replace deformed frames
+	    model.getObjectByName( 'deformed structure' ).getObjectByName( 'deformed frames' ).children.forEach( frame => {
+		const j = model.getObjectByName( 'joints' ).getObjectByName( structure[ 'frames' ][ frame.name ].joint_j );
+		const k = model.getObjectByName( 'joints' ).getObjectByName( structure[ 'frames' ][ frame.name ].joint_k );
+
+		const length = k.position.clone().sub( j.position ).length();
+
+		const internal_displacements = structure[ 'internal_displacements' ][ load_pattern ][ frame.name ];
+		const ux = internal_displacements.ux;
+		const uy = internal_displacements.uy;
+		const uz = internal_displacements.uz;
+
+		const num_values = ux.length;
+		const points = [];
+
+		for ( let i = 0; i < num_values; i++ ) {
+		    const point = new THREE.Vector3( ux[ i ], uy[ i ], uz[ i ] ).multiplyScalar( scale );
+		    points.push( point.add( new THREE.Vector3( ( i / (num_values - 1) ) * length, 0, 0 ) ) );
+		}
+		// internal_displacement.forEach( ( [ key,  ] ) )
+
+		frame.remove( frame.getObjectByName( 'deformed frame' ) );
+		frame.add( createDeformedFrame( points, length ) );
+	    } );  // = [];
+
+	    // model.getObjectByName(  )
+	    // 	// deformed_frame
+	    // 	model.getObjectByName( 'deformed structure' ).getObjectByName( 'deformed frames' ).remove( frame );
+	    // } );
+	} else {
+	    if ( load_pattern === '' ) {
+		model.getObjectByName( 'deformed structure' ).getObjectByName( 'deformed frames' ).children.forEach( frame => {
+		    const j = model.getObjectByName( 'joints' ).getObjectByName( structure[ 'frames' ][ frame.name ].joint_j );
+		    const k = model.getObjectByName( 'joints' ).getObjectByName( structure[ 'frames' ][ frame.name ].joint_k );
+
+		    const length = k.position.clone().sub( j.position ).length();
+
+		    const deformedFrame = createDeformedFrame( [ new THREE.Vector3( ), new THREE.Vector3( length, 0, 0 ) ], length );
+
+		    frame.remove( frame.getObjectByName( 'deformed frame' ) );
+		    frame.add( deformedFrame );
+		} );
+	    } else {
+		reject( new Error( "load pattern displacements '" + load_pattern + "' does not exist" ) );
+	    }
+	}
+    });
 }
 
 
