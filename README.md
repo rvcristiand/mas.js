@@ -1,10 +1,10 @@
-# FEM.js
+# mas.js
 
-Model Civil Engineering Structures with [FEM.js](https://rvcristiand.github.io/FEM.js).
+Model Civil Engineering Structures with [mas.js](https://rvcristiand.github.io/mas.js).
 
 ## Getting Started
 
-You can use [FEM.js](https://rvcristiand.github.io/FEM.js) online! Just click [here](https://rvcristiand.github.io/FEM.js/).
+You can use [mas.js](https://rvcristiand.github.io/mas.js) online! Just click [here](https://rvcristiand.github.io/mas.js/).
 
 Alternatively, you can run it from a local machine. The following instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
@@ -12,7 +12,7 @@ Alternatively, you can run it from a local machine. The following instructions w
 
 You need a Web Browser and run a local server. [Git](https://git-scm.com/) is optional.
 
-#### Get a copy of FEM.js
+#### Get a copy of mas.js
 
 Fork, clone or download this repository.
 
@@ -42,7 +42,7 @@ If you have already a local host running on your machine, you can open the _inde
 
 ## API
 
-Details about the functions provides by FEM.js.
+Details about the functions provides by mas.js.
 
 ### Functions
 

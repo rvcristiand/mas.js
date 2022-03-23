@@ -1,5 +1,5 @@
 import * as terminal from "./modules/terminal.js";
-import * as FEM from "./modules/FEM.js";
+import * as mas from "./modules/mas.js";
 
 
 // scene
@@ -16,12 +16,12 @@ var autocomplete = document.getElementById( "autocomplete" );
 
 // addLoadAtJoint
 terminal.add_function( 'addLoadAtJoint', {
-  func: FEM.addLoadAtJoint
+  func: mas.addLoadAtJoint
 });
 
 // addLoadPattern
 terminal.add_function('addLoadPattern', {
-  func: FEM.addLoadPattern,
+  func: mas.addLoadPattern,
   successful: function ( name ) {
     return "load pattern '" + name + "' was added";
   }
@@ -29,7 +29,7 @@ terminal.add_function('addLoadPattern', {
 
 // removeLoadPattern
 terminal.add_function('removeLoadPattern', {
-  func: FEM.removeLoadPattern,
+  func: mas.removeLoadPattern,
   succesful: function ( name ) {
     return "load pattern '" + name + "' was removed";
   }
@@ -37,7 +37,7 @@ terminal.add_function('removeLoadPattern', {
 
 // addSupport
 terminal.add_function('addSupport', {
-  func: FEM.addSupport,
+  func: mas.addSupport,
   successful: function ( name ) {
     return "support " + name + " was added";
   }
@@ -45,7 +45,7 @@ terminal.add_function('addSupport', {
 
 // removeSupport
 terminal.add_function( 'removeSupport', {
-  func: FEM.removeSupport,
+  func: mas.removeSupport,
   successful: name => {
     return "support '" + name + "' was removed";
   }
@@ -53,7 +53,7 @@ terminal.add_function( 'removeSupport', {
 
 // addFrame
 terminal.add_function('addFrame', {
-  func: FEM.addFrame,
+  func: mas.addFrame,
   successful: function ( name ) {
     return "frame " + name + " was added";
   }
@@ -61,54 +61,54 @@ terminal.add_function('addFrame', {
 
 // removeFrame
 terminal.add_function( 'removeFrame', {
-  func: FEM.removeFrame,
+  func: mas.removeFrame,
   successful: name => {
     return "frame '" + name + "' was removed";
   }
 });
 
 // add section
-terminal.add_function( 'addSection', { func: FEM.addSection, successful: name => "section '" + name + "' was added" } );
+terminal.add_function( 'addSection', { func: mas.addSection, successful: name => "section '" + name + "' was added" } );
 
 // add rectangular section
 terminal.add_function( 'addRectangularSection', {
-  func: FEM.addRectangularSection,
+  func: mas.addRectangularSection,
   successful: function( name, width, height ) {
     return "rectangle section " + name + " was added";
   }
 });
 
 // remove section
-terminal.add_function( 'removeSection', { func: FEM.removeSection, successful: name => "section '" + name + "' was removed" } );
+terminal.add_function( 'removeSection', { func: mas.removeSection, successful: name => "section '" + name + "' was removed" } );
 
 // add material
 terminal.add_function( 'addMaterial', {
-  func: FEM.addMaterial, 
+  func: mas.addMaterial, 
   successful: function( name, e, g) {
     return "material '" + name + "' was added";
   }
 });
 
 // removeMaterial
-terminal.add_function( 'removeMaterial', { func: FEM.removeMaterial, successful: name => "material '" + name + "' was removed" } );
+terminal.add_function( 'removeMaterial', { func: mas.removeMaterial, successful: name => "material '" + name + "' was removed" } );
 
 // addJoint
 terminal.add_function('addJoint', {
-  func: FEM.addJoint,
+  func: mas.addJoint,
   successful: function ( name, x, y, z ) { 
     return "joint " + name + " was added";
   }
 });
 
 // removeJoint
-terminal.add_function( 'removeJoint', { func: FEM.removeJoint, successful: name => "joint " + name + " was removed" } );
+terminal.add_function( 'removeJoint', { func: mas.removeJoint, successful: name => "joint " + name + " was removed" } );
 
 // setFrameView
-terminal.add_function( 'setFrameView', { func: FEM.setFrameView, successful: viewType => { return viewType + " setted" } } );
+terminal.add_function( 'setFrameView', { func: mas.setFrameView, successful: viewType => { return viewType + " setted" } } );
 
 // showJointsLabel
 terminal.add_function('showJointsLabel', {
-  func: FEM.showJointsLabel,
+  func: mas.showJointsLabel,
   successful: function () {
     return "joints' label was showed";
   }
@@ -116,7 +116,7 @@ terminal.add_function('showJointsLabel', {
 
 // hideJointsLabel
 terminal.add_function('hideJointsLabel', {
-  func: FEM.hideJointsLabel,
+  func: mas.hideJointsLabel,
   successful: function () {
     return "joints' label was hidden";
   }
@@ -124,7 +124,7 @@ terminal.add_function('hideJointsLabel', {
 
 // showFramesLabel
 terminal.add_function('showFramesLabel', {
-  func: FEM.showFramesLabel,
+  func: mas.showFramesLabel,
   successful: function () {
     return "frames' label was showed";
   }
@@ -132,7 +132,7 @@ terminal.add_function('showFramesLabel', {
 
 // hideFramesLabel
 terminal.add_function('hideFramesLabel', {
-  func: FEM.hideFramesLabel,
+  func: mas.hideFramesLabel,
   successful: function () {
     return "frames' label was hidden";
   }
@@ -140,7 +140,7 @@ terminal.add_function('hideFramesLabel', {
 
 // setUpwardsAxis
 terminal.add_function("setUpwardsAxis", {
-  func: FEM.setUpwardsAxis,
+  func: mas.setUpwardsAxis,
   successful: function ( axisUpwards ) {
     return "upwards axis set to " + axisUpwards;
   }
@@ -148,7 +148,7 @@ terminal.add_function("setUpwardsAxis", {
 
 // setView
 terminal.add_function("setView", {
-  func: FEM.setView,
+  func: mas.setView,
   succesfull: function ( direction ) {
     return "standard view set to " + direction;
   }
@@ -156,17 +156,17 @@ terminal.add_function("setView", {
 
 // loadModel
 terminal.add_function("open", {
-  func: FEM.open,
+  func: mas.open,
   successful: function (file) {
     return "the " + "'" + file + "'" + " has been loaded";
   }
 });
 
 // getStructure
-terminal.add_function( "getStructure", { func: FEM.getStructure, successful: "" } );
+terminal.add_function( "getStructure", { func: mas.getStructure, successful: "" } );
 
 // get load patterns
-terminal.add_function( "getLoadPatterns", { func: FEM.getLoadPatterns, successful: "" } );
+terminal.add_function( "getLoadPatterns", { func: mas.getLoadPatterns, successful: "" } );
 
 // default command
 command_line.value = "open(" + '"' + "space_frame.json" + '"' + ")";
