@@ -29,8 +29,8 @@ var displacementsController;
 // FEM.js
 var config = {
   // background
-  'background.topColor': '#000000',
-  'background.bottomColor': '#282828',
+  'background.topColor': '#00ccff', // 000000
+  'background.bottomColor': '#ece2c6', // 282828
   
   // model
   'model.axisUpwards': 'y',
