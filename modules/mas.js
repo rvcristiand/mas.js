@@ -919,7 +919,7 @@ export function open( filename ) {
 		    } );
 		} );
 	    }
-          // if ( load_pattern.hasOwnProperty( 'frames' ) )
+            if ( load_pattern.hasOwnProperty( 'frames' ) ) {
 	    Object.values( load_pattern.frames ).forEach( loads => {  // load_types
 	      loads.forEach( load => {
 		  switch ( load.type ) {
@@ -930,6 +930,7 @@ export function open( filename ) {
 		  }
 	      } );
             } );
+	    }
 	} );
 
 	// add joint displacements
