@@ -934,19 +934,25 @@ export function open( filename ) {
 	} );
 
 	// add joint displacements
-	Object.entries( json.displacements ).forEach( ( [ load_pattern, joint_displacements ] ) => {
-	    addLoadPatternDisplacements( load_pattern, joint_displacements );
-	} );
+	if ( json.hasOwnProperty( 'displacements' ) ) {
+	    Object.entries( json.displacements ).forEach( ( [ load_pattern, joint_displacements ] ) => {
+		addLoadPatternDisplacements( load_pattern, joint_displacements );
+	    } );
+	}
 
 	// add internal forces
-	Object.entries( json.internal_forces ).forEach( ( [ load_pattern, internal_forces ] ) => {
-	    addLoadPatternInternalForces( load_pattern, internal_forces );
-	} );
+	if ( json.hasOwnProperty( 'internal_forces' ) ) {
+	    Object.entries( json.internal_forces ).forEach( ( [ load_pattern, internal_forces ] ) => {
+		addLoadPatternInternalForces( load_pattern, internal_forces );
+	    } );
+	}
 
 	// add internal displacements
-	Object.entries( json.internal_displacements ).forEach( ( [ load_pattern, internal_displacements ] ) => {
-	    addLoadPatternInternalDisplacements( load_pattern, internal_displacements );
-	} );
+	if ( json.hasOwnProperty( 'internal_displacements' ) ) {
+	    Object.entries( json.internal_displacements ).forEach( ( [ load_pattern, internal_displacements ] ) => {
+		addLoadPatternInternalDisplacements( load_pattern, internal_displacements );
+	    } );
+	}
 
       return "the '" + filename + "' model has been loaded";
     });
