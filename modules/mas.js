@@ -108,7 +108,7 @@ var config = {
   'frame.opacity': 0.5,
   'frame.label': false,
   
-  'frame.axes.visible': true,
+  'frame.axes.visible': false,
   'frame.axes.size': 1,
   
   'frame.axes.head.radius': 0.04,
@@ -123,10 +123,10 @@ var config = {
   
   'support.analytical.size': 1,
   
-  'support.analytical.head.radius': 0.04,
+  'support.analytical.head.radius': 0.08,
   'support.analytical.head.height': 0.3,
   
-  'support.analytical.shaft.tube' : 0.04,
+  'support.analytical.shaft.tube' : 0.02,
   'support.analytical.straightShaft.length': 1,
   'support.analytical.curveShaft.radius': 1,
   
@@ -520,7 +520,7 @@ function init() {
   // loadFolder.add( config, 'load.as' ).options( [ 'components', 'resultant' ] ).name( 'as' ).onChange( as => setLoadAs( as ) );
   // add force folder
   let forceFolder = loadFolder.addFolder( "force" );
-  forceFolder.add( config, 'load.force.scale' ).name( 'scale' ).min( 0.1 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadForceScale( scale ) );
+  forceFolder.add( config, 'load.force.scale' ).name( 'scale' ).min( 0.01 ).max( 1 ).step( 0.01 ).onChange( scale => setLoadForceScale( scale ) );
   forceFolder.addColor( config, 'load.resultant.force' ).name( 'color' ).onChange( color => resultantForceMaterial.color = new THREE.Color( color ) );
   // add torque folder
   let torqueFolder = loadFolder.addFolder( "torque" );
@@ -904,7 +904,7 @@ export function open( filename ) {
       // add suports
 	if ( json.hasOwnProperty( 'supports' ) ) {
 	    Object.values( json.supports ).forEach( support => {
-		addSupport( support.joint, support.ux, support.uy, support.uz, support.rx, support.ry, support.rz );
+		addSupport( support.joint, support.r_ux, support.r_uy, support.r_uz, support.r_rx, support.r_ry, support.r_rz );
 	    } );
 	}
 
@@ -923,8 +923,8 @@ export function open( filename ) {
 	    Object.values( load_pattern.frames ).forEach( loads => {  // load_types
 	      loads.forEach( load => {
 		  switch ( load.type ) {
-		  case "DistributedLoad":
-		      addUniformlyDistributedLoadAtFrame( load.load_pattern, load.frame, load.system, load.fx, load.fy, load.fz, load.mx, load.my, load.mz );
+		  case "UniformlyDistributedLoad":
+		      addUniformlyDistributedLoadAtFrame( load.load_pattern, load.element, 'local', load.wx, load.wy, load.wz, 0, 0, 0 );
 		      break;
 		      // Object.entries( load_types.uniformly_distributed ).forEach( ( [ system, loads ] ) => loads.forEach(  ) );		      
 		  }
@@ -2846,7 +2846,7 @@ function createInternalForceAtFrame( frame, internal_force, axis, material, edge
     let internalForceShape, load, loadGeometry, loadEdges, loadEdgesGeometry;
 
     // if no internal force
-    if ( !internal_force.every( value => value ) ) return internalForceAtFrame;
+    if ( internal_force.every( value => !value ) ) return internalForceAtFrame;
 
     // calculate frame length
     let p1, p2, length;
@@ -2887,8 +2887,8 @@ function createInternalForceAtFrame( frame, internal_force, axis, material, edge
     let internalForceShapes = [];
 
     for ( let i = 0; i < composed_function.length; i++ ) {
-	if ( composed_function[ i ].length < 2 ) break;  // TODO: find a better solution
-	if ( composed_function[ i ].every( value => Math.abs( value ) < 0.000001 ) ) break;
+	if ( composed_function[ i ].length < 2 ) continue;  // TODO: find a better solution
+	if ( composed_function[ i ].every( value => Math.abs( value ) < 0.000001 ) ) continue;
 	numValues = composed_function[i].length;
 
 	internalForceShape = new THREE.Shape();
